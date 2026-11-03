@@ -54,53 +54,30 @@ References to Layer-2 or partner-chain mechanisms in other networks (chapter [12
 ```mermaid
 flowchart TB
     subgraph APPS["Users and applications"]
-        W["iOS and Android wallets<br/>(Sargon)"]
-        EXT["Connector Extension"]
-        DAPP["dApps with RDT"]
-        ROLA["Backends with ROLA login"]
-        EXP["Radix Dashboard and explorers"]
-        DEV["Developer Console"]
+        W["iOS and Android wallets (Sargon)<br/>and Connector Extension"]
+        DAPP["dApps with RDT and backends<br/>with ROLA login"]
+        EXP["Radix Dashboard, explorers<br/>and Developer Console"]
         OLYW["olympia-wallet"]
     end
     subgraph CENTRAL["Central services: a single operator"]
-        GW["Gateway API"]
-        AGG["DataAggregator<br/>single instance"]
-        PG[("PostgreSQL<br/>~2.5 TB, +60 GB/month")]
-        SIG["WebRTC signalling"]
-        TURN["TURN servers"]
-        RELAY["Radix Connect Relay"]
-        PRICE["Token and NFT prices"]
-        IMG["Image service"]
-        DIR["dApp directory"]
+        AUX["Wallet services<br/>WebRTC signalling, TURN,<br/>Radix Connect Relay, prices,<br/>images, dApp directory"]
+        GW["<b>Babylon Gateway</b><br/>Gateway API + DataAggregator<br/>(single instance)<br/>PostgreSQL ~2.5 TB, +60 GB/month"]
         OGW["Olympia Gateway<br/>2021-2023 history"]
     end
     subgraph NET["Radix network"]
         FN[("Full nodes<br/>Java + Rust, 16 GB RAM")]
         VAL[("~100 validators<br/>Java + Rust, 16 GB RAM")]
     end
+    W -.-> AUX
+    DAPP -.-> AUX
     W --> GW
-    EXT --> GW
     DAPP --> GW
-    ROLA --> GW
     EXP --> GW
-    DEV --> GW
-    GW --> PG
-    AGG --> PG
-    AGG -- "transaction stream" --> FN
-    GW -- "preview and submit" --> FN
-    FN --- VAL
-    W -.-> SIG
-    EXT -.-> SIG
-    W -.-> TURN
-    EXT -.-> TURN
-    W -.-> RELAY
-    DAPP -.-> RELAY
-    W -.-> PRICE
-    W -.-> IMG
-    W -.-> DIR
     OLYW --> OGW
+    GW <-->|"transaction stream,<br/>preview and submit"| FN
+    FN --- VAL
     classDef central fill:#ffd6d6,stroke:#c00,color:#000
-    class GW,AGG,PG,SIG,TURN,RELAY,PRICE,IMG,DIR,OGW central
+    class GW,AUX,OGW central
 ```
 
 In red, services that depend on a single operator.
@@ -229,7 +206,7 @@ An explorer is the **most demanding** client: it needs global indexes that neith
 
 ```mermaid
 flowchart LR
-    O[("Olympia ledger<br/>frozen on 28 Sep 2023")] -- "migrated state:<br/>balances, stakes, tokens" --> G["Babylon genesis<br/>versions 1 to ~669"]
+    O[("Olympia ledger<br/>frozen on 28 Sep 2023")] -- "migrated state:<br/>balances, stakes, tokens" --> G["Babylon genesis<br/>versions 1 to 647"]
     G --> B[("Babylon ledger<br/>kept by every node")]
     O -- "transaction history<br/>(not in Babylon)" --> OG["Olympia Gateway<br/>single service"]
     O -. "proposal: export once" .-> AR["Verifiable archive<br/>IPFS, BitTorrent or Arweave"]

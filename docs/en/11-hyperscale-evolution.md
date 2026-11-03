@@ -30,12 +30,11 @@ Hyperscale is open source and the Foundation is in maintenance mode. So if the c
 In short: the **network and funds** can migrate to Hyperscale; **applications** have to be rebuilt. With the current code (a development version, v0.0.6) **it is not yet possible in production**; the work described in sections [11.5](#s11-5) and [11.6](#s11-6) is needed.
 
 ```mermaid
-flowchart LR
-    O["Olympia<br/>2021-2023"] -- "genesis migration<br/>Sep 2023" --> B["Babylon<br/>2023-today<br/>with a central Gateway"]
-    B -- "chapters 6, 9 and 10<br/>2027" --> BS["Babylon without Gateway<br/>4 GB nodes"]
-    BS -- "section 6.2" --> BV["Babylon with<br/>verifiable reads"]
-    BS -. "governance decision<br/>chapter 11" .-> H["Hyperscale<br/>sharded network<br/>2-4 years"]
-    BV -. "the same pieces carry over" .-> H
+flowchart TB
+    O["<b>Olympia</b><br/>2021-2023"] -->|"genesis migration<br/>Sep 2023"| B["<b>Babylon</b> · 2023-today<br/>with a central Gateway"]
+    B -->|"chapters 6, 9 and 10 · 2027"| BS["<b>Babylon without Gateway</b><br/>4-8 GB nodes"]
+    BS -->|"section 6.2"| BV["<b>Babylon with verifiable reads</b>"]
+    BV -.->|"governance decision (chapter 11)<br/>the same pieces carry over"| H["<b>Hyperscale</b><br/>sharded network · 2-4 years"]
     classDef old fill:#eeeeee,stroke:#888,color:#000
     classDef bad fill:#ffd6d6,stroke:#c00,color:#000
     classDef good fill:#d9f7d9,stroke:#080,color:#000
@@ -103,20 +102,21 @@ Hyperscale is a **sharded** network design: state is split across several shards
 
 ```mermaid
 flowchart TB
-    BEACON["Beacon chain<br/>one block per 5-min epoch<br/>validators and shard topology"]
+    CLIENT["Wallet or application"]
+    BEACON["<b>Beacon chain</b><br/>one block per 5-min epoch<br/>validators and shard topology"]
     subgraph SHARDS["Shards: each with its own HotStuff-2 consensus"]
         S1["Shard 1<br/>accounts with prefix A"]
         S2["Shard 2<br/>accounts with prefix B"]
-        S3["Shard N<br/>splits or merges with load"]
+        S3["Shard N<br/>splits or merges<br/>with load"]
+        S1 <-->|"cross-shard transaction:<br/>provision, execute, certify"| S2
     end
-    EC["Execution certificates<br/>validators sign the result"]
-    VM["WASM virtual machine<br/>state access declared before execution"]
-    CLIENT["Wallet or application"]
-    BEACON --> SHARDS
-    S1 <-- "cross-shard transaction:<br/>provision, execute, certify" --> S2
-    SHARDS --> EC
-    SHARDS --- VM
-    CLIENT -- "sends to a node of its<br/>account's shard" --> S1
+    VM["<b>WASM virtual machine</b><br/>state access declared<br/>before execution"]
+    EC["<b>Execution certificates</b><br/>validators<br/>sign the result"]
+    CLIENT -->|"sends to its<br/>account's shard"| S1
+    BEACON --> S1
+    BEACON --> S3
+    S2 -->|"execute on"| VM
+    S2 -->|"produce"| EC
 ```
 
 <a id="s11-2"></a>
@@ -169,25 +169,18 @@ flowchart TB
 - it does not require trusting a bridge.
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph BAB["Babylon"]
-        F["1. Agreed freeze<br/>transaction moratorium"]
-        R["2. Final state root<br/>signed by validators"]
-        AR[("Verifiable history<br/>archive")]
-        F --> R
-        R --> AR
+        direction LR
+        F["<b>1.</b> Agreed freeze<br/>transaction moratorium"] --> R["<b>2.</b> Final state root<br/>signed by validators"] --> AR[("Verifiable history<br/>archive")]
     end
-    subgraph HS["Hyperscale"]
-        G["3. Genesis<br/>XRD for accounts with known keys<br/>validators with new BLS keys"]
-        C["4. Claim contract<br/>Merkle proof + signature"]
-        U["New accounts account_hs…"]
+    subgraph HS["Hyperscale (optional temporary bridge with Babylon: M2)"]
+        direction LR
+        G["<b>3.</b> Genesis<br/>XRD for accounts with known keys<br/>validators with new BLS keys"] --> U["New accounts<br/>account_hs…"]
+        C["<b>4.</b> Claim contract<br/>Merkle proof + signature"] --> U
         D2["dApps rewritten<br/>with the Hyperscale SDK"]
-        G --> U
-        C --> U
     end
-    R --> G
-    R --> C
-    BAB -. "optional temporary bridge (M2)" .-> HS
+    BAB -->|"the final root<br/>feeds 3 and 4"| HS
 ```
 
 ```mermaid
@@ -195,13 +188,13 @@ sequenceDiagram
     autonumber
     participant U as User with their wallet
     participant A as Babylon archive
-    participant C as Claim contract on Hyperscale
+    participant C as Claim contract<br/>on Hyperscale
     U->>A: request the Merkle proof of their balance at the final root
     A-->>U: balance + Merkle proof
-    U->>U: sign the claim with their Babylon account key
+    Note right of U: sign the claim with their Babylon account key
     U->>C: send balance, proof and signature
-    C->>C: does the proof match the published final root?
-    C->>C: does the signature match the Babylon account?
+    Note left of C: does the proof match the published final root?
+    Note left of C: does the signature match the Babylon account?
     alt both checks pass
         C-->>U: deliver the funds to their account_hs… account
     else a check fails

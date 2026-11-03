@@ -215,53 +215,30 @@ Es una tabla técnica: los nombres de tecnologías de otras redes (Geyser, smold
 ```mermaid
 flowchart TB
     subgraph APPS["Usuarios y aplicaciones"]
-        W["Wallets iOS y Android<br/>(Sargon)"]
-        EXT["Connector Extension"]
-        DAPP["dApps con RDT"]
-        ROLA["Backends con inicio de sesión ROLA"]
-        EXP["Radix Dashboard y exploradores"]
-        DEV["Developer Console"]
+        W["Wallets iOS y Android (Sargon)<br/>y Connector Extension"]
+        DAPP["dApps con RDT y backends<br/>con inicio de sesión ROLA"]
+        EXP["Radix Dashboard, exploradores<br/>y Developer Console"]
         OLYW["olympia-wallet"]
     end
     subgraph CENTRAL["Servicios centrales: un solo operador"]
-        GW["Gateway API"]
-        AGG["DataAggregator<br/>una sola instancia"]
-        PG[("PostgreSQL<br/>~2,5 TB, +60 GB/mes")]
-        SIG["Señalización WebRTC"]
-        TURN["Servidores TURN"]
-        RELAY["Radix Connect Relay"]
-        PRICE["Precios de tokens y NFT"]
-        IMG["Servicio de imágenes"]
-        DIR["Directorio de dApps"]
+        AUX["Servicios de la wallet<br/>señalización WebRTC, TURN,<br/>Radix Connect Relay, precios,<br/>imágenes, directorio de dApps"]
+        GW["<b>Babylon Gateway</b><br/>Gateway API + DataAggregator<br/>(una sola instancia)<br/>PostgreSQL ~2,5 TB, +60 GB/mes"]
         OGW["Gateway de Olympia<br/>historial 2021-2023"]
     end
     subgraph NET["Red Radix"]
         FN[("Nodos completos<br/>Java + Rust, 16 GB RAM")]
         VAL[("~100 validadores<br/>Java + Rust, 16 GB RAM")]
     end
+    W -.-> AUX
+    DAPP -.-> AUX
     W --> GW
-    EXT --> GW
     DAPP --> GW
-    ROLA --> GW
     EXP --> GW
-    DEV --> GW
-    GW --> PG
-    AGG --> PG
-    AGG -- "stream de transacciones" --> FN
-    GW -- "preview y envío" --> FN
-    FN --- VAL
-    W -.-> SIG
-    EXT -.-> SIG
-    W -.-> TURN
-    EXT -.-> TURN
-    W -.-> RELAY
-    DAPP -.-> RELAY
-    W -.-> PRICE
-    W -.-> IMG
-    W -.-> DIR
     OLYW --> OGW
+    GW <-->|"stream de transacciones,<br/>preview y envío"| FN
+    FN --- VAL
     classDef central fill:#ffd6d6,stroke:#c00,color:#000
-    class GW,AGG,PG,SIG,TURN,RELAY,PRICE,IMG,DIR,OGW central
+    class GW,AUX,OGW central
 ```
 
 En rojo, los servicios que dependen de un solo operador.
@@ -270,35 +247,21 @@ En rojo, los servicios que dependen de un solo operador.
 
 ```mermaid
 flowchart TB
-    subgraph APPS["Usuarios y aplicaciones (versiones actuales; solo cambia la URL)"]
-        W["Wallets iOS y Android"]
-        EXT["Connector Extension"]
-        DAPP["dApps con RDT"]
-        ROLA["Backends con inicio de sesión ROLA"]
-        EXP["Explorador de referencia<br/>web estática, código abierto"]
-    end
-    REG["Registro en la cadena<br/>metadatos api_endpoints"]
-    subgraph READ["Nodos de lectura: muchos operadores independientes"]
-        R1["Operador A<br/>nodo completo + indexador ligero"]
-        R2["Operador B<br/>nodo completo + indexador ligero"]
-        R3["Operador C<br/>nodo completo + indexador ligero"]
-    end
-    subgraph NET["Red Radix"]
-        VAL[("Validadores<br/>perfil pequeño: R1-R4")]
-    end
-    subgraph SELF["Servicios auxiliares alojables por cualquiera"]
-        SIG["Señalización y TURN propios"]
-        RELAY["Relés de Radix Connect<br/>e iroh propios"]
-        PRICE["Servicios de precios<br/>configurables"]
-    end
+    APPS["<b>Usuarios y aplicaciones</b><br/>wallets iOS y Android, Connector Extension,<br/>dApps con RDT, backends con ROLA<br/>(versiones actuales: solo cambia la URL)"]
+    EXP["<b>Explorador de referencia</b><br/>web estática, código abierto"]
+    REG["<b>1. Registro en la cadena</b><br/>metadatos api_endpoints"]
+    READ["<b>2. Nodos de lectura</b><br/>muchos operadores independientes (A, B, C…)<br/>nodo completo + indexador ligero"]
+    SELF["<b>Servicios auxiliares</b> que cualquiera puede alojar<br/>señalización y TURN, relés de Radix Connect e iroh,<br/>precios configurables"]
     ARCH[("Archivo verificable de Olympia<br/>IPFS, BitTorrent, Arweave")]
-    APPS -- "1. leen la lista" --> REG
-    APPS -- "2. consultan con conmutación por error" --> READ
-    READ --> VAL
+    VAL[("Validadores<br/>perfil pequeño: R1-R4")]
+    APPS -->|"leen la lista"| REG
+    APPS -->|"consultan con conmutación por error"| READ
+    EXP --> READ
     APPS -.-> SELF
     EXP -.-> ARCH
+    READ --> VAL
     classDef good fill:#d9f7d9,stroke:#080,color:#000
-    class READ,REG,ARCH,SELF good
+    class READ,REG,SELF,ARCH good
 ```
 
 ### Infraestructura a largo plazo: solución ideal
@@ -310,24 +273,23 @@ flowchart TB
         DAPP["dApps, ROLA y exploradores<br/>cliente ligero en WebAssembly"]
     end
     subgraph NET["Red Radix: un solo binario en Rust"]
-        V[("Validadores<br/>4 GB RAM, nodo podado")]
-        N1[("Nodo con API de lectura nativa<br/>índices + pruebas de Merkle")]
         N2[("Otro nodo cualquiera<br/>incluso anónimo")]
+        N1[("Nodo con API de lectura nativa<br/>índices + pruebas de Merkle")]
+        V[("Validadores<br/>4 GB RAM, nodo podado")]
         A[("Nodos de archivo<br/>historial completo")]
+        N1 --- V
+        N2 --- V
+        V --- A
     end
-    SNAP[("Snapshots de estado verificables<br/>IPFS, BitTorrent")]
+    SNAP[("Snapshots de estado verificables<br/>IPFS, BitTorrent<br/>un nodo nuevo arranca en horas")]
     HIST[("Historial antiguo verificable<br/>Babylon y Olympia")]
     INC["Incentivos por servir lecturas<br/>decididos por gobernanza"]
-    W -- "QUIC directo + pruebas" --> N1
-    W -- "si uno falla, otro" --> N2
-    DAPP -- "QUIC o HTTPS + pruebas" --> N1
-    N1 --- V
-    N2 --- V
-    A -- "genera" --> SNAP
-    SNAP -- "arranque en horas" --> N2
-    A -- "publica" --> HIST
+    W -->|"QUIC + pruebas"| N1
+    W -->|"si uno falla, otro"| N2
+    DAPP -->|"QUIC o HTTPS<br/>+ pruebas"| N1
     INC -.-> N1
-    INC -.-> N2
+    A -->|"genera"| SNAP
+    A -->|"publica"| HIST
     classDef good fill:#d9f7d9,stroke:#080,color:#000
     class W,DAPP,V,N1,N2,A,SNAP,HIST good
 ```
@@ -336,35 +298,40 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    S0["<b>HOY</b><br/>Babylon con un Gateway central<br/>nodos de 16 GB de RAM"]
-    S1["<b>ETAPA 1 · meses</b><br/>Indexador ligero junto a cada nodo (E3)<br/>el Gateway desaparece · ajustes R1-R4"]
-    S2["<b>ETAPA 2 · 2027</b><br/>Índices dentro de babylon-node (E2)<br/>nodos de 4-8 GB · arranque verificado (R9)"]
-    S3["<b>ETAPA 3 · años</b><br/>Lecturas verificables y cliente ligero<br/>no hace falta confiar en ningún nodo"]
-    D{"<b>Decisión de la gobernanza</b><br/>¿adoptar Hyperscale?"}
-    FA["<b>ETAPA FINAL A</b><br/>Seguir mejorando Babylon en su cadena<br/>migración del nodo a Rust (R11)"]
-    FB["<b>ETAPA FINAL B</b><br/>Radix en Hyperscale<br/>red fragmentada en la capa 1 (capítulo 11)"]
-    S0 --> S1 --> S2 --> S3 --> D
-    D -->|No o más adelante| FA
-    D -->|Sí| FB
+    subgraph ROW1[" "]
+        direction LR
+        S0["<b>HOY</b><br/>Gateway central<br/>nodos de 16 GB"] --> S1["<b>ETAPA 1 · meses</b><br/>indexador ligero (E3)<br/>sin Gateway · R1-R4"] --> S2["<b>ETAPA 2 · 2027</b><br/>índices en el nodo (E2)<br/>nodos de 4-8 GB · R9"]
+    end
+    subgraph ROW2[" "]
+        direction LR
+        S3["<b>ETAPA 3 · años</b><br/>lecturas verificables<br/>y cliente ligero"] --> D{"<b>Gobernanza</b><br/>¿adoptar<br/>Hyperscale?"}
+    end
+    subgraph ROW3[" "]
+        direction TB
+        FA["<b>FINAL A</b> · si no, o más adelante<br/>seguir mejorando Babylon<br/>nodo en Rust (R11)"]
+        FB["<b>FINAL B</b> · si se adopta<br/>Radix en Hyperscale<br/>(capítulo 11)"]
+    end
+    ROW1 --> ROW2 --> ROW3
     classDef today fill:#ffd6d6,stroke:#c00,color:#000
     classDef step fill:#dbe9ff,stroke:#2b5fb4,color:#000
     classDef decision fill:#fff3c4,stroke:#b58900,color:#000
     classDef final fill:#d9f7d9,stroke:#080,color:#000
+    classDef row fill:none,stroke:none
     class S0 today
     class S1,S2,S3 step
     class D decision
     class FA,FB final
+    class ROW1,ROW2,ROW3 row
 ```
 
 ### Evolución de Radix
 
 ```mermaid
-flowchart LR
-    O["Olympia<br/>2021-2023"] -- "migración por génesis<br/>sep-2023" --> B["Babylon<br/>2023-hoy<br/>con Gateway central"]
-    B -- "capítulos 6, 9 y 10<br/>2027" --> BS["Babylon sin Gateway<br/>nodos de 4 GB"]
-    BS -- "sección 6.2" --> BV["Babylon con lecturas<br/>verificables"]
-    BS -. "decisión de la gobernanza<br/>capítulo 11" .-> H["Hyperscale<br/>red fragmentada<br/>2-4 años"]
-    BV -. "las mismas piezas sirven" .-> H
+flowchart TB
+    O["<b>Olympia</b><br/>2021-2023"] -->|"migración por génesis<br/>sep-2023"| B["<b>Babylon</b> · 2023-hoy<br/>con Gateway central"]
+    B -->|"capítulos 6, 9 y 10 · 2027"| BS["<b>Babylon sin Gateway</b><br/>nodos de 4-8 GB"]
+    BS -->|"sección 6.2"| BV["<b>Babylon con lecturas verificables</b>"]
+    BV -.->|"decisión de la gobernanza (capítulo 11)<br/>las mismas piezas sirven"| H["<b>Hyperscale</b><br/>red fragmentada · 2-4 años"]
     classDef old fill:#eeeeee,stroke:#888,color:#000
     classDef bad fill:#ffd6d6,stroke:#c00,color:#000
     classDef good fill:#d9f7d9,stroke:#080,color:#000

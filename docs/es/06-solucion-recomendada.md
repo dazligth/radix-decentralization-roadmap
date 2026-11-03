@@ -13,59 +13,42 @@
 
 ```mermaid
 flowchart TB
-    subgraph APPS["Usuarios y aplicaciones (versiones actuales; solo cambia la URL)"]
-        W["Wallets iOS y Android"]
-        EXT["Connector Extension"]
-        DAPP["dApps con RDT"]
-        ROLA["Backends con inicio de sesión ROLA"]
-        EXP["Explorador de referencia<br/>web estática, código abierto"]
-    end
-    REG["Registro en la cadena<br/>metadatos api_endpoints"]
-    subgraph READ["Nodos de lectura: muchos operadores independientes"]
-        R1["Operador A<br/>nodo completo + indexador ligero"]
-        R2["Operador B<br/>nodo completo + indexador ligero"]
-        R3["Operador C<br/>nodo completo + indexador ligero"]
-    end
-    subgraph NET["Red Radix"]
-        VAL[("Validadores<br/>perfil pequeño: R1-R4")]
-    end
-    subgraph SELF["Servicios auxiliares alojables por cualquiera"]
-        SIG["Señalización y TURN propios"]
-        RELAY["Relés de Radix Connect<br/>e iroh propios"]
-        PRICE["Servicios de precios<br/>configurables"]
-    end
+    APPS["<b>Usuarios y aplicaciones</b><br/>wallets iOS y Android, Connector Extension,<br/>dApps con RDT, backends con ROLA<br/>(versiones actuales: solo cambia la URL)"]
+    EXP["<b>Explorador de referencia</b><br/>web estática, código abierto"]
+    REG["<b>1. Registro en la cadena</b><br/>metadatos api_endpoints"]
+    READ["<b>2. Nodos de lectura</b><br/>muchos operadores independientes (A, B, C…)<br/>nodo completo + indexador ligero"]
+    SELF["<b>Servicios auxiliares</b> que cualquiera puede alojar<br/>señalización y TURN, relés de Radix Connect e iroh,<br/>precios configurables"]
     ARCH[("Archivo verificable de Olympia<br/>IPFS, BitTorrent, Arweave")]
-    APPS -- "1. leen la lista" --> REG
-    APPS -- "2. consultan con conmutación por error" --> READ
-    READ --> VAL
+    VAL[("Validadores<br/>perfil pequeño: R1-R4")]
+    APPS -->|"leen la lista"| REG
+    APPS -->|"consultan con conmutación por error"| READ
+    EXP --> READ
     APPS -.-> SELF
     EXP -.-> ARCH
+    READ --> VAL
     classDef good fill:#d9f7d9,stroke:#080,color:#000
-    class READ,REG,ARCH,SELF good
+    class READ,REG,SELF,ARCH good
 ```
 
 Detalle: cómo encuentran las aplicaciones los nodos de lectura.
 
 ```mermaid
-flowchart LR
+flowchart TB
     C["Wallets, dApps, ROLA y exploradores"]
-    REG["Registro en la cadena<br/>metadatos api_endpoints<br/>de los validadores"]
-    C -- "1. leen la lista de nodos de lectura" --> REG
-    C -- "2. consultan con conmutación por error" --> A
-    C --> B
+    REG["<b>1.</b> Registro en la cadena<br/>metadatos api_endpoints<br/>de los validadores"]
+    A["<b>Nodo de lectura A</b><br/>nodo completo +<br/>indexador ligero ~10-50 GB"]
+    B["<b>Nodo de lectura B</b><br/>nodo completo +<br/>indexador ligero"]
+    Z["<b>Nodo de lectura …</b><br/>nodo completo +<br/>indexador ligero"]
+    R(("Red Radix"))
+    C -->|"leen la lista"| REG
+    C --> A
+    C -->|"<b>2.</b> consultan con<br/>conmutación por error"| B
     C --> Z
-    subgraph A["Nodo de lectura A"]
-        A1[("Nodo completo")] --- A2["Indexador ligero<br/>~10-50 GB"]
-    end
-    subgraph B["Nodo de lectura B"]
-        B1[("Nodo completo")] --- B2["Indexador ligero"]
-    end
-    subgraph Z["Nodo de lectura ..."]
-        Z1[("Nodo completo")] --- Z2["Indexador ligero"]
-    end
-    A1 --> R(("Red Radix"))
-    B1 --> R
-    Z1 --> R
+    A --> R
+    B --> R
+    Z --> R
+    classDef good fill:#d9f7d9,stroke:#080,color:#000
+    class REG,A,B,Z good
 ```
 
 ## Cómo funciona un nodo de lectura
@@ -102,8 +85,9 @@ sequenceDiagram
     participant N as Nodo completo
     W->>L: preview de la transacción
     L->>N: /transaction/preview
-    N-->>W: resultado y comisiones
-    W->>W: el usuario firma
+    N-->>L: resultado
+    L-->>W: resultado y comisiones
+    Note right of W: el usuario firma
     W->>L: enviar transacción
     L->>N: /lts/transaction/submit
     loop mientras la época sea válida
@@ -206,24 +190,23 @@ flowchart TB
         DAPP["dApps, ROLA y exploradores<br/>cliente ligero en WebAssembly"]
     end
     subgraph NET["Red Radix: un solo binario en Rust"]
-        V[("Validadores<br/>4 GB RAM, nodo podado")]
-        N1[("Nodo con API de lectura nativa<br/>índices + pruebas de Merkle")]
         N2[("Otro nodo cualquiera<br/>incluso anónimo")]
+        N1[("Nodo con API de lectura nativa<br/>índices + pruebas de Merkle")]
+        V[("Validadores<br/>4 GB RAM, nodo podado")]
         A[("Nodos de archivo<br/>historial completo")]
+        N1 --- V
+        N2 --- V
+        V --- A
     end
-    SNAP[("Snapshots de estado verificables<br/>IPFS, BitTorrent")]
+    SNAP[("Snapshots de estado verificables<br/>IPFS, BitTorrent<br/>un nodo nuevo arranca en horas")]
     HIST[("Historial antiguo verificable<br/>Babylon y Olympia")]
     INC["Incentivos por servir lecturas<br/>decididos por gobernanza"]
-    W -- "QUIC directo + pruebas" --> N1
-    W -- "si uno falla, otro" --> N2
-    DAPP -- "QUIC o HTTPS + pruebas" --> N1
-    N1 --- V
-    N2 --- V
-    A -- "genera" --> SNAP
-    SNAP -- "arranque en horas" --> N2
-    A -- "publica" --> HIST
+    W -->|"QUIC + pruebas"| N1
+    W -->|"si uno falla, otro"| N2
+    DAPP -->|"QUIC o HTTPS<br/>+ pruebas"| N1
     INC -.-> N1
-    INC -.-> N2
+    A -->|"genera"| SNAP
+    A -->|"publica"| HIST
     classDef good fill:#d9f7d9,stroke:#080,color:#000
     class W,DAPP,V,N1,N2,A,SNAP,HIST good
 ```
@@ -233,16 +216,16 @@ flowchart TB
 ```mermaid
 sequenceDiagram
     autonumber
-    participant W as Wallet con cliente ligero
-    participant Q as Cualquier nodo, incluso desconocido
+    participant W as Wallet<br/>con cliente ligero
+    participant Q as Cualquier nodo<br/>incluso desconocido
     participant V as Validadores
     V-->>Q: firman la prueba del ledger con state_tree_hash
     W->>Q: dame el saldo de mi cuenta
     Q-->>W: dato + prueba de Merkle + prueba del ledger firmada
-    W->>W: ¿firmó más de 2/3 del stake de la época?
-    W->>W: ¿la prueba de Merkle cuadra con state_tree_hash?
+    Note right of W: ¿firmó más de 2/3 del stake de la época?
+    Note right of W: ¿la prueba de Merkle cuadra con state_tree_hash?
     alt las dos comprobaciones son correctas
-        W->>W: muestra el saldo, sin confiar en el nodo
+        Note right of W: muestra el saldo, sin confiar en el nodo
     else alguna falla
         W->>Q: descarta el nodo y pregunta a otro
     end
@@ -276,24 +259,30 @@ sequenceDiagram
 
 ```mermaid
 flowchart TB
-    S0["<b>HOY</b><br/>Babylon con un Gateway central<br/>nodos de 16 GB de RAM"]
-    S1["<b>ETAPA 1 · meses</b><br/>Indexador ligero junto a cada nodo (E3)<br/>el Gateway desaparece · ajustes R1-R4"]
-    S2["<b>ETAPA 2 · 2027</b><br/>Índices dentro de babylon-node (E2)<br/>nodos de 4-8 GB · arranque verificado (R9)"]
-    S3["<b>ETAPA 3 · años</b><br/>Lecturas verificables y cliente ligero<br/>no hace falta confiar en ningún nodo"]
-    D{"<b>Decisión de la gobernanza</b><br/>¿adoptar Hyperscale?"}
-    FA["<b>ETAPA FINAL A</b><br/>Seguir mejorando Babylon en su cadena<br/>migración del nodo a Rust (R11)"]
-    FB["<b>ETAPA FINAL B</b><br/>Radix en Hyperscale<br/>red fragmentada en la capa 1 (capítulo 11)"]
-    S0 --> S1 --> S2 --> S3 --> D
-    D -->|No o más adelante| FA
-    D -->|Sí| FB
+    subgraph ROW1[" "]
+        direction LR
+        S0["<b>HOY</b><br/>Gateway central<br/>nodos de 16 GB"] --> S1["<b>ETAPA 1 · meses</b><br/>indexador ligero (E3)<br/>sin Gateway · R1-R4"] --> S2["<b>ETAPA 2 · 2027</b><br/>índices en el nodo (E2)<br/>nodos de 4-8 GB · R9"]
+    end
+    subgraph ROW2[" "]
+        direction LR
+        S3["<b>ETAPA 3 · años</b><br/>lecturas verificables<br/>y cliente ligero"] --> D{"<b>Gobernanza</b><br/>¿adoptar<br/>Hyperscale?"}
+    end
+    subgraph ROW3[" "]
+        direction TB
+        FA["<b>FINAL A</b> · si no, o más adelante<br/>seguir mejorando Babylon<br/>nodo en Rust (R11)"]
+        FB["<b>FINAL B</b> · si se adopta<br/>Radix en Hyperscale<br/>(capítulo 11)"]
+    end
+    ROW1 --> ROW2 --> ROW3
     classDef today fill:#ffd6d6,stroke:#c00,color:#000
     classDef step fill:#dbe9ff,stroke:#2b5fb4,color:#000
     classDef decision fill:#fff3c4,stroke:#b58900,color:#000
     classDef final fill:#d9f7d9,stroke:#080,color:#000
+    classDef row fill:none,stroke:none
     class S0 today
     class S1,S2,S3 step
     class D decision
     class FA,FB final
+    class ROW1,ROW2,ROW3 row
 ```
 
 **Cómo encaja con el corto plazo:** no son alternativas, son etapas. E3 resuelve el problema de 2026. E2 elimina el proceso aparte. Los puntos 2-8 añaden la verificación sobre lo que E2 ya sirve. La interfaz `LedgerBackend` de los clientes es la que permite pasar de una etapa a otra sin rehacer las aplicaciones.

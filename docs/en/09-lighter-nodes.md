@@ -51,29 +51,28 @@
 ### The node today
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph JVM["Java process (JVM): 12 GB heap by default"]
         CONS["HotStuff consensus<br/>~17,400 lines"]
-        P2P["Netty P2P networking<br/>~9,300 lines + DSON/CBOR"]
         SYNC["Ledger sync<br/>and BFT sync"]
-        REL["Mempool relay"]
-        CFG["Guice + RxJava configuration"]
+        REL["Mempool<br/>relay"]
+        P2P["Netty P2P networking<br/>~9,300 lines + DSON/CBOR<br/>Guice + RxJava configuration"]
     end
-    JNI{{"JNI bridge<br/>92 functions, SBOR data copied"}}
+    JNI{{"JNI bridge: 92 functions, SBOR data copied"}}
     subgraph RUST["Rust library (libcorerust.so)"]
-        ENG["Radix Engine<br/>execution"]
         SM["State manager"]
-        MP["Mempool ~1.2 GB"]
-        API["Core API and Engine State API"]
+        ENG["Radix Engine<br/>execution"]
+        MP["Mempool<br/>~1.2 GB"]
         DB[("RocksDB with no memory limits<br/>full history, no pruning")]
+        API["Core API and<br/>Engine State API"]
     end
     CONS <--> JNI
     SYNC <--> JNI
     REL <--> JNI
     JNI <--> SM
     SM --> ENG
-    SM --> DB
     SM --> MP
+    SM --> DB
     API --> DB
     classDef heavy fill:#ffd6d6,stroke:#c00,color:#000
     class JVM,DB heavy
@@ -291,17 +290,17 @@ A new node starts **in hours (estimate), without replaying 567 million transacti
 sequenceDiagram
     autonumber
     participant NEW as New node
-    participant SRC as Any source: archive, IPFS, another node
+    participant SRC as Any source<br/>archive, IPFS, another node
     participant NET as Radix network
     NEW->>SRC: download the state snapshot at version V
     NEW->>SRC: download epoch proofs from the checkpoint
-    NEW->>NEW: verify each proof: signed by more than 2/3 of stake
-    NEW->>NEW: rebuild the state tree from the substates
+    Note right of NEW: verify each proof: signed by more than 2/3 of stake
+    Note right of NEW: rebuild the state tree from the substates
     alt the root matches the signed state_tree_hash at V
         NEW->>NET: sync normally from V
         NET-->>NEW: new transactions
     else it does not match
-        NEW->>NEW: discard the snapshot and try another source
+        Note right of NEW: discard the snapshot and try another source
     end
 ```
 
@@ -436,24 +435,12 @@ These figures are *estimates* to be validated with R2's long-running test.
   - disk stops growing with the age of the network.
 
 ```mermaid
-flowchart LR
-    subgraph V["Light validator: 4 GB RAM, 50-250 GB"]
-        V1["Current state"]
-        V2["Last N epochs"]
-        V3["Epoch proofs"]
-    end
-    subgraph R["Read node: 4 GB after R11, ≤ 500 GB"]
-        R1["Current state"]
-        R2["Historical transactions"]
-        R3["Light-indexer indexes"]
-    end
-    subgraph A["Archive node: 8-16 GB RAM, 1-4 TB"]
-        A1["Full history"]
-        A2["Receipts and accumulators"]
-    end
-    A -- "verifiable snapshots" --> V
-    A -- "verifiable snapshots" --> R
-    A -- "full sync" --> R
+flowchart TB
+    A["<b>Archive node</b> · 8-16 GB RAM, 1-4 TB<br/>full history<br/>receipts and accumulators"]
+    V["<b>Light validator</b> · 4 GB RAM, 50-250 GB<br/>current state · last N epochs<br/>epoch proofs"]
+    R["<b>Read node</b> · 4 GB after R11, ≤ 500 GB<br/>current state · historical transactions<br/>light-indexer indexes"]
+    A -->|"verifiable snapshots"| V
+    A -->|"verifiable snapshots<br/>or full sync"| R
 ```
 
 | Node type | RAM (estimate) | Disk (estimate) | What it stores |

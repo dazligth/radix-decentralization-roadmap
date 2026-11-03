@@ -51,29 +51,28 @@ Las rutas `fichero:línea` son de `develop` salvo que se indique lo contrario. L
 ### El nodo hoy
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph JVM["Proceso Java (JVM): 12 GB de heap por defecto"]
         CONS["Consenso HotStuff<br/>~17 400 líneas"]
-        P2P["Red P2P Netty<br/>~9 300 líneas + DSON/CBOR"]
         SYNC["Sincronización del ledger<br/>y BFT sync"]
-        REL["Retransmisión de la mempool"]
-        CFG["Configuración Guice + RxJava"]
+        REL["Retransmisión<br/>de la mempool"]
+        P2P["Red P2P Netty<br/>~9 300 líneas + DSON/CBOR<br/>configuración Guice + RxJava"]
     end
-    JNI{{"Puente JNI<br/>92 funciones, datos SBOR copiados"}}
+    JNI{{"Puente JNI: 92 funciones, datos SBOR copiados"}}
     subgraph RUST["Biblioteca Rust (libcorerust.so)"]
-        ENG["Radix Engine<br/>ejecución"]
         SM["State manager"]
-        MP["Mempool ~1,2 GB"]
-        API["Core API y Engine State API"]
+        ENG["Radix Engine<br/>ejecución"]
+        MP["Mempool<br/>~1,2 GB"]
         DB[("RocksDB sin límites de memoria<br/>historial completo, sin poda")]
+        API["Core API y<br/>Engine State API"]
     end
     CONS <--> JNI
     SYNC <--> JNI
     REL <--> JNI
     JNI <--> SM
     SM --> ENG
-    SM --> DB
     SM --> MP
+    SM --> DB
     API --> DB
     classDef heavy fill:#ffd6d6,stroke:#c00,color:#000
     class JVM,DB heavy
@@ -291,17 +290,17 @@ Un nodo nuevo arranca **en horas (estimación), sin reproducir 567 millones de t
 sequenceDiagram
     autonumber
     participant NEW as Nodo nuevo
-    participant SRC as Cualquier fuente: archivo, IPFS, otro nodo
+    participant SRC as Cualquier fuente<br/>archivo, IPFS, otro nodo
     participant NET as Red Radix
     NEW->>SRC: descarga el snapshot de estado en la versión V
     NEW->>SRC: descarga las pruebas de época desde el punto de control
-    NEW->>NEW: verifica cada prueba: firma de más de 2/3 del stake
-    NEW->>NEW: reconstruye el árbol de estado con los substates
+    Note right of NEW: verifica cada prueba: firma de más de 2/3 del stake
+    Note right of NEW: reconstruye el árbol de estado con los substates
     alt la raíz coincide con state_tree_hash firmado en V
         NEW->>NET: sincroniza normalmente desde V
         NET-->>NEW: transacciones nuevas
     else no coincide
-        NEW->>NEW: descarta el snapshot y prueba otra fuente
+        Note right of NEW: descarta el snapshot y prueba otra fuente
     end
 ```
 
@@ -436,24 +435,12 @@ Las cifras son *estimaciones* que hay que validar con la prueba prolongada de R2
   - el disco deja de crecer con la edad de la red.
 
 ```mermaid
-flowchart LR
-    subgraph V["Validador ligero: 4 GB RAM, 50-250 GB"]
-        V1["Estado actual"]
-        V2["Últimas N épocas"]
-        V3["Pruebas de época"]
-    end
-    subgraph R["Nodo de lectura: 4 GB tras R11, ≤ 500 GB"]
-        R1["Estado actual"]
-        R2["Transacciones de la historia"]
-        R3["Índices del indexador ligero"]
-    end
-    subgraph A["Nodo de archivo: 8-16 GB RAM, 1-4 TB"]
-        A1["Todo el historial"]
-        A2["Recibos y acumuladores"]
-    end
-    A -- "snapshots verificables" --> V
-    A -- "snapshots verificables" --> R
-    A -- "sincronización completa" --> R
+flowchart TB
+    A["<b>Nodo de archivo</b> · 8-16 GB RAM, 1-4 TB<br/>todo el historial<br/>recibos y acumuladores"]
+    V["<b>Validador ligero</b> · 4 GB RAM, 50-250 GB<br/>estado actual · últimas N épocas<br/>pruebas de época"]
+    R["<b>Nodo de lectura</b> · 4 GB tras R11, ≤ 500 GB<br/>estado actual · transacciones de la historia<br/>índices del indexador ligero"]
+    A -->|"snapshots verificables"| V
+    A -->|"snapshots verificables<br/>o sincronización completa"| R
 ```
 
 | Tipo de nodo | RAM (estimación) | Disco (estimación) | Qué guarda |

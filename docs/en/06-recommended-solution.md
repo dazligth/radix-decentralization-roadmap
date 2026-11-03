@@ -13,59 +13,42 @@
 
 ```mermaid
 flowchart TB
-    subgraph APPS["Users and applications (current versions; only the URL changes)"]
-        W["iOS and Android wallets"]
-        EXT["Connector Extension"]
-        DAPP["dApps with RDT"]
-        ROLA["Backends with ROLA login"]
-        EXP["Reference explorer<br/>static site, open source"]
-    end
-    REG["On-ledger registry<br/>api_endpoints metadata"]
-    subgraph READ["Read nodes: many independent operators"]
-        R1["Operator A<br/>full node + light indexer"]
-        R2["Operator B<br/>full node + light indexer"]
-        R3["Operator C<br/>full node + light indexer"]
-    end
-    subgraph NET["Radix network"]
-        VAL[("Validators<br/>small profile: R1-R4")]
-    end
-    subgraph SELF["Auxiliary services anyone can host"]
-        SIG["Own signalling and TURN"]
-        RELAY["Own Radix Connect<br/>and iroh relays"]
-        PRICE["Configurable<br/>price services"]
-    end
+    APPS["<b>Users and applications</b><br/>iOS and Android wallets, Connector Extension,<br/>dApps with RDT, backends with ROLA<br/>(current versions: only the URL changes)"]
+    EXP["<b>Reference explorer</b><br/>static site, open source"]
+    REG["<b>1. On-ledger registry</b><br/>api_endpoints metadata"]
+    READ["<b>2. Read nodes</b><br/>many independent operators (A, B, C…)<br/>full node + light indexer"]
+    SELF["<b>Auxiliary services</b> anyone can host<br/>signalling and TURN, Radix Connect and iroh relays,<br/>configurable prices"]
     ARCH[("Verifiable Olympia archive<br/>IPFS, BitTorrent, Arweave")]
-    APPS -- "1. read the list" --> REG
-    APPS -- "2. query with failover" --> READ
-    READ --> VAL
+    VAL[("Validators<br/>small profile: R1-R4")]
+    APPS -->|"read the list"| REG
+    APPS -->|"query with failover"| READ
+    EXP --> READ
     APPS -.-> SELF
     EXP -.-> ARCH
+    READ --> VAL
     classDef good fill:#d9f7d9,stroke:#080,color:#000
-    class READ,REG,ARCH,SELF good
+    class READ,REG,SELF,ARCH good
 ```
 
 Detail: how applications find read nodes.
 
 ```mermaid
-flowchart LR
+flowchart TB
     C["Wallets, dApps, ROLA and explorers"]
-    REG["On-ledger registry<br/>validator api_endpoints<br/>metadata"]
-    C -- "1. read the list of read nodes" --> REG
-    C -- "2. query with failover" --> A
-    C --> B
+    REG["<b>1.</b> On-ledger registry<br/>api_endpoints metadata<br/>of the validators"]
+    A["<b>Read node A</b><br/>full node +<br/>light indexer ~10-50 GB"]
+    B["<b>Read node B</b><br/>full node +<br/>light indexer"]
+    Z["<b>Read node …</b><br/>full node +<br/>light indexer"]
+    R(("Radix network"))
+    C -->|"read the list"| REG
+    C --> A
+    C -->|"<b>2.</b> query with<br/>failover"| B
     C --> Z
-    subgraph A["Read node A"]
-        A1[("Full node")] --- A2["Light indexer<br/>~10-50 GB"]
-    end
-    subgraph B["Read node B"]
-        B1[("Full node")] --- B2["Light indexer"]
-    end
-    subgraph Z["Read node ..."]
-        Z1[("Full node")] --- Z2["Light indexer"]
-    end
-    A1 --> R(("Radix network"))
-    B1 --> R
-    Z1 --> R
+    A --> R
+    B --> R
+    Z --> R
+    classDef good fill:#d9f7d9,stroke:#080,color:#000
+    class REG,A,B,Z good
 ```
 
 ## How a read node works
@@ -102,8 +85,9 @@ sequenceDiagram
     participant N as Full node
     W->>L: transaction preview
     L->>N: /transaction/preview
-    N-->>W: result and fees
-    W->>W: user signs
+    N-->>L: result
+    L-->>W: result and fees
+    Note right of W: user signs
     W->>L: submit transaction
     L->>N: /lts/transaction/submit
     loop while the epoch window is valid
@@ -206,24 +190,23 @@ flowchart TB
         DAPP["dApps, ROLA and explorers<br/>light client in WebAssembly"]
     end
     subgraph NET["Radix network: a single Rust binary"]
-        V[("Validators<br/>4 GB RAM, pruned node")]
-        N1[("Node with native read API<br/>indexes + Merkle proofs")]
         N2[("Any other node<br/>even anonymous")]
+        N1[("Node with native read API<br/>indexes + Merkle proofs")]
+        V[("Validators<br/>4 GB RAM, pruned node")]
         A[("Archive nodes<br/>full history")]
+        N1 --- V
+        N2 --- V
+        V --- A
     end
-    SNAP[("Verifiable state snapshots<br/>IPFS, BitTorrent")]
+    SNAP[("Verifiable state snapshots<br/>IPFS, BitTorrent<br/>a new node bootstraps in hours")]
     HIST[("Verifiable old history<br/>Babylon and Olympia")]
     INC["Incentives for serving reads<br/>decided by governance"]
-    W -- "direct QUIC + proofs" --> N1
-    W -- "if one fails, another" --> N2
-    DAPP -- "QUIC or HTTPS + proofs" --> N1
-    N1 --- V
-    N2 --- V
-    A -- "produces" --> SNAP
-    SNAP -- "bootstrap in hours" --> N2
-    A -- "publishes" --> HIST
+    W -->|"QUIC + proofs"| N1
+    W -->|"if one fails, another"| N2
+    DAPP -->|"QUIC or HTTPS<br/>+ proofs"| N1
     INC -.-> N1
-    INC -.-> N2
+    A -->|"produces"| SNAP
+    A -->|"publishes"| HIST
     classDef good fill:#d9f7d9,stroke:#080,color:#000
     class W,DAPP,V,N1,N2,A,SNAP,HIST good
 ```
@@ -233,16 +216,16 @@ flowchart TB
 ```mermaid
 sequenceDiagram
     autonumber
-    participant W as Wallet with light client
-    participant Q as Any node, even unknown
+    participant W as Wallet<br/>with light client
+    participant Q as Any node<br/>even unknown
     participant V as Validators
     V-->>Q: sign the ledger proof with state_tree_hash
     W->>Q: give me my account balance
     Q-->>W: data + Merkle proof + signed ledger proof
-    W->>W: did more than 2/3 of the epoch stake sign?
-    W->>W: does the Merkle proof match state_tree_hash?
+    Note right of W: did more than 2/3 of the epoch stake sign?
+    Note right of W: does the Merkle proof match state_tree_hash?
     alt both checks pass
-        W->>W: show the balance, without trusting the node
+        Note right of W: show the balance, without trusting the node
     else a check fails
         W->>Q: drop the node and ask another
     end
@@ -276,24 +259,30 @@ sequenceDiagram
 
 ```mermaid
 flowchart TB
-    S0["<b>TODAY</b><br/>Babylon with a central Gateway<br/>16 GB RAM nodes"]
-    S1["<b>STAGE 1 · months</b><br/>Light indexer next to each node (E3)<br/>the Gateway disappears · tuning R1-R4"]
-    S2["<b>STAGE 2 · 2027</b><br/>Indexes inside babylon-node (E2)<br/>4-8 GB nodes · verified bootstrap (R9)"]
-    S3["<b>STAGE 3 · years</b><br/>Verifiable reads and light client<br/>no node needs to be trusted"]
-    D{"<b>Governance decision</b><br/>adopt Hyperscale?"}
-    FA["<b>FINAL STAGE A</b><br/>Keep improving Babylon on its own chain<br/>node migration to Rust (R11)"]
-    FB["<b>FINAL STAGE B</b><br/>Radix on Hyperscale<br/>sharded network on Layer 1 (chapter 11)"]
-    S0 --> S1 --> S2 --> S3 --> D
-    D -->|No, or later| FA
-    D -->|Yes| FB
+    subgraph ROW1[" "]
+        direction LR
+        S0["<b>TODAY</b><br/>central Gateway<br/>16 GB nodes"] --> S1["<b>STAGE 1 · months</b><br/>light indexer (E3)<br/>no Gateway · R1-R4"] --> S2["<b>STAGE 2 · 2027</b><br/>indexes in the node (E2)<br/>4-8 GB nodes · R9"]
+    end
+    subgraph ROW2[" "]
+        direction LR
+        S3["<b>STAGE 3 · years</b><br/>verifiable reads<br/>and light client"] --> D{"<b>Governance</b><br/>adopt<br/>Hyperscale?"}
+    end
+    subgraph ROW3[" "]
+        direction TB
+        FA["<b>FINAL A</b> · if not, or later<br/>keep improving Babylon<br/>node in Rust (R11)"]
+        FB["<b>FINAL B</b> · if adopted<br/>Radix on Hyperscale<br/>(chapter 11)"]
+    end
+    ROW1 --> ROW2 --> ROW3
     classDef today fill:#ffd6d6,stroke:#c00,color:#000
     classDef step fill:#dbe9ff,stroke:#2b5fb4,color:#000
     classDef decision fill:#fff3c4,stroke:#b58900,color:#000
     classDef final fill:#d9f7d9,stroke:#080,color:#000
+    classDef row fill:none,stroke:none
     class S0 today
     class S1,S2,S3 step
     class D decision
     class FA,FB final
+    class ROW1,ROW2,ROW3 row
 ```
 
 **How it fits with the short term:** these are stages, not alternatives. E3 solves the 2026 problem. E2 removes the separate process. Items 2-8 add verification on top of what E2 already serves. The clients' `LedgerBackend` interface is what lets them move from one stage to the next without rewriting applications.

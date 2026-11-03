@@ -54,53 +54,30 @@ Las referencias a mecanismos de capa 2 o de cadenas asociadas en otras redes (ca
 ```mermaid
 flowchart TB
     subgraph APPS["Usuarios y aplicaciones"]
-        W["Wallets iOS y Android<br/>(Sargon)"]
-        EXT["Connector Extension"]
-        DAPP["dApps con RDT"]
-        ROLA["Backends con inicio de sesión ROLA"]
-        EXP["Radix Dashboard y exploradores"]
-        DEV["Developer Console"]
+        W["Wallets iOS y Android (Sargon)<br/>y Connector Extension"]
+        DAPP["dApps con RDT y backends<br/>con inicio de sesión ROLA"]
+        EXP["Radix Dashboard, exploradores<br/>y Developer Console"]
         OLYW["olympia-wallet"]
     end
     subgraph CENTRAL["Servicios centrales: un solo operador"]
-        GW["Gateway API"]
-        AGG["DataAggregator<br/>una sola instancia"]
-        PG[("PostgreSQL<br/>~2,5 TB, +60 GB/mes")]
-        SIG["Señalización WebRTC"]
-        TURN["Servidores TURN"]
-        RELAY["Radix Connect Relay"]
-        PRICE["Precios de tokens y NFT"]
-        IMG["Servicio de imágenes"]
-        DIR["Directorio de dApps"]
+        AUX["Servicios de la wallet<br/>señalización WebRTC, TURN,<br/>Radix Connect Relay, precios,<br/>imágenes, directorio de dApps"]
+        GW["<b>Babylon Gateway</b><br/>Gateway API + DataAggregator<br/>(una sola instancia)<br/>PostgreSQL ~2,5 TB, +60 GB/mes"]
         OGW["Gateway de Olympia<br/>historial 2021-2023"]
     end
     subgraph NET["Red Radix"]
         FN[("Nodos completos<br/>Java + Rust, 16 GB RAM")]
         VAL[("~100 validadores<br/>Java + Rust, 16 GB RAM")]
     end
+    W -.-> AUX
+    DAPP -.-> AUX
     W --> GW
-    EXT --> GW
     DAPP --> GW
-    ROLA --> GW
     EXP --> GW
-    DEV --> GW
-    GW --> PG
-    AGG --> PG
-    AGG -- "stream de transacciones" --> FN
-    GW -- "preview y envío" --> FN
-    FN --- VAL
-    W -.-> SIG
-    EXT -.-> SIG
-    W -.-> TURN
-    EXT -.-> TURN
-    W -.-> RELAY
-    DAPP -.-> RELAY
-    W -.-> PRICE
-    W -.-> IMG
-    W -.-> DIR
     OLYW --> OGW
+    GW <-->|"stream de transacciones,<br/>preview y envío"| FN
+    FN --- VAL
     classDef central fill:#ffd6d6,stroke:#c00,color:#000
-    class GW,AGG,PG,SIG,TURN,RELAY,PRICE,IMG,DIR,OGW central
+    class GW,AUX,OGW central
 ```
 
 En rojo, los servicios que dependen de un solo operador.
@@ -229,7 +206,7 @@ Un explorador es el cliente **más exigente**: necesita índices globales que ni
 
 ```mermaid
 flowchart LR
-    O[("Ledger de Olympia<br/>congelado el 28-sep-2023")] -- "estado migrado:<br/>saldos, stakes, tokens" --> G["Génesis de Babylon<br/>versiones 1 a ~669"]
+    O[("Ledger de Olympia<br/>congelado el 28-sep-2023")] -- "estado migrado:<br/>saldos, stakes, tokens" --> G["Génesis de Babylon<br/>versiones 1 a 647"]
     G --> B[("Ledger de Babylon<br/>lo guarda cada nodo")]
     O -- "historial de transacciones<br/>(no está en Babylon)" --> OG["Gateway de Olympia<br/>un solo servicio"]
     O -. "propuesta: exportar una vez" .-> AR["Archivo verificable<br/>IPFS, BitTorrent o Arweave"]

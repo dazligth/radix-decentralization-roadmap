@@ -30,12 +30,11 @@ Hyperscale es de código abierto y la Foundation está en modo de mantenimiento.
 En resumen: la **red y los fondos** pueden migrar a Hyperscale; las **aplicaciones** tienen que rehacerse. Con el código actual (versión en desarrollo, v0.0.6) **todavía no es posible hacerlo en producción**; hace falta el trabajo descrito en las secciones [11.5](#s11-5) y [11.6](#s11-6).
 
 ```mermaid
-flowchart LR
-    O["Olympia<br/>2021-2023"] -- "migración por génesis<br/>sep-2023" --> B["Babylon<br/>2023-hoy<br/>con Gateway central"]
-    B -- "capítulos 6, 9 y 10<br/>2027" --> BS["Babylon sin Gateway<br/>nodos de 4 GB"]
-    BS -- "sección 6.2" --> BV["Babylon con lecturas<br/>verificables"]
-    BS -. "decisión de la gobernanza<br/>capítulo 11" .-> H["Hyperscale<br/>red fragmentada<br/>2-4 años"]
-    BV -. "las mismas piezas sirven" .-> H
+flowchart TB
+    O["<b>Olympia</b><br/>2021-2023"] -->|"migración por génesis<br/>sep-2023"| B["<b>Babylon</b> · 2023-hoy<br/>con Gateway central"]
+    B -->|"capítulos 6, 9 y 10 · 2027"| BS["<b>Babylon sin Gateway</b><br/>nodos de 4-8 GB"]
+    BS -->|"sección 6.2"| BV["<b>Babylon con lecturas verificables</b>"]
+    BV -.->|"decisión de la gobernanza (capítulo 11)<br/>las mismas piezas sirven"| H["<b>Hyperscale</b><br/>red fragmentada · 2-4 años"]
     classDef old fill:#eeeeee,stroke:#888,color:#000
     classDef bad fill:#ffd6d6,stroke:#c00,color:#000
     classDef good fill:#d9f7d9,stroke:#080,color:#000
@@ -103,20 +102,21 @@ Hyperscale es un diseño de red **fragmentada** (*sharded*): el estado se repart
 
 ```mermaid
 flowchart TB
-    BEACON["Cadena beacon<br/>un bloque por época de 5 min<br/>validadores y topología de fragmentos"]
+    CLIENT["Wallet o aplicación"]
+    BEACON["<b>Cadena beacon</b><br/>un bloque por época de 5 min<br/>validadores y topología de fragmentos"]
     subgraph SHARDS["Fragmentos: cada uno con su consenso HotStuff-2"]
         S1["Fragmento 1<br/>cuentas con prefijo A"]
         S2["Fragmento 2<br/>cuentas con prefijo B"]
-        S3["Fragmento N<br/>se divide o fusiona según la carga"]
+        S3["Fragmento N<br/>se divide o fusiona<br/>según la carga"]
+        S1 <-->|"transacción entre fragmentos:<br/>provisión, ejecución, certificación"| S2
     end
-    EC["Certificados de ejecución<br/>los validadores firman el resultado"]
-    VM["Máquina virtual WASM<br/>acceso al estado declarado antes de ejecutar"]
-    CLIENT["Wallet o aplicación"]
-    BEACON --> SHARDS
-    S1 <-- "transacción entre fragmentos:<br/>provisión, ejecución, certificación" --> S2
-    SHARDS --> EC
-    SHARDS --- VM
-    CLIENT -- "envía a un nodo del fragmento<br/>de su cuenta" --> S1
+    VM["<b>Máquina virtual WASM</b><br/>acceso al estado declarado<br/>antes de ejecutar"]
+    EC["<b>Certificados de ejecución</b><br/>los validadores<br/>firman el resultado"]
+    CLIENT -->|"envía al fragmento<br/>de su cuenta"| S1
+    BEACON --> S1
+    BEACON --> S3
+    S2 -->|"ejecutan en"| VM
+    S2 -->|"producen"| EC
 ```
 
 <a id="s11-2"></a>
@@ -169,25 +169,18 @@ flowchart TB
 - no exige confiar en un puente.
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph BAB["Babylon"]
-        F["1. Congelación acordada<br/>moratoria de transacciones"]
-        R["2. Raíz final del estado<br/>firmada por los validadores"]
-        AR[("Archivo del historial<br/>verificable")]
-        F --> R
-        R --> AR
+        direction LR
+        F["<b>1.</b> Congelación acordada<br/>moratoria de transacciones"] --> R["<b>2.</b> Raíz final del estado<br/>firmada por los validadores"] --> AR[("Archivo del historial<br/>verificable")]
     end
-    subgraph HS["Hyperscale"]
-        G["3. Génesis<br/>XRD de cuentas con clave conocida<br/>validadores con claves BLS nuevas"]
-        C["4. Contrato de reclamación<br/>prueba de Merkle + firma"]
-        U["Cuentas nuevas account_hs…"]
+    subgraph HS["Hyperscale (puente temporal opcional con Babylon: M2)"]
+        direction LR
+        G["<b>3.</b> Génesis<br/>XRD de cuentas con clave conocida<br/>validadores con claves BLS nuevas"] --> U["Cuentas nuevas<br/>account_hs…"]
+        C["<b>4.</b> Contrato de reclamación<br/>prueba de Merkle + firma"] --> U
         D2["dApps reescritas<br/>con el SDK de Hyperscale"]
-        G --> U
-        C --> U
     end
-    R --> G
-    R --> C
-    BAB -. "puente temporal opcional (M2)" .-> HS
+    BAB -->|"la raíz final<br/>alimenta 3 y 4"| HS
 ```
 
 ```mermaid
@@ -195,13 +188,13 @@ sequenceDiagram
     autonumber
     participant U as Usuario con su wallet
     participant A as Archivo de Babylon
-    participant C as Contrato de reclamación en Hyperscale
+    participant C as Contrato de reclamación<br/>en Hyperscale
     U->>A: pide la prueba de Merkle de su saldo en la raíz final
     A-->>U: saldo + prueba de Merkle
-    U->>U: firma la reclamación con la clave de su cuenta de Babylon
+    Note right of U: firma la reclamación con la clave de su cuenta de Babylon
     U->>C: envía saldo, prueba y firma
-    C->>C: ¿la prueba cuadra con la raíz final publicada?
-    C->>C: ¿la firma corresponde a la cuenta de Babylon?
+    Note left of C: ¿la prueba cuadra con la raíz final publicada?
+    Note left of C: ¿la firma corresponde a la cuenta de Babylon?
     alt ambas comprobaciones son correctas
         C-->>U: entrega los fondos en su cuenta account_hs…
     else alguna falla
