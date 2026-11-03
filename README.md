@@ -1,10 +1,128 @@
-# Radix without the Gateway
+# Radix without central dependencies
 
 🇬🇧 English · [🇪🇸 Español](README.es.md)
 
-How to make the Radix network work for everything and for everyone **without the Babylon Gateway**: code analysis, measured mainnet data, compared strategies and per-repository changes.
+Technical analysis and roadmap for the Radix network to serve all of its users **without depending on the Babylon Gateway**, with **4 GB RAM / 500 GB disk nodes**, and for a possible **evolution towards Hyperscale**. It includes code analysis, measured mainnet data, compared strategies, per-repository changes and an implementation guide.
 
 Report dated 3 November 2026.
+
+### Key figures
+
+| | |
+|---|---|
+| End of Gateway funding | **31 Dec 2026** |
+| Gateway database | **~2.5 TB**, +60 GB/month |
+| Mainnet ledger (compressed snapshot, Sep 2026) | **274 GiB**, +5-8 GiB/month |
+| Mainnet state versions (Nov 2026) | **~567 million**, over 99 % round updates |
+| User transactions since genesis | **~10-15 million** (estimated) |
+| Use cases the node already serves without the Gateway | **~80-85 %** |
+| Proposed light indexer | **~10-50 GB** (estimated) |
+| Node RAM today → target | **16 GB → 4 GB** |
+
+### Reading guide
+
+| If you are… | Read first |
+|---|---|
+| A community member or XRD holder | This summary, the conclusion and the infrastructure diagrams |
+| A node operator or validator | [Chapter 9: lighter nodes](docs/en/07-lighter-nodes.md) |
+| A wallet, dApp or tooling developer | [Chapter 7: per-repository changes](docs/en/05-per-repository-changes.md) and [chapter 10: implementation guide](docs/en/08-implementation-guide.md) |
+| Governance (RAC, DAO) | The conclusion, the [roadmap](docs/en/06-roadmap.md) and [chapter 11: evolution to Hyperscale](docs/en/09-hyperscale-evolution.md) |
+| Anyone unsure about a term | The [glossary](docs/en/11-glossary.md) |
+
+## Executive summary
+
+1. **The Gateway is currently a single point of failure for the ecosystem.**
+   - No official client talks to nodes directly: not the wallets (Sargon), the RDT, ROLA, the Connector Extension or the Dashboard.
+   - According to the Foundation, its operation is **funded only until 31 December 2026**, and there is no public plan for afterwards.
+2. **Nodes already cover 80-85 % of use cases directly.** I verified this in the `babylon-node` code. Six specific capabilities are missing (N1-N6, section 3).
+3. **I compared six strategies.** Based on the measured data, the most suitable combines two (E3 and E2):
+   - **Short term (E3): a light indexer next to each node**, which replaces the Gateway. The Gateway ceases to exist.
+     - So that already-released wallets and dApps keep working without an update, the indexer accepts the same requests those applications send today. Only the **request format** is kept, not the Gateway software.
+     - It would take **about 10-50 GB** (estimate), versus the Gateway's **~2.5 TB**, at almost no cost for anyone who already runs a node.
+     - It includes what **transaction explorers** need, and is complemented by an **open-source reference explorer**.
+   - **Medium term (E2): build those indexes and a public read mode into the node itself.** Every node in the network becomes an access point.
+   - **On-ledger discovery:** applications get the list of access points from validator metadata instead of using a fixed address.
+4. **Lighter nodes (section 9).**
+   - Today a mainnet node reserves 12 GB of memory for Java, runs RocksDB with no memory limits and keeps the full history; the compressed ledger is already 274 GiB.
+   - With specific code changes (tuning RocksDB, pruning data used only by APIs, bootstrapping from a verified snapshot and, later, migrating the core from Java to Rust), a validator or full node **can run with 4 GB of RAM and under 500 GB of disk**.
+5. **Final evolution towards Hyperscale (section 11).**
+   - Hyperscale is open source, but it is **a new network**: a different virtual machine, different addresses and no Scrypto compatibility. Adopting it means migrating balances and **rewriting applications**.
+   - The work would fall to the community. The recommended strategy is a genesis with **verifiable claims** of balances using cryptographic proofs.
+   - Its difficulty is **very high**, with a 2-4 year timeline. Meanwhile, Babylon must keep running, so the rest of the plan remains useful.
+
+The "Conclusion" section below summarises feasibility and difficulty for each goal. Section 10 explains step by step how to make each change, and the glossary explains technical terms.
+
+## Conclusion
+
+**Can the Radix network serve all of its users and use cases without depending on the Gateway?** **Yes.**
+
+- No use case needs information that only the Gateway can produce: everything comes from the ledger and the state that nodes already store.
+- What is missing is specific indexes and a public access mode on nodes. No protocol or consensus changes are needed.
+
+**Olympia is not an obstacle.** Its state was migrated into the Babylon genesis, so nodes already have it. It adds two tasks:
+
+- processing genesis once when building the indexes;
+- **archiving Olympia's history as soon as possible**, because it is not in Babylon and currently depends on a single service. This task is **low** difficulty but **urgent**.
+
+**Feasibility and difficulty by goal:**
+
+| Goal | Difficulty | Estimated effort |
+|---|---|---|
+| dApps, ROLA sign-in, transaction submission and tracking, balances | **Low-medium** | ~1-2 person-months |
+| Current wallets working without the Gateway (E3, no new releases) | **Medium** | ~4-7 person-months for the light indexer |
+| Full transaction explorers without the Gateway (dedicated indexes and an open-source reference explorer) | **Medium** | ~1-2 person-months of indexes + ~2-3 for the explorer |
+| Effective decentralisation: many operators, on-ledger discovery, failover and resubmission in clients | **Medium** | ~3-5 person-months in clients |
+| All features inside the node itself (E2), full history and governance snapshots | **High** | ~6-10 person-months in the node + ~4-6 in clients |
+| Nodes with 4 GB RAM and ≤ 500 GB disk, still on Java (R1-R9, section 9) | **Medium** | ~8-14 person-months |
+| Migrating the node core from Java to Rust (R11): enough headroom in 4 GB, including for read nodes | **Very high** | ~30-50 person-months |
+| Access without trusting the node: verifiable reads with a light client (section 6.2) | **Very high** | ~40-80 person-months, several years |
+| Migration to Hyperscale as the final evolution (section 11) | **Very high** | ~110-210 person-months, 2-4 years, excluding dApps |
+
+**Overall difficulty of removing the Gateway: medium-high.** The main difficulty is organisational rather than technical:
+
+- **Coordination:** the Foundation is in maintenance mode. Changes to the node, Sargon and the wallets depend on community developers and governance (DAO / RAC).
+- **Timeline:** Gateway funding ends on 31 December 2026.
+- **Funding:** a small team would need roughly **7-10 person-months** for the minimum viable solution (light indexer and reference explorer), and **18-30** for the full solution.
+
+**Recommended short-term solution:** the **light indexer next to each node (E3)**, which replaces the Gateway, followed by integrating it into `babylon-node` (E2) and on-ledger discovery. The measured data supports it:
+
+- it takes ~10-50 GB (estimate), versus ~2.5 TB;
+- its cost per operator is close to zero, versus ~€300-500/month;
+- it works with current wallets without new releases;
+- it is the only option that can be ready before funding ends.
+
+**4 GB / 500 GB nodes are feasible** (section 9).
+
+- **R1-R4:** low cost (weeks), and they remove the main cause of today's 16 GB: unbounded RocksDB and 12 GB reserved for Java.
+- **R5-R9:** pruning and bootstrapping from a verified snapshot keep disk under 500 GB even as the network grows.
+- **R11:** migrating to Rust provides enough headroom for the read nodes that replace the Gateway to run in 4 GB as well.
+
+**Ideal long-term solution:** any node serves **verifiable** reads, and every wallet includes a light client that checks each response (section 6.2). Then no node needs to be trusted.
+
+- Babylon already signs the Merkle roots of state, transactions and receipts; what is missing is exposing those proofs and verifying them in clients.
+- It is the end goal within Babylon. Its difficulty is **very high** (several years), and the short-term solution is its first stage.
+
+**Final evolution with Hyperscale** (section 11).
+
+- **Is it possible to migrate Radix using the Hyperscale code? Yes, with conditions.** The network and funds can migrate; Scrypto contracts and dApps cannot, because they must be rewritten. With the current code, still in development, it is not yet possible in production.
+- It is a migration to a new network, not an upgrade.
+- The community would have to:
+  - prepare Hyperscale for mainnet;
+  - build its read API and indexer;
+  - adapt Sargon and the wallets;
+  - migrate balances through verifiable claims;
+  - and each project would have to rewrite its contracts.
+- The pieces proposed in this report (light indexer, on-ledger discovery, verified snapshots, Merkle proofs and the `LedgerBackend` interface) are also needed for that migration.
+- Recommendation: governance should first decide whether to adopt Hyperscale. Until then, apply R1-R9 and **postpone R11**.
+
+**Still to validate with a prototype:**
+
+- the real size of the indexes;
+- indexing speed from genesis;
+- exact compatibility of responses with what wallets expect;
+- the real per-table ledger size on a mainnet node.
+
+## Infrastructure and evolution in diagrams
 
 ### Current infrastructure
 
@@ -126,75 +244,6 @@ flowchart TB
     class W,DAPP,V,N1,N2,A,SNAP,HIST good
 ```
 
-## Executive summary
-
-1. **Today the Gateway is a single point of failure for the whole ecosystem.**
-   - No official client can talk to a node. That covers the wallets, Sargon, the RDT, ROLA, the extension and the Dashboard.
-   - According to the Foundation, its operation is **pre-funded only until December 2026**, two months from now. There is no public plan for after that.
-2. **The node already serves ~80-85 % of use cases directly.** I verified this in the `babylon-node` code. Six capabilities are missing (N1-N6, section 3).
-3. **I evaluated six strategies.** Based on the measured data, the best is **E3 + E2**:
-   - **E3 (short term): a lightweight indexer running next to each node** (a sidecar). **It replaces the Gateway**: the Gateway is switched off and runs nowhere. So that already-released wallets and dApps work without an update, the indexer answers the same routes, with the same JSON, that those apps already know how to request. Only that **request format** is reused, not the Gateway software.
-     - Estimated **~10-50 GB**, versus the Gateway's **~2.5 TB**.
-     - A node operator can deploy it at near-zero marginal cost.
-     - **Current wallets and the RDT can use it without a new release**, because they already accept a custom Gateway URL.
-     - It includes the indexes that **transaction explorers** need: history of any entity, resource holders, NFT location, statistics and search.
-     - It is completed by an **open-source reference explorer**, because the Radix Dashboard is not public.
-   - **E2 (medium term): move those indexes and a "public read mode" into `babylon-node` itself.** Every node then becomes an access point.
-   - **On-ledger discovery:** clients find access points in validator metadata instead of a hard-coded URL.
-4. **Conclusion: it is possible. Overall difficulty is medium-high.**
-   - **Low-medium** for dApps, ROLA and transactions.
-   - **Medium** for wallets with reduced history, and for full transaction explorers (E3 plus an open-source explorer).
-   - **High** for full parity: filtered history, NFT location and historical snapshots.
-
-5. **Lighter nodes (section 9):** today a mainnet node defaults to 12 GB of Java memory, runs RocksDB with no memory limits, and keeps the full history forever: the compressed snapshot is already 274 GiB. With concrete code changes (tuning RocksDB, pruning data used only by APIs, bootstrapping from a verified snapshot and, in the long run, migrating the core from Java to Rust), a validator or full node **can run on 4 GB of RAM and under 500 GB of disk**.
-
-   Details in the "Conclusion" section right below. Section 10 explains step by step how to make each change.
-
-## Conclusion
-
-**Is it possible for Radix to work for everything and for everyone without the Gateway?** **Yes, it is possible.**
-
-- No use case needs anything that only the Gateway can produce. Everything derives from the node's transaction stream and state.
-- The network already has almost everything in the node. What is missing is specific indexes and a public access mode, not protocol or consensus changes.
-
-**Olympia is not an obstacle** to the goal. Its state was migrated into the Babylon genesis, so the node already has it. It adds only two tasks: process genesis when indexing (once), and **archive Olympia's history now**, because it is not in Babylon and today depends on a single service. The second task is **low** difficulty but **urgent**.
-
-**Difficulty by goal:**
-
-| Goal | Difficulty | Estimate |
-|---|---|---|
-| dApps, ROLA login, transaction submit and tracking, balances (with E3, or with the node plus small RDT and ROLA changes) | **Low-medium** | ~1-2 person-months |
-| Today's wallets working without the Gateway (E3, no new releases) | **Medium** | ~4-7 person-months for the light indexer |
-| Full transaction explorers without the Gateway (indexes h, i, j and an open-source reference explorer) | **Medium** | ~1-2 person-months of indexes + ~2-3 person-months of explorer |
-| Real decentralisation: many operators, on-ledger discovery, failover and resubmission in clients | **Medium** | ~3-5 person-months in clients |
-| Full parity inside the node (E2), full history and governance snapshots | **High** | ~6-10 person-months in the node + ~4-6 in clients |
-| Trustless access: verifiable reads with a light client (section 6.2) | **Very high** | ~40-80 more person-months, years |
-| Nodes with 4 GB RAM and ≤ 500 GB disk while still on Java: RocksDB and memory tuning, pruning API-only data, verified snapshot bootstrap (R1-R9, section 9) | **Medium** | ~8-14 person-months |
-| Migrating the node core from Java to Rust (R11): comfortable headroom in 4 GB, even for read nodes | **Very high** | ~30-50 person-months |
-
-**Overall difficulty: medium-high.** The hard part is not the technology. It is three organisational factors:
-
-- **Coordination:** the Foundation is in maintenance mode. Node, Sargon and wallet changes depend on community developers and governance (DAO / RAC).
-- **Time:** Gateway funding ends on 31 Dec 2026.
-- **Funding** for a small team, roughly **18-30 person-months** for the full path including explorers, or **7-10** for the minimum viable path (E3 plus the reference explorer).
-
-**Best short-term solution:** the **lightweight indexer next to each node (E3)**, which replaces the Gateway. It is followed by moving it into `babylon-node` (E2) and on-ledger discovery. With unlimited time, the ideal solution is the one in section 6.2: **verifiable** reads with cryptographic proofs. The reasons, from the measured data:
-
-- It needs ~10-50 GB (estimated), versus ~2.5 TB.
-- Its cost per operator is near zero, versus ~€300-500/month.
-- It works with today's wallets without new releases.
-- It is the only path viable before funding ends.
-
-**4 GB / 500 GB nodes: yes, it is possible** (section 9). Changes R1-R4 are cheap (weeks) and remove the main reason for the 16 GB: unbounded RocksDB and 12 GB reserved for Java. Pruning and bootstrapping from a verified snapshot (R5-R9) keep disk under 500 GB even as the network keeps growing. Migrating to Rust (R11) gives comfortable headroom and lets the read nodes that replace the Gateway fit in 4 GB as well.
-
-**Best solution with unlimited time:** every node serves **verifiable** reads, and every wallet carries a light client that checks each response (section 6.2). Then there is no need to trust even the node. Babylon already signs Merkle roots of state, transactions and receipts; what is missing is exposing the proofs and verifying them in clients. It is the end goal, with **very high** difficulty (years), and the short-term solution is the first stage towards it.
-
-**To validate with a prototype:**
-
-- the real size of the indexes;
-- ingestion speed from genesis;
-- exact response conformance with what the wallets expect.
-
 ### Stages towards the ideal solution
 
 ```mermaid
@@ -208,6 +257,23 @@ flowchart LR
     class S3 good
 ```
 
+### Evolution of Radix
+
+```mermaid
+flowchart LR
+    O["Olympia<br/>2021-2023"] -- "genesis migration<br/>Sep 2023" --> B["Babylon<br/>2023-today<br/>with a central Gateway"]
+    B -- "chapters 6, 9 and 10<br/>2027" --> BS["Babylon without Gateway<br/>4 GB nodes"]
+    BS -- "section 6.2" --> BV["Babylon with<br/>verifiable reads"]
+    BS -. "governance decision<br/>chapter 11" .-> H["Hyperscale<br/>sharded network<br/>2-4 years"]
+    BV -. "the same pieces carry over" .-> H
+    classDef old fill:#eeeeee,stroke:#888,color:#000
+    classDef bad fill:#ffd6d6,stroke:#c00,color:#000
+    classDef good fill:#d9f7d9,stroke:#080,color:#000
+    class O old
+    class B bad
+    class BS,BV,H good
+```
+
 ## Documents
 
 1. [Sections 1-2: current situation, who depends on the Gateway, explorers and Olympia](docs/en/01-current-situation.md)
@@ -218,6 +284,8 @@ flowchart LR
 6. [Section 8: roadmap](docs/en/06-roadmap.md)
 7. [Section 9: lighter nodes, 4 GB RAM and 500 GB disk, Java to Rust migration](docs/en/07-lighter-nodes.md)
 8. [Section 10: step-by-step implementation guide](docs/en/08-implementation-guide.md)
-9. [Sources and methodology](docs/en/09-sources.md)
+9. [Section 11: final evolution towards Hyperscale and migration](docs/en/09-hyperscale-evolution.md)
+10. [Sources and methodology](docs/en/10-sources.md)
+11. [Glossary](docs/en/11-glossary.md)
 
 > Figures marked as *estimate* must be validated with a prototype. Corrections and contributions are welcome via issues or pull requests.

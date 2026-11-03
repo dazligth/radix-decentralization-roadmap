@@ -1,4 +1,4 @@
-[← Índice](../../README.es.md) · [Anterior: Sección 9: nodos más ligeros, 4 GB de RAM y 500 GB de disco, migración de Java a Rust](07-nodos-ligeros.md) · [Siguiente: Fuentes y metodología](09-fuentes.md)
+[← Índice](../../README.es.md) · [Anterior: Sección 9: nodos más ligeros, 4 GB de RAM y 500 GB de disco, migración de Java a Rust](07-nodos-ligeros.md) · [Siguiente: Sección 11: evolución final hacia Hyperscale y migración](09-evolucion-hyperscale.md)
 
 # 10. Guía de implementación paso a paso
 
@@ -96,7 +96,7 @@ loop {
 
 1. **Génesis.** Se empieza en la versión 1. Las transacciones de génesis (~669) contienen el estado migrado de Olympia y tienen recibos muy grandes. Hay que procesarlas en streaming, sin cargar el recibo entero en memoria.
 2. **Ancestro global de un vault.** El recibo dice qué vault cambió. Para saber de qué cuenta o componente es, se usa la ascendencia del nodo: se guarda al ver la creación del vault, o se consulta `/entity/info` la primera vez.
-3. **Escritura atómica.** Los índices y el cursor se escriben en el mismo lote. Si el proceso se cae, se reanuda desde el cursor y repetir trabajo no hace daño, porque las escrituras son idempotentes.
+3. **Escritura atómica.** Los índices y el cursor se escriben en el mismo lote. Si el proceso se cae, se reanuda desde el cursor y repetir trabajo no causa problemas, porque las escrituras son idempotentes.
 4. **Rendimiento.** Para la primera sincronización (~567 millones de versiones), descargar lotes grandes en paralelo y escribir en orden. Los cambios de ronda solo se cuentan.
 
 ### Capa de API
@@ -358,4 +358,4 @@ La ventana del árbol de estado ya conserva las versiones recientes (`state_hash
 
 ---
 
-[← Índice](../../README.es.md) · [Anterior: Sección 9: nodos más ligeros, 4 GB de RAM y 500 GB de disco, migración de Java a Rust](07-nodos-ligeros.md) · [Siguiente: Fuentes y metodología](09-fuentes.md)
+[← Índice](../../README.es.md) · [Anterior: Sección 9: nodos más ligeros, 4 GB de RAM y 500 GB de disco, migración de Java a Rust](07-nodos-ligeros.md) · [Siguiente: Sección 11: evolución final hacia Hyperscale y migración](09-evolucion-hyperscale.md)

@@ -1,4 +1,4 @@
-[← Index](../../README.md) · [Previous: Section 9: lighter nodes, 4 GB RAM and 500 GB disk, Java to Rust migration](07-lighter-nodes.md) · [Next: Sources and methodology](09-sources.md)
+[← Index](../../README.md) · [Previous: Section 9: lighter nodes, 4 GB RAM and 500 GB disk, Java to Rust migration](07-lighter-nodes.md) · [Next: Section 11: final evolution towards Hyperscale and migration](09-hyperscale-evolution.md)
 
 # 10. Step-by-step implementation guide
 
@@ -358,4 +358,4 @@ The state tree window already keeps recent versions (`state_hash_tree.*`). For t
 
 ---
 
-[← Index](../../README.md) · [Previous: Section 9: lighter nodes, 4 GB RAM and 500 GB disk, Java to Rust migration](07-lighter-nodes.md) · [Next: Sources and methodology](09-sources.md)
+[← Index](../../README.md) · [Previous: Section 9: lighter nodes, 4 GB RAM and 500 GB disk, Java to Rust migration](07-lighter-nodes.md) · [Next: Section 11: final evolution towards Hyperscale and migration](09-hyperscale-evolution.md)

@@ -1,4 +1,4 @@
-[← Índice](../../README.es.md) · [Anterior: Sección 10: guía de implementación paso a paso](08-guia-de-implementacion.md)
+[← Índice](../../README.es.md) · [Anterior: Sección 11: evolución final hacia Hyperscale y migración](09-evolucion-hyperscale.md)
 
 # Fuentes
 
@@ -19,8 +19,9 @@
 - [Radix Labs Roadmap — to Hyperscale and beyond (30-nov-2024)](https://www.radixdlt.com/blog/radix-labs-roadmap---to-hyperscale-and-beyond)
 - [radix.wiki — Xi'an](https://radix.wiki/contents/tech/releases/radix-mainnet-xian)
 - [RadixTalk — Babylon node betatesting (mediciones de RAM en betanet, 2023)](https://radixtalk.com/t/babylon-node-betatesting-first-impressions/1792)
+- [hyperscale-rs (GitHub)](https://github.com/hyperscalers/hyperscale-rs) y [hyperscale-vm (GitHub)](https://github.com/hyperscalers/hyperscale-vm), revisados en nov-2026 (commit 6204357 y submódulo `vm` en ddb17014)
 - Código del nodo: `radixdlt/babylon-node` rama `develop` (12919a01) y etiqueta `v1.4.0.0` (7400951e); `radixdlt/babylon-nodecli`.
 
 ---
 
-[← Índice](../../README.es.md) · [Anterior: Sección 10: guía de implementación paso a paso](08-guia-de-implementacion.md)
+[← Índice](../../README.es.md) · [Anterior: Sección 11: evolución final hacia Hyperscale y migración](09-evolucion-hyperscale.md)

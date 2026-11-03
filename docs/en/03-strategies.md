@@ -34,7 +34,7 @@ It is a separate process, written in Rust with RocksDB or SQLite. It works like 
   - locker touches;
   - validator emissions.
 - **It contains none of the Gateway software:** no DataAggregator, no PostgreSQL, no substate history. It only keeps the **response format** (the OpenAPI contract), so already-released wallets work without an update. Once clients adopt the node's native API (E2), that compatibility layer can be removed.
-- It answers requests **with the same routes and the same JSON that wallets and dApps use today** (those in section 2, about 25 routes). Already-released apps then work by changing only the URL. It speaks the same language; there is no Gateway behind it. Current-state reads are delegated live to the node (Core and Engine State APIs); its own indexes are used only for what the node cannot answer.
+- It answers requests **with the same routes and the same JSON that wallets and dApps use today** (those in section 2, about 25 routes). Already-released apps then work by changing only the URL. It is a matter of format: there is no Gateway behind it. Current-state reads are delegated live to the node (Core and Engine State APIs); its own indexes are used only for what the node cannot answer.
 
 Assessment:
 

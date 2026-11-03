@@ -20,9 +20,12 @@ gantt
     R3-R8 pruning and pruned node            :2027-01-15, 150d
     R9 verified snapshot bootstrap           :2027-04-01, 180d
     R10 protocol update                      :2027-07-01, 120d
-    R11 Java to Rust migration               :2027-03-01, 600d
+    R11 Java to Rust, can wait if Hyperscale is adopted :2027-03-01, 600d
     section Ideal
     Verifiable reads and light client        :2027-09-01, 540d
+    section Hyperscale
+    Governance decision                      :milestone, 2027-06-30, 0d
+    Migration to Hyperscale, if adopted      :2027-07-01, 1095d
 ```
 
 ```mermaid
@@ -43,6 +46,7 @@ flowchart LR
 | **F2** | Feb-Apr 2027 | Clients: lists with failover and discovery (Sargon, wallets, RDT, ROLA, extension, SDK). Resubmission in Sargon. Fixes (`BaseUrlInterceptor`, hard-coded mainnet, hard-coded services). | No central default provider |
 | **F3** | 2027 | `babylon-node`: N1, N6, N5b, then N2-N4. R3-R8 (pruning and pruned node) and R9 (verified snapshot bootstrap). Snapshot capture in consultation. | Every node is an access point; the indexer becomes optional |
 | **F4** | 2027-2029 | Phased migration of the core to Rust (R11). Protocol update R10. Verifiable reads and light client (6.2, 10.6). | 4 GB nodes with headroom; access without trusting the node |
+| **F5** | After the governance decision | Migration to Hyperscale (section 11): mainnet readiness, read API and indexer, wallets, genesis with verifiable claims, dApp rewrites. | Final evolution of Radix, if the community adopts it |
 
 ---
 

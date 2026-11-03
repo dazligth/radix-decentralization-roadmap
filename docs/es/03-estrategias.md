@@ -34,7 +34,7 @@ Es un proceso aparte, en Rust y con RocksDB o SQLite. Funciona así:
   - toques de lockers;
   - emisiones de validadores.
 - **No contiene nada del software del Gateway:** ni DataAggregator, ni PostgreSQL, ni historia de substates. Solo conserva el **formato de las respuestas** (el contrato OpenAPI), para que los wallets ya publicados funcionen sin actualizarse. Cuando los clientes adopten la API nativa del nodo (E2), esa capa de compatibilidad se puede quitar.
-- Responde a las peticiones **con las mismas rutas y el mismo JSON que usan hoy los wallets y dApps** (los de la sección 2, unas 25 rutas). Así las apps ya publicadas funcionan cambiando solo la URL. Es como hablar el mismo idioma: no hay ningún Gateway detrás. Las lecturas de estado actual las delega en vivo al nodo (Core y Engine State API); solo usa sus índices para lo que el nodo no sabe.
+- Responde a las peticiones **con las mismas rutas y el mismo JSON que usan hoy los wallets y dApps** (los de la sección 2, unas 25 rutas). Así las apps ya publicadas funcionan cambiando solo la URL. Es una cuestión de formato: detrás no hay ningún Gateway. Las lecturas de estado actual las delega en vivo al nodo (Core y Engine State API); solo usa sus índices para lo que el nodo no sabe.
 
 Evaluación:
 

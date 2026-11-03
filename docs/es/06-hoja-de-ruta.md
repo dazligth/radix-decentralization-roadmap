@@ -20,9 +20,12 @@ gantt
     R3-R8 poda y nodo podado                 :2027-01-15, 150d
     R9 arranque desde snapshot verificado    :2027-04-01, 180d
     R10 actualización de protocolo           :2027-07-01, 120d
-    R11 migración de Java a Rust             :2027-03-01, 600d
+    R11 Java a Rust, aplazable si se adopta Hyperscale :2027-03-01, 600d
     section Ideal
     Lecturas verificables y cliente ligero   :2027-09-01, 540d
+    section Hyperscale
+    Decisión de la gobernanza               :milestone, 2027-06-30, 0d
+    Migración a Hyperscale, si se adopta     :2027-07-01, 1095d
 ```
 
 ```mermaid
@@ -43,6 +46,7 @@ flowchart LR
 | **F2** | feb.-abr. 2027 | Clientes: listas con failover y descubrimiento (Sargon, wallets, RDT, ROLA, extensión, SDK). Reenvío en Sargon. Correcciones (`BaseUrlInterceptor`, mainnet fijo, servicios fijos). | Sin proveedor por defecto central |
 | **F3** | 2027 | `babylon-node`: N1, N6, N5b, después N2-N4. R3-R8 (poda y nodo podado) y R9 (arranque desde snapshot verificado). Captura de snapshots en consultation. | Cada nodo es un punto de acceso; el indexador pasa a ser opcional |
 | **F4** | 2027-2029 | Migración del núcleo a Rust (R11) por fases. Actualización de protocolo R10. Lecturas verificables y cliente ligero (6.2, 10.6). | Nodos de 4 GB con margen; acceso sin confiar en el nodo |
+| **F5** | Tras la decisión de la gobernanza | Migración a Hyperscale (sección 11): preparación para mainnet, API de lectura e indexador, wallets, génesis con reclamación verificable, reescritura de dApps. | Evolución final de Radix, si la comunidad la adopta |
 
 ---
 

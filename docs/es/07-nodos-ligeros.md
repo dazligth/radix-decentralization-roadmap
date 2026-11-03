@@ -245,7 +245,7 @@ Un nodo nuevo arranca **en horas, sin reproducir 567 millones de transacciones y
   - pruebas de época desde el génesis;
   - estado de protocolo;
   - un manifiesto con hashes por bloque.
-- **Distribución:** HTTP, BitTorrent o IPFS. Da igual de dónde venga, porque se verifica.
+- **Distribución:** HTTP, BitTorrent o IPFS. Su origen no importa, porque se verifica.
 - **Importación y verificación:**
   1. Verificar la **cadena de pruebas de época** desde el génesis, o desde un punto de control incluido en el binario: cada prueba la firma más de 2/3 del stake del conjunto de validadores anterior.
   2. Cargar los substates y **reconstruir el árbol de estado** (JMT).
@@ -382,7 +382,7 @@ Las cifras son *estimaciones* que hay que validar con la prueba prolongada de R2
 **Lectura de la tabla:**
 
 - Con Java y los ajustes R1-R4, un validador **cabe en 4 GB, pero sin margen**.
-- Tras la migración a Rust cabe con holgura, **incluso un nodo de lectura con indexador**.
+- Tras la migración a Rust cabe con margen suficiente, **incluso un nodo de lectura con indexador**.
 - Se recomiendan **4 GB de swap** como red de seguridad.
 
 ## 9.6 Presupuesto de disco con 500 GB
@@ -432,7 +432,7 @@ flowchart LR
   - Con **R1-R4** (semanas de trabajo, sin tocar el consenso), un validador baja a ~3,6 GB de RAM y deja de crecer en memoria con el ledger.
   - Con **R5-R9** (meses), el disco queda muy por debajo de 500 GB, y los nodos nuevos arrancan en horas desde un snapshot verificado.
   - Con **R11** (más de un año) hay margen holgado, y también caben en 4 GB los nodos de lectura que sustituyen al Gateway.
-- **Lo más urgente:** medir el tamaño real por column family en un nodo de mainnet, y aplicar R1 y R2. Son baratos y quitan el principal motivo de los 16 GB.
+- **Lo más urgente:** medir el tamaño real por column family en un nodo de mainnet, y aplicar R1 y R2. Tienen un coste bajo y eliminan la causa principal de los 16 GB actuales.
 - **Dificultad:**
 
   | Cambios | Dificultad |

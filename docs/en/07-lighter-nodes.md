@@ -245,7 +245,7 @@ A new node starts **in hours, without replaying 567 million transactions and wit
   - epoch proofs since genesis;
   - protocol state;
   - a manifest with per-chunk hashes.
-- **Distribution:** HTTP, BitTorrent or IPFS. Where it comes from does not matter, because it is verified.
+- **Distribution:** HTTP, BitTorrent or IPFS. Its origin does not matter, because it is verified.
 - **Import and verification:**
   1. Verify the **chain of epoch proofs** from genesis, or from a checkpoint shipped in the binary: each proof is signed by more than 2/3 of the previous validator set's stake.
   2. Load the substates and **rebuild the state tree** (JMT).
@@ -432,7 +432,7 @@ flowchart LR
   - With **R1-R4** (weeks of work, no consensus changes), a validator drops to ~3.6 GB of RAM and its memory stops growing with the ledger.
   - With **R5-R9** (months), disk stays well under 500 GB, and new nodes start in hours from a verified snapshot.
   - With **R11** (more than a year) there is comfortable headroom, and the read nodes that replace the Gateway also fit in 4 GB.
-- **Most urgent:** measure the real per-column-family size on a mainnet node, and apply R1 and R2. They are cheap and remove the main reason for the 16 GB.
+- **Most urgent:** measure the real per-column-family size on a mainnet node, and apply R1 and R2. They are low-cost and remove the main cause of today's 16 GB.
 - **Difficulty:**
 
   | Changes | Difficulty |
