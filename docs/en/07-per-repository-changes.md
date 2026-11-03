@@ -75,9 +75,10 @@ Effort: **S** days · **M** 1-3 weeks · **L** more than a month · **XL** sever
 | N2 | Optional index `db.non_fungible_location_index.enable` and `/core/state/non-fungible-location` | P1 / M |
 | N3 | Change index per global entity (not just accounts), with NFT changes, manifest class and filters | P1 / L |
 | N4 | Reverse role-rule index and `/core/extra/entities-by-role-requirement` | P1 / M |
-| N5 | Archive node: `state_version_history_length` with no practical limit, `LedgerStateSelector::ByTimestamp` (already anticipated in `engine-state-api-schema.yaml:592`), `at_ledger_state` on the LTS | P1 / M |
-| N7 | Batch endpoints (metadata and state for several entities at once) | P2 / S |
+| N5 | Archive node: `state_version_history_length` with no practical limit, `LedgerStateSelector::ByTimestamp` (already anticipated in `engine-state-api-schema.yaml:595`), `at_ledger_state` on the LTS | P1 / M |
+| N7 | Batch endpoints: metadata and state for several entities at once, read from a single snapshot with RocksDB `MultiGet`. Needed for public read nodes (section [6.4](06-recommended-solution.md#s6-4)) | P1 / S-M |
 | N8-N9 | Locker touches; validator emissions | P2 / S |
+| N10 | **Canonical history export:** an option for `/stream/transactions` to return the on-ledger receipt (`LedgerTransactionReceipt`) encoded in SBOR, and the export-then-prune rule in R8 (section [6.5](06-recommended-solution.md#s6-5)) | P1 / S-M |
 | (D) | Validator metadata convention `api_endpoints` (list of URLs with capabilities), and operator documentation | P0 / S |
 
 The changes that **reduce node RAM and disk** (R1-R11: RocksDB tuning, pruning, verified snapshot bootstrap, the proposal-statistics protocol update and the Java-to-Rust migration) are in **chapter [9](09-lighter-nodes.md#s9)**, with each one detailed in section [9.4](09-lighter-nodes.md#s9-4).
@@ -247,7 +248,7 @@ They do not use the Gateway, but they are P1 infrastructure that also depends on
 
 - **P0/S.** Hard-coded URLs in `src/network-config.ts:14-22`; the network is inferred from the URL (`:33-36`, `weft.ts:211-225`).
 - **P1/S, when migrating.** Today it queries the Gateway (`src/core/RadixClient.ts:123`) and compares the status with `"Rejected"` / `"PermanentlyRejected"` (`:143`), values the Gateway does return. When moving to the node's LTS, `PermanentRejection` and `FateUncertainButLikelyRejection` must be mapped; it also does not handle the Gateway's `LikelyButNotCertainRejection` today.
-- **P1/M.** Create a `LedgerReader` interface for its ~25 `fetch` calls.
+- **P1/M.** Create a `LedgerReader` interface for its ~25 `fetch` calls to the Gateway.
 - **P1/S.** `waitForOwnerApproval` (`AgentWallet.ts:697-722`) should watch component state instead of filtering the stream.
 - **P2.** The Astrolescent API should accept a self-hosted instance.
 
@@ -296,7 +297,22 @@ They do not use the Gateway, but they are P1 infrastructure that also depends on
 - **`reference/hyperscale-rs`:**
   - A different network, not compatible with Babylon.
   - Its RPC (`crates/production/src/rpc/routes.rs:13-35`) has no state reads.
-  - According to the Foundation, Xi'an needs a new access layer anyway. The clients' `LedgerBackend` interface is where that third implementation would go.
+  - According to the Foundation, the Hyperscale-based Xi'an needs a new access layer anyway. The clients' `LedgerBackend` interface is where that third implementation would go. With Xi'an with Scrypto (chapter [13](13-xian-with-scrypto.md#s13)), the current access layer stays, adapted to each shard.
+
+<a id="s7-18"></a>
+
+## 7.18 New repository: `radix-history` (decentralised history)
+
+Implements section [6.5](06-recommended-solution.md#s6-5) and shares its assessment (possibility, difficulty and effort). Proposed structure:
+
+| Module | What it does |
+|---|---|
+| `segment-format` | Versioned specification and library of the segment format: header, raw transactions, receipts (with N10), proofs, hash of the previous segment. It is the contract between nodes and history services. |
+| `exporter` | A process next to the node: reads `/core/stream/transactions` and `/core/stream/proofs`, cuts segments by epoch, encodes them deterministically and uploads them content-addressed. Later, the same code moves into `babylon-node` (N10). |
+| `verifier` | Checks a segment: proof signatures (more than 2/3 of the epoch's stake), each epoch's transaction tree against `transaction_tree_hash` and, with N10, receipts against `receipt_tree_hash`. |
+| `archive` | Receives segments, verifies them, replicates them and publishes signed **receipts** (segment hash and epochs covered). |
+| `composer` and `query` | Build and serve query indexes (by account, resource and date) in the same API format as the light indexer. They can be rebuilt: if they have a bug, they are regenerated from the segments. |
+| `mirrors` | Tools to replicate to S3, IPFS and Arweave, and to check that each replica keeps every segment. |
 
 ---
 

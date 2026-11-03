@@ -1,0 +1,19 @@
+# Etiquetas que usan las plantillas y la guía de contribución.
+# Labels used by the templates and the contribution guide.
+# Se pueden crear en GitHub a mano o con una acción de sincronización de etiquetas.
+# They can be created on GitHub by hand or with a label-sync action.
+- name: correction
+  color: "d73a4a"
+  description: "Corrección de un dato, enlace o traducción / Correction of a figure, link or translation"
+- name: data
+  color: "0e8a16"
+  description: "Dato o medición real / Real data or measurement"
+- name: strategy
+  color: "1d76db"
+  description: "Nueva estrategia o alternativa / New strategy or alternative"
+- name: community
+  color: "c5def5"
+  description: "Idea o nota de la comunidad / Community idea or note"
+- name: needs translation
+  color: "fbca04"
+  description: "Falta sincronizar el otro idioma / The other language still needs updating"

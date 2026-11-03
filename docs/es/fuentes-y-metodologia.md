@@ -1,4 +1,4 @@
-[← Índice](../../README.es.md) · [Anterior: Capítulo 12: referencias de otras redes descentralizadas](12-referencias-otras-redes.md) · [Siguiente: Glosario](glosario.md)
+[← Índice](../../README.es.md) · [Anterior: Capítulo 13: etapa final alternativa, Xi'an con Scrypto](13-xian-con-scrypto.md) · [Siguiente: Glosario](glosario.md)
 
 # Fuentes y metodología
 
@@ -18,17 +18,22 @@
 
 Estas cuestiones no se han podido medir o verificar y conviene resolverlas con datos (plantilla de *issue* «Dato o medición»):
 
-1. Tamaño real en disco de un nodo de mainnet, por column family.
+1. Tamaño real en disco de un nodo de mainnet, por column family. Hay una primera medición aportada por la comunidad (~493 GB, sección [9.1](09-nodos-ligeros.md#s9-1)); falta el desglose y el método.
 2. Consumo real de RAM (RSS) de un nodo de mainnet con la configuración por defecto y con R1-R2.
 3. Tamaño real de los índices del indexador ligero y velocidad de indexación desde la génesis.
 4. Compatibilidad exacta de las respuestas del indexador con lo que esperan los wallets.
 5. Si `last_updated_at_state_version` puede obtenerse del árbol de estado sin un índice nuevo (N5b).
 6. Datos de otras redes no verificados (sección [12.9](12-referencias-otras-redes.md#s12-9)).
+7. Capacidad de un nodo de lectura público: peticiones por segundo y latencia con 4, 8 y 16 GB de RAM, sin que el nodo se retrase respecto al ledger (sección [6.4](06-solucion-recomendada.md#s6-4)).
+8. Tamaño de los segmentos de historial por época, y si nodos de versiones distintas producen segmentos idénticos (sección [10.8](10-guia-de-implementacion.md#s10-8)).
+9. Porcentaje de transacciones de mainnet que tocarían más de un fragmento, frecuencia de accesos no declarados y rendimiento del Radix Engine en un fragmento (etapa C0, sección [13.10](13-xian-con-scrypto.md#s13-10)).
 
 ## Fuentes
 
-- Código: `babylon-node` (rama `develop` y versión `v1.4.0.0`), `babylon-gateway` (`main`), `sargon` (`main`), `babylon-wallet-ios` (`main`), `rola`, `babylon-nodecli` (clones del 3-nov-2026) y los repositorios locales. Las rutas `fichero:línea` se refieren a esas versiones.
+- Código: `radixdlt-scrypto` (rama `develop`, commit `a405d7ae48`, ene-2026), `hyperscale-rs` (commit `6204357`, 30-oct-2026), `babylon-node` (rama `develop` y versión `v1.4.0.0`), `babylon-gateway` (`main`), `sargon` (`main`), `babylon-wallet-ios` (`main`), `rola`, `babylon-nodecli` (clones del 3-nov-2026) y los repositorios locales. Las rutas `fichero:línea` se refieren a esas versiones.
 - Mediciones: API pública `mainnet.radixdlt.com` (`/status/gateway-status`, `/stream/transactions`), 3-nov-2026. Las tasas diarias son muestras de 100 transacciones por fecha y sirven como orden de magnitud.
+- Medición aportada por un miembro de la comunidad (nov-2026): tamaño en disco de un nodo de mainnet (~493 GB; recibos, 217 GB; ~600 GB con el índice de cambios de cuenta; ~65 GB/año). No se han publicado el método ni la versión del nodo; se recoge como dato aportado, pendiente de confirmar.
+- Diseño aportado por un miembro de la comunidad: «Node-side History Export» (exploración, nov-2026; no publicada como documento público). Origen de las reglas de segmentos canónicos, pruebas dentro y exportar antes de podar (sección [6.5](06-solucion-recomendada.md#s6-5)), y del experimento de la sección [10.8](10-guia-de-implementacion.md#s10-8). Las cifras de su Gateway mínimo (100-150 GB de disco, 2 CPU, 4-6 GB de RAM, más un nodo completo de 550-600 GB) se recogen como dato aportado.
 - [RFPs for Gateway and Relay Services (3-feb-2026)](https://www.radixdlt.com/blog/the-next-phase-of-decentralization-rfps-for-gateway-and-relay-services)
 - [The Foundation Operational Stack: Mapping the 2026 Transition](https://www.radixdlt.com/blog/the-foundation-operational-stack-mapping-the-2026-transition)
 - [Foundation Update: Moving to Maintenance Mode (28-abr-2026)](https://www.radixdlt.com/blog/foundation-update-moving-to-maintenance-mode)
@@ -60,6 +65,7 @@ Estas cuestiones no se han podido medir o verificar y conviene resolverlas con d
 - [RocksDB — uso de memoria](https://github.com/facebook/rocksdb/wiki/Memory-usage-in-RocksDB), [caché de bloques](https://github.com/facebook/rocksdb/wiki/Block-Cache) y [Write Buffer Manager](https://github.com/facebook/rocksdb/wiki/Write-Buffer-Manager)
 - [rust-rocksdb v0.24.0](https://github.com/rust-rocksdb/rust-rocksdb/tree/v0.24.0)
 - Cardano: [Mithril](https://mithril.network/doc/), [arranque de un nodo con Mithril](https://mithril.network/doc/manual/getting-started/bootstrap-cardano-node), [informe de IOG T2-2026](https://services.iog.io/hubfs/Branded_Q2%202026%20delivery%20report.pdf), [informe de IOG T3-2025](https://www.iog.io/news/strengthening-cardanos-foundations-q3-2025-progress-report), [requisitos de hardware](https://developers.cardano.org/docs/operators/basics/hardware-requirements/), [cardano-db-sync](https://github.com/IntersectMBO/cardano-db-sync), [Koios](https://koios.rest/), [CIP-164 (Leios)](https://cips.cardano.org/cip/CIP-164) y [planificación de Dijkstra](https://product.cardano.intersectmbo.org/hardfork-planning/dijkstra/)
+- Cardano, informe mensual de escalado de cardano.org (2-may-2024): participación de Mithril, 22 % del stake activo en abril de 2024.
 - Sui: [nodo completo](https://docs.sui.io/guides/operator/sui-full-node), [gestión de datos y poda](https://docs.sui.io/guides/operator/data-management), [snapshots](https://docs.sui.io/guides/operator/snapshots), [verificación de checkpoints](https://docs.sui.io/concepts/cryptography/system/checkpoint-verification) e [indexador y GraphQL](https://docs.sui.io/concepts/data-access/graphql-indexer)
 - Aptos: [state sync](https://aptos.dev/network/nodes/configure/state-sync), [poda](https://aptos.dev/network/nodes/configure/data-pruning), [requisitos](https://aptos.dev/network/nodes/validator-node/node-requirements) e [indexador](https://aptos.dev/build/indexer)
 - Solana: [Geyser](https://docs.anza.xyz/validator/geyser), [requisitos](https://docs.anza.xyz/operations/requirements), [arranque del validador](https://docs.anza.xyz/operations/guides/validator-start) y [Old Faithful](https://docs.old-faithful.net/)
@@ -67,8 +73,8 @@ Estas cuestiones no se han podido medir o verificar y conviene resolverlas con d
 - Polkadot: [nodo completo](https://docs.polkadot.com/node-infrastructure/run-a-node/relay-chain/full-node/), [warp sync](https://github.com/paritytech/substrate/pull/9227), [smoldot](https://github.com/smol-dot/smoldot), [clientes ligeros](https://docs.polkadot.com/reference/tools/light-clients/) y [requisitos de validador](https://docs.polkadot.com/node-infrastructure/run-a-validator/requirements/)
 - Cardano (nuevas implementaciones y herramientas): [Kupo](https://github.com/CardanoSolutions/kupo), [Amaru (glosario de cardano.org)](https://cardano.org/vi/glossary/amaru/), [Dingo](https://pkg.go.dev/github.com/blinklabs-io/dingo@v0.50.1); Acropolis se describe en el informe de IOG T2-2026 citado arriba
 - Kaspa: [rusty-kaspa](https://github.com/kaspanet/rusty-kaspa), [kaspad v0.12.19](https://github.com/kaspanet/kaspad/releases/tag/v0.12.19), [guía de Crescendo](https://raw.githubusercontent.com/kaspanet/rusty-kaspa/master/docs/crescendo-guide.md), [referencias de API](https://docs.kaspa.org/references) y [Resolver](https://kaspa.aspectron.org/rpc/kaspa-resolver.html)
-- Midnight: [cómo funciona](https://docs.midnight.network/learn/how-midnight-works), [notas de versión de 2024 (Halo2)](https://docs.midnight.network/relnotes/2024-09_testnet_release_notes), [tokens](https://docs.midnight.network/tokens/overview), [divulgación explícita en Compact](https://docs.midnight.network/compact/explicit_disclosure), [generación local de pruebas](https://docs.midnight.network/guides/local-proving), [Glacier Drop](https://midnight.network/blog/glacier-drop-claim-portal-now-open) y [Kachina (artículo)](https://eprint.iacr.org/2020/543)
+- Midnight: [cómo funciona](https://docs.midnight.network/learn/how-midnight-works), notas de versión de la testnet de sep-2024 (Halo2; el enlace original ya no está disponible), [tokens](https://docs.midnight.network/tokens/overview), [divulgación explícita en Compact](https://docs.midnight.network/compact/explicit_disclosure), [generación local de pruebas](https://docs.midnight.network/guides/local-proving), [Glacier Drop](https://midnight.network/blog/glacier-drop-claim-portal-now-open) y [Kachina (artículo)](https://eprint.iacr.org/2020/543)
 
 ---
 
-[← Índice](../../README.es.md) · [Anterior: Capítulo 12: referencias de otras redes descentralizadas](12-referencias-otras-redes.md) · [Siguiente: Glosario](glosario.md)
+[← Índice](../../README.es.md) · [Anterior: Capítulo 13: etapa final alternativa, Xi'an con Scrypto](13-xian-con-scrypto.md) · [Siguiente: Glosario](glosario.md)

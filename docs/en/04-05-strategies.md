@@ -59,13 +59,14 @@ Assessment:
 - **Coverage:** ~100 % of what wallets, the RDT, ROLA, the extension and the SDK use.
   - It does **not** include arbitrary `at_ledger_state`. Today the only significant use is consultation's. Sargon uses it to keep paged reads consistent, which is solved by pinning the version.
 - **Client changes:** **none to get it working.** The wallets already let users add a custom URL (Settings → Gateways) pointing to the indexer, and the RDT has `gatewayBaseUrl`. Small changes are needed for automatic endpoint selection.
-- **Size:** **~10-50 GB**, versus ~2.5 TB. The basis is ~10-15 million user transactions × ~0.5-1 KB per marker (an assumption to validate with a prototype), giving ~5-15 GB; the rest of the range covers the NFT-location, holder, search and auxiliary tables, skipping the ~555 million round updates. *This is an estimate to validate with a prototype.*
+- **Size:** **~10-50 GB** added to the full node, versus the ~2.5 TB the Gateway adds (estimate). Both models need the full node, which today takes ~493-600 GB (measurement contributed by a community member, section [9.1](09-lighter-nodes.md#s9-1)). The basis is ~10-15 million user transactions × ~0.5-1 KB per marker (an assumption to validate with a prototype), giving ~5-15 GB; the rest of the range covers the NFT-location, holder, search and auxiliary tables, skipping the ~555 million round updates. *This is an estimate to validate with a prototype.*
 - **First sync:** walk ~567 million stream versions. Assuming an ingestion rate of 2,000-5,000 versions/s for a process without Postgres (an assumption to validate), that is ~1.3-3.3 days. Signed snapshots can shorten it. *Estimate.*
 - **Cost per operator:** marginal on top of an existing node (disk and a little CPU).
 - **Decentralisation:** high. Any node operator can run it.
 - **Problem:**
   - That request format (a stable OpenAPI contract) must be kept while apps use it. Once clients adopt the node's native API, it can be retired.
   - Trust: the client trusts the node, as it trusts the Gateway today.
+  - Read load: one request in the Gateway format becomes several reads on the node, which has no batch reads today. Section [6.4](06-recommended-solution.md#s6-4) sets out how to handle it.
 
 ## E4. Indexing inside each client
 
@@ -114,13 +115,13 @@ Scoring scale: 1 = bad, 5 = very good.
 | Use-case coverage | 2 (partial: 9 of 19 fully and 2 partly) | 5 | **5 (~100 %; no arbitrary history)** | 1 | 2 | 1-2 |
 | Full transaction explorers | 1 (no history, holders or statistics) | 4 (if h, i, j are added) | **5 (with h, i, j)** | 1 | 1 | 1 |
 | Removes the Gateway as a central service | 5 | 5 | **5** (no Gateway remains; only the request format is reused) | 5 | 5 | 3 |
-| Storage per operator | 0 extra | Tens of GB (est.) | **~10-50 GB (est.)** | — | — | — |
+| Storage per operator | 0 extra | Tens of GB (est.) | **~10-50 GB on top of the node (est.)** | — | — | — |
 | Monthly cost per operator | ~0 on top of the node | ~0 | **~€0-20 on top of the node (est.)** | — | — | — |
 | Client changes required | Many | Many (none if the node also serves the current format) | **None to get it working** | Many | Many | Per dApp |
 | Available before 31 Dec 2026? | Partly | No | **Prototype of the critical subset: possible** | No | No | No |
 | Development effort (est.) | 15-25 person-months | 6-10 person-months (node) + ~4-6 (clients) | **4-7 person-months** (+1-2 for explorer indexes) | — | ~40-80 person-months; years | Per dApp |
 | Technical risk | Medium | Medium-high (node core) | **Medium** | High | Very high | Low |
-| Valid for Xi'an / Hyperscale | No | No | Partly (interface reusable) | — | Partly (would need adapting) | No (they must be rewritten) |
+| Valid after the final evolution | With Hyperscale (FINAL B), no; with Xi'an with Scrypto (FINAL C), yes, per shard | Same as E1 | With Hyperscale, partly (interface reusable); with FINAL C, yes, per shard | — | Partly, would need adapting | With Hyperscale, they must be rewritten; with FINAL C, yes |
 
 **Reading the table:**
 

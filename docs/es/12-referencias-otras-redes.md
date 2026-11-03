@@ -1,4 +1,4 @@
-[← Índice](../../README.es.md) · [Anterior: Capítulo 11: evolución final hacia Hyperscale](11-evolucion-hyperscale.md) · [Siguiente: Fuentes, metodología y preguntas abiertas](fuentes-y-metodologia.md)
+[← Índice](../../README.es.md) · [Anterior: Capítulo 11: etapa final B, migración a Hyperscale](11-evolucion-hyperscale.md) · [Siguiente: Capítulo 13: etapa final alternativa, Xi'an con Scrypto](13-xian-con-scrypto.md)
 
 <a id="s12"></a>
 
@@ -19,7 +19,7 @@ Como el objetivo de Radix es resolverlo todo en la **capa 1**, cada referencia i
 | **9.5.** Nodos con poca RAM | **Cardano:** al llevar el ledger a disco (UTxO-HD con LSM), la memoria residente bajó de ~15-16 GB a ~5,0-5,8 GB (~65 %) en la versión beta del nodo (informe de IOG, T2-2026); reproducir la cadena requirió solo 4 GB en pruebas de mainnet (T3-2025). **Ethereum:** el cliente de consenso Nimbus funciona con 4 GB. | Mover datos de la memoria al disco reduce mucho la RAM. Ver en la sección [12.9](#s12-9) por qué Radix lo tiene más fácil. |
 | **E2.** API de lectura dentro del nodo | **Kaspa:** API wRPC integrada en el nodo. **Sui:** índice gRPC en el nodo completo. **Cardano:** Acropolis (IOG), un nodo modular en Rust con una API, alineada en parte con la de Blockfrost, dentro del propio nodo, que sincronizaba en ~1 hora en lugar de 4 días (proyecto cerrado en T2-2026; el código sigue publicado). | Integrar la lectura en el propio nodo, como propone E2, ya se ha hecho. |
 | **E3.** Indexador junto al nodo | **Solana:** interfaz Geyser, donde complementos cargados en el validador envían cuentas, transacciones y bloques a bases de datos externas. **Aptos:** servicio de flujo de transacciones (gRPC) para indexadores. **Cardano:** Kupo, indexador ligero. | El patrón de alimentar indexadores ligeros desde el nodo es común. |
-| **10.2.** Descubrimiento de puntos de acceso | **Cardano: Koios**, una API comunitaria «sin instancia central», con operadores independientes que se añaden a un fichero de topología en GitHub y un monitor que solo marca como activos los que están al día. **Kaspa:** red de nodos públicos con un servicio *Resolver* que dirige a los clientes al nodo menos cargado. **Polkadot:** los clientes ligeros encuentran nodos por P2P, sin depender de servidores RPC. | Hay redes de lectura federadas, pero **ninguna de las analizadas publica sus puntos de acceso en un registro en la propia capa 1**. El descubrimiento en la cadena que propone este informe sería una aportación nueva. |
+| **10.2.** Descubrimiento de puntos de acceso | **Cardano: Koios**, una API comunitaria «sin instancia central», con operadores independientes que se añaden a un fichero de topología en GitHub. **Kaspa:** red de nodos públicos con un servicio *Resolver* que dirige a los clientes al nodo menos cargado. **Polkadot:** los clientes ligeros encuentran nodos por P2P, sin depender de servidores RPC. | Hay redes de lectura federadas, pero **ninguna de las analizadas publica sus puntos de acceso en un registro en la propia capa 1**. El descubrimiento en la cadena que propone este informe sería una aportación nueva. |
 | **6.2.** Lecturas verificables y cliente ligero | **Polkadot:** smoldot, cliente ligero que funciona en el navegador y «no confía en absoluto» en los nodos completos. **Sui:** cliente ligero que sigue los checkpoints de fin de época firmados por los validadores. **Ethereum:** `eth_getProof` (EIP-1186), comités de sincronización y Helios. | El cliente ligero en el navegador o en el wallet existe en producción. |
 | **6.2, punto 6.** Incentivos para servir lecturas | **Pocket Network** y **The Graph** pagan a quien sirve lecturas o índices, con pruebas del trabajo hecho. | Son modelos útiles, pero funcionan como redes aparte. En Radix habría que implementarlos en la propia capa 1. |
 | **R1.** Límites de memoria de RocksDB | **Documentación oficial de RocksDB:** por defecto, cada column family tiene su propia caché de bloques (32 MB desde la versión 8.2; 8 MB antes); los bloques de índice y de filtro no cuentan dentro de esa caché; `max_open_files = -1` precarga todos los índices y filtros; el *Write Buffer Manager* limita la memoria de las memtables entre column families y puede contabilizarla en la caché de bloques. | Confirma las causas del consumo de memoria descritas en la sección [9.2](09-nodos-ligeros.md#s9-2) y la solución de R1. |
@@ -37,8 +37,8 @@ Como el objetivo de Radix es resolverlo todo en la **capa 1**, cada referencia i
 | **UTxO-HD / LSM** | Capa 1 | Lleva el ledger de la memoria al disco | Beta del nodo 10.7.1/11.0.1: RAM de ~15-16 GB a ~5,0-5,8 GB. Requisitos oficiales: 24 GB en memoria; 8 GB con el ledger en disco («pendiente de confirmación»); 250-350 GB de disco. |
 | **Koios** | Servicio de lectura federado | API comunitaria con varios operadores, sin instancia central | En funcionamiento; descubrimiento por fichero en GitHub, sin incentivos en la cadena |
 | **cardano-db-sync / Blockfrost** | Servicio de lectura | Indexador completo en PostgreSQL (~438 GB, 64 GB de RAM recomendados); Blockfrost publica su backend para que cualquiera lo aloje | En funcionamiento. Es el equivalente al Gateway de Radix, y muestra su coste. |
-| **Amaru (Rust), Dingo (Go)** | Capa 1 | Nuevas implementaciones del nodo, que entran primero como relés | Amaru funciona como relé en mainnet; la fecha de producción de bloques no está verificada |
-| **Ouroboros Leios** | Capa 1 (bifurcación de protocolo) | Añade bloques de respaldo (*endorser blocks*) certificados por un comité ponderado por stake, para aumentar la capacidad sin cambiar la cadena principal (CIP-164, propuesta) | Red de pruebas desde el 23-jun-2026; código completo previsto para el T4-2026; fecha de mainnet sin fijar. Requiere más disco y más recursos en los relés de quien tenga mucho stake. |
+| **Amaru (Rust), Dingo (Go)** | Capa 1 | Nuevas implementaciones del nodo | Amaru funciona como relé en mainnet y su producción de bloques está prevista para noviembre de 2026 (glosario de cardano.org); Dingo admite los papeles de relé y productor de bloques, pero aún no está listo para producción |
+| **Ouroboros Leios** | Capa 1 (bifurcación de protocolo) | Añade bloques de respaldo (*endorser blocks*) certificados por un comité ponderado por stake, para aumentar la capacidad sin cambiar la cadena principal (CIP-164, propuesta) | Red de pruebas desde el 23-jun-2026; código completo previsto para el T4-2026. Intersect no fija aún la fecha de mainnet; el informe de IOG del T2-2026 la apunta para finales de 2026. Requiere más disco y más recursos en los relés de quien tenga mucho stake. |
 
 <a id="s12-3"></a>
 
@@ -47,7 +47,7 @@ Como el objetivo de Radix es resolverlo todo en la **capa 1**, cada referencia i
 | Mecanismo | Tipo | Qué hace |
 |---|---|---|
 | **Poda configurable** | Capa 1 | Épocas a conservar de objetos y de checkpoints; sin poda, un nodo puede superar 7 TB |
-| **Snapshots formales** | Capa 1 | Estado vivo al final de cada época, verificado contra un compromiso firmado por los validadores; según la documentación de Sui, en mainnet se conservan los de unas 60 épocas |
+| **Snapshots formales** | Capa 1 | Estado vivo al final de cada época, verificado contra un compromiso firmado por los validadores; según la documentación de Sui, los almacenamientos de Mysten conservan los de las últimas 90 épocas |
 | **Cliente ligero** | Capa 1 | Sigue los checkpoints de fin de época, con firmas BLS agregadas de los validadores, desde la génesis |
 | **Indexador y GraphQL** | Servicio de lectura | Indexador en PostgreSQL y API GraphQL, que pueden alojar los propios usuarios o proveedores; JSON-RPC marcado como obsoleto |
 | **Hardware de un nodo completo** | — | 128 GB de RAM y 4 TB NVMe |
@@ -57,7 +57,7 @@ Como el objetivo de Radix es resolverlo todo en la **capa 1**, cada referencia i
 ## 12.4 Aptos
 
 - **Sincronización rápida** (capa 1): omite el historial y se basa en las firmas de los validadores; suele completarse en pocas horas.
-- **Poda** (capa 1): por defecto conserva los últimos 150 millones de transacciones; los nodos de archivo están obsoletos en favor del indexador.
+- **Poda** (capa 1): por defecto conserva los últimos 150 millones de transacciones; los nodos de archivo, que lo conservan todo, siguen documentados.
 - **Indexador** (servicio de lectura): flujo de transacciones por gRPC y API GraphQL, alojable por terceros.
 - **Hardware de un validador:** 128 GB de RAM y 3 TB NVMe (estimación oficial para 2024).
 
@@ -76,7 +76,7 @@ Como el objetivo de Radix es resolverlo todo en la **capa 1**, cada referencia i
 
 - **NEAR** (capa 1): nodos RPC con 5 épocas por defecto y nodos de archivo con almacenamiento caliente (3 TB SSD) y frío (115 TB HDD). Su servicio de datos NEAR Lake dejó de indexar el 24-mar-2026. Es un ejemplo del riesgo de depender de un único servicio de lectura.
 - **Polkadot** (capa 1):
-  - poda del estado por defecto (últimos 256 bloques; los cuerpos de bloque se conservan);
+  - poda del estado por defecto (últimos 256 bloques; los cuerpos de los bloques finalizados se conservan: opción `--blocks-pruning`, por defecto `archive-canonical`);
   - *warp sync* (pruebas de finalidad + estado);
   - cliente ligero **smoldot** en el navegador, que la documentación describe como alternativa «de confianza mínima» frente a los servidores RPC públicos, «cómodos pero centralizados».
   - Validador: 32 GB de RAM y 2 TB NVMe.
@@ -98,18 +98,23 @@ Kaspa es el precedente más directo de dos propuestas de este informe: **R11** (
 
 ## 12.8 Midnight: cómo implementa la privacidad (contraste)
 
+> [!IMPORTANT]
+> - **¿Es posible llevar privacidad a la capa 1 de Radix?** Sí, con condiciones: requiere una actualización de protocolo (verificación de pruebas ZK en el motor y recursos protegidos).
+> - **Dificultad:** Muy alta.
+> - **Esfuerzo y plazo:** no estimado en este informe; es un objetivo opcional.
+
 **Tipo:** red aparte, **cadena asociada** a Cardano, construida con el kit Partner Chains (basado en Substrate); sus productores de bloques deben ser operadores de stake pools de Cardano. **No es un modelo para Radix**, cuyo objetivo es la capa 1. Se analiza por su forma de implementar la privacidad.
 
 | Elemento | Cómo funciona |
 |---|---|
 | **Pruebas de conocimiento cero** | zk-SNARK con el sistema Halo2 (sustituyó a Plonk en 2024), adaptado para recursión eficiente (notas de versión de 2024; la documentación posterior describe una pila basada en PLONK/KZG sobre BLS12-381). |
 | **Estado público y privado** | El estado público está en la cadena; el privado lo guarda cada usuario localmente y nunca se expone. |
-| **Tokens** | NIGHT (público, modelo UTXO, firmas Schnorr); tokens protegidos (*shielded*, con pruebas ZK); DUST, un recurso protegido e intransferible que se genera al poseer NIGHT y que se consume para pagar las transacciones. |
+| **Tokens** | NIGHT (público, modelo UTXO, firmas Schnorr, según las notas de la Wallet SDK 1.0.0 de Midnight); tokens protegidos (*shielded*, con pruebas ZK); DUST, un recurso protegido e intransferible que se genera al poseer NIGHT y que se consume para pagar las transacciones. |
 | **Lenguaje Compact** | Lenguaje parecido a TypeScript que compila a circuitos ZK. Los datos privados entran como *witnesses* desde el cliente; cualquier dato privado que vaya a hacerse público debe marcarse con `disclose()`, o el compilador rechaza el programa. |
 | **Generación de pruebas** | En un «servidor de pruebas» local del usuario; la documentación aconseja ejecutarlo en una máquina propia, porque recibe los datos privados. |
 | **Divulgación selectiva** | Claves de visualización que permiten a un indexador autorizado leer el historial protegido de un usuario. |
-| **Distribución de NIGHT (Glacier Drop)** | Foto de saldos de ocho redes (11-jun-2025); el usuario firma un mensaje con la clave de la dirección de la foto e indica una dirección nueva; después, Scavenger Mine (abierta a todos) y Lost-and-Found (una parte de la asignación para quien no reclamó a tiempo). Según fuentes de terceros, solo admitía cuentas de clave única, no multifirma ni contratos. |
-| **Lanzamiento** | NIGHT se emitió como activo de Cardano en diciembre de 2025; la red principal estaba prevista para finales de marzo de 2026 (la fecha exacta no se ha verificado). |
+| **Distribución de NIGHT (Glacier Drop)** | Foto de saldos de ocho redes (11-jun-2025, según CoinDesk y Decrypt); el usuario firma un mensaje con la clave de la dirección de la foto e indica una dirección nueva; después, Scavenger Mine (abierta a todos) y Lost-and-Found (una parte de la asignación para quien no reclamó a tiempo). Según fuentes de terceros, solo admitía cuentas de clave única, no multifirma ni contratos. |
+| **Lanzamiento** | NIGHT se emitió como activo de Cardano en diciembre de 2025; el bloque génesis de su red principal se creó el 17-mar-2026, con validadores federados y en modo restringido (blog de Midnight, «State of the Network», marzo de 2026). |
 
 **Qué podría aplicarse en la capa 1 de Radix** (requiere trabajo profundo en el motor y una actualización de protocolo):
 
@@ -138,13 +143,13 @@ Lo que **no** se trasladaría: la cadena separada, los operadores federados, la 
 5. **Las redes de lectura federadas existen** (Koios, nodos públicos de Kaspa), pero se coordinan fuera de la cadena. **Publicar los puntos de acceso en la propia capa 1**, como propone este informe, sería una aportación nueva de Radix.
 6. **Depender de un único servicio de lectura es un riesgo real:** NEAR Lake dejó de indexar en marzo de 2026.
 7. **La reescritura en Rust por fases (R11)** tiene un precedente muy similar en **Kaspa**, que pasó de Go a Rust conviviendo en la red, con adopción gradual.
-8. **Evolucionar la capa 1 sin cambiar de red es posible** cuando el nuevo diseño es compatible con el anterior, como hace Cardano con Leios. Hyperscale, en cambio, no es compatible con Babylon (sección [11.2](11-evolucion-hyperscale.md#s11-2)). Por eso exige una migración, y por eso conviene que la comunidad compare también la opción de mejorar Babylon en su propia cadena antes de decidir.
+8. **Evolucionar la capa 1 sin cambiar de red es posible** cuando el nuevo diseño es compatible con el anterior, como hace Cardano con Leios. Hyperscale, en cambio, no es compatible con Babylon (sección [11.2](11-evolucion-hyperscale.md#s11-2)). Por eso exige una migración, y por eso conviene que la comunidad compare también la opción de mejorar Babylon en su propia cadena antes de decidir. El capítulo [13](13-xian-con-scrypto.md#s13) describe una tercera vía: fragmentar Babylon en su propia cadena conservando Scrypto.
 9. **La privacidad** se puede plantear en la capa 1 con verificación de pruebas ZK en el motor y recursos protegidos. Es un trabajo de gran envergadura, que Midnight resuelve con una red aparte.
 
 **Qué no se ha podido verificar:**
 
 - la participación de stake en Mithril en 2025-2026;
-- la fecha de producción de bloques de Amaru;
+- la fecha real de producción de bloques de Amaru (prevista para noviembre de 2026);
 - la fecha exacta de cierre del JSON-RPC de Sui;
 - cómo verifica Solana los snapshots al cargarlos;
 - la ventana de poda exacta de Kaspa;
@@ -157,4 +162,4 @@ Ninguno de estos puntos se usa como argumento en el informe.
 
 ---
 
-[← Índice](../../README.es.md) · [Anterior: Capítulo 11: evolución final hacia Hyperscale](11-evolucion-hyperscale.md) · [Siguiente: Fuentes, metodología y preguntas abiertas](fuentes-y-metodologia.md)
+[← Índice](../../README.es.md) · [Anterior: Capítulo 11: etapa final B, migración a Hyperscale](11-evolucion-hyperscale.md) · [Siguiente: Capítulo 13: etapa final alternativa, Xi'an con Scrypto](13-xian-con-scrypto.md)

@@ -6,7 +6,7 @@ labels: ["data"]
 ---
 
 **Qué se ha medido / What was measured:**
-<!-- p. ej. tamaño por column family, RSS del nodo, tiempo de sincronización / e.g. per-column-family size, node RSS, sync time -->
+<!-- p. ej. tamaño por column family, RSS del nodo, tiempo de sincronización, prueba de carga de un nodo de lectura (sección 6.4), tamaño de los segmentos de historial por época (10.8), métricas de la etapa C0 (13.10) / e.g. per-column-family size, node RSS, sync time, read-node load test (section 6.4), history segment size per epoch (10.8), stage C0 metrics (13.10) -->
 
 **Resultado / Result:**
 

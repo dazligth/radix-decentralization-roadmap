@@ -2,16 +2,21 @@
 
 <a id="s11"></a>
 
-# 11. Evolución final: de Babylon a Hyperscale
+# 11. Etapa final B: migrar de Babylon a Hyperscale
 
 > [!IMPORTANT]
 > - **¿Es posible?** Sí, con condiciones: la red y los fondos pueden migrar; los contratos Scrypto y las dApps no, deben reescribirse. Con el código actual (en desarrollo) todavía no es posible en producción.
 > - **Dificultad:** Muy alta.
 > - **Esfuerzo y plazo:** ~110-210 personas-mes sin contar las dApps; 2-4 años (estimación).
 
-**Objetivo de este capítulo.** Describir qué sería necesario para que Radix adopte Hyperscale como evolución final de la red, quién tendría que hacerlo y con qué dificultad.
+**Objetivo de este capítulo.** Describir qué sería necesario para que Radix adopte Hyperscale como evolución final de la red (FINAL B), quién tendría que hacerlo y con qué dificultad. Las alternativas, seguir mejorando Babylon (FINAL A) y Xi'an con Scrypto (FINAL C), se comparan en la sección [13.11](13-xian-con-scrypto.md#s13-11).
+
+Los apartados 11.1 a 11.8 desarrollan la valoración del recuadro de este capítulo; la sección [11.4](#s11-4) tiene la suya propia.
 
 Hyperscale es de código abierto y la Foundation está en modo de mantenimiento. Por tanto, si la comunidad decide adoptarlo, será la propia comunidad quien tenga que adaptar el código de Radix y dirigir la migración.
+
+> [!NOTE]
+> **Alternativa sin migrar:** el capítulo [13](13-xian-con-scrypto.md#s13) describe una tercera etapa final (FINAL C) en la que Babylon evoluciona en su propia cadena hasta una red fragmentada, como prometía Xi'an, **conservando Scrypto**. Allí se comparan las tres opciones.
 
 ## Veredicto: ¿es posible migrar Radix usando el código de Hyperscale?
 
@@ -34,16 +39,18 @@ flowchart TB
     O["<b>Olympia</b><br/>2021-2023"] -->|"migración por génesis<br/>sep-2023"| B["<b>Babylon</b> · 2023-hoy<br/>con Gateway central"]
     B -->|"capítulos 6, 9 y 10 · 2027"| BS["<b>Babylon sin Gateway</b><br/>nodos de 4-8 GB"]
     BS -->|"sección 6.2"| BV["<b>Babylon con lecturas verificables</b>"]
-    BV -.->|"decisión de la gobernanza (capítulo 11)<br/>las mismas piezas sirven"| H["<b>Hyperscale</b><br/>red fragmentada · 2-4 años"]
+    BV -.->|"FINAL B · capítulo 11"| H["<b>Hyperscale</b><br/>red fragmentada · 2-4 años"]
     classDef old fill:#eeeeee,stroke:#888,color:#000
     classDef bad fill:#ffd6d6,stroke:#c00,color:#000
     classDef good fill:#d9f7d9,stroke:#080,color:#000
     class O old
     class B bad
-    class BS,BV,H good
+    BV -.->|"FINAL C · capítulo 13"| X["<b>Xi'an con Scrypto</b><br/>Babylon fragmentada · 3-5 años"]
+    BV -.->|"FINAL A · capítulo 9"| A["<b>Seguir mejorando Babylon</b><br/>nodo en Rust (R11) · 1-3 años"]
+    class BS,BV,H,X,A good
 ```
 
-### Etapa final: qué pasaría de Babylon a Hyperscale
+### Etapa final B: qué pasaría de Babylon a Hyperscale
 
 **¿Es posible?** Sí, con condiciones: la red y los fondos pueden migrar con la estrategia M1 (génesis y reclamación verificable), aunque con el código actual de Hyperscale, todavía en desarrollo, no es posible en producción. **Dificultad:** muy alta. **Scrypto no es compatible:** los contratos y las dApps tendrían que reescribirse. En verde, lo que pasa directamente; en amarillo, lo que pasa con cambios; en rojo, lo que no pasa.
 
@@ -97,7 +104,7 @@ Hyperscale es un diseño de red **fragmentada** (*sharded*): el estado se repart
 | Red | QUIC mediante iroh |
 | Firmas de validadores | BLS12-381, con agregación de firmas |
 | Firmas de usuarios | Ed25519, secp256k1 (las mismas que Babylon) y ML-DSA-65 (post-cuántica) |
-| Pruebas publicadas por la Foundation | 500 000 TPS sostenidas y picos de más de 800 000 en 128 fragmentos (feb-2026). Se hicieron con el código «Hyperscale» cuyo autor publicó parcialmente en `github.com/DanoshiFusermoto/Hyperscale`; el artículo no menciona `hyperscale-rs`, y este repositorio no publica cifras de rendimiento. |
+| Pruebas publicadas por la Foundation | 500 000 TPS sostenidas en la prueba pública (publicada el 31-ene-2026, con más de 100 fragmentos y picos de más de 700 000); la publicación de cierre (20-feb-2026) habla de 128 fragmentos y picos de más de 800 000. Se hicieron con el código «Hyperscale» cuyo autor publicó parcialmente en `github.com/DanoshiFusermoto/Hyperscale`; el artículo no menciona `hyperscale-rs`, y este repositorio no publica cifras de rendimiento. |
 | Situación del proyecto (según radix.wiki, fuente secundaria, nov-2026; RFC original en RadixTalk) | `hyperscale-rs` fue propuesto como candidato de producción en un RFC de la comunidad (20-abr-2026); solo se financió el primero de seis hitos. El 3-sep-2026 su desarrollador dejó las propuestas, subvenciones y colaboraciones con Radix, pero siguió desarrollando el código, y considera a Radix una de varias redes candidatas, no la única. Ha indicado que existe una vía para pasar a Hyperscale (en sus palabras, *upgrade path*) y que la guiaría. |
 
 ```mermaid
@@ -256,6 +263,7 @@ Consiste en ejecutar el Radix Engine dentro de Hyperscale, o traducir Scrypto a 
 | Reescribir cada contrato con el SDK de Hyperscale | Sí | Media-alta por proyecto |
 | Herramientas que ayuden a traducir contratos Scrypto sencillos al SDK de Hyperscale | Sí, en parte | Alta |
 | Bifurcar Hyperscale para ejecutar el Radix Engine (M3) | Solo con limitaciones: se perdería la composición entre fragmentos para esos contratos | Muy alta |
+| Fragmentar Babylon conservando Scrypto, sin Hyperscale (capítulo [13](13-xian-con-scrypto.md#s13)): cada transacción declara las entidades globales que usa, lo que permite mantener la composición entre fragmentos | Sí, con condiciones | Muy alta |
 
 <a id="s11-5"></a>
 
@@ -266,7 +274,7 @@ Consiste en ejecutar el Radix Engine dentro de Hyperscale, o traducir Scrypto a 
 | **Hyperscale para mainnet** | Sustituir valores de desarrollo (p. ej. `SHARD_CAPACITY=4`, ratios de comisiones provisionales); auditorías de seguridad independientes; ampliar la verificación formal (hoy acotada); herramientas para operadores (equivalente a `babylon-nodecli`, despliegue de *vnodes*); decidir los parámetros económicos (emisión, comisiones, stake mínimo) y que el token de comisiones sea XRD | Muy alta |
 | **Génesis y reclamación** | Ampliar la génesis de Hyperscale (otros recursos, stakes) o escribir el contrato de reclamación de M1; herramienta de exportación del estado final de Babylon con pruebas | Alta |
 | **Babylon (lado de salida)** | Congelación ordenada (moratoria), publicación de la raíz final firmada, endpoint de pruebas de Merkle (sección [10.6](10-guia-de-implementacion.md#s10-6)), nodos de archivo | Media |
-| **API de lectura e indexador de Hyperscale** | Hoy no existen. Hay que añadir lecturas de estado, eventos, recibos e historial, conscientes de la fragmentación. El diseño del indexador ligero, el descubrimiento en la cadena y el cliente ligero de este informe se pueden reutilizar. | Alta |
+| **API de lectura e indexador de Hyperscale** | Hoy no existen. Hay que añadir lecturas de estado, eventos, recibos e historial, conscientes de la fragmentación. El diseño del indexador ligero, el descubrimiento en la cadena y el cliente ligero de este informe se pueden reutilizar. Hace falta además un orden global derivado para la API actual (sección [13.9](13-xian-con-scrypto.md#s13-9)) y exportar el historial por fragmento (sección [6.5](06-solucion-recomendada.md#s6-5)). | Alta |
 | **Sargon y wallets iOS/Android** | Soporte de HBOR, nuevas direcciones y sobres de transacción, fragmentos; convivencia con Babylon durante la transición; flujo de reclamación; agenda que relacione direcciones antiguas y nuevas. Gracias a la interfaz `LedgerBackend` propuesta (sección [10.4](10-guia-de-implementacion.md#s10-4)), Hyperscale sería un backend más. | Muy alta |
 | **Wallet de hardware (Ledger)** | Nueva app de firma para el formato de Hyperscale | Media |
 | **RDT, ROLA y Radix Connect** | Nuevos tipos de petición y verificación del inicio de sesión. Radix Connect (relé, WebRTC o iroh) se puede reutilizar como canal. | Media |
@@ -315,9 +323,9 @@ Son estimaciones de orden de magnitud, para planificar, no presupuestos:
    - las pruebas de Merkle y el cliente ligero.
 
    Estas mismas piezas son las que necesitan Hyperscale y la reclamación de M1.
-3. **Decisión sobre R11 (migración del nodo de Babylon a Rust).** Conviene **aplicar R1-R9**, de coste moderado (R1-R4 en semanas; R5-R9 en meses), y **aplazar R11 hasta que la gobernanza decida sobre Hyperscale**, porque su esfuerzo (30-50 personas-mes) competiría con el de la migración. Si Hyperscale no se adopta o se retrasa, R11 vuelve a ser la vía para nodos de 4 GB con margen.
-4. **Alternativa que conviene comparar:** Cardano aumenta la capacidad de su capa 1 con Leios mediante una bifurcación de protocolo en la misma cadena, sin migrar a una red nueva (sección [12.2](12-referencias-otras-redes.md#s12-2)). Antes de decidir, la gobernanza debería comparar la migración a Hyperscale con la opción de seguir mejorando Babylon en su propia cadena.
-5. **Recomendación:** que la gobernanza decida primero si adopta Hyperscale y con qué estrategia (M1, con M2 como apoyo temporal). Mientras tanto, mantener el plan a corto plazo de este informe, cuyo valor no depende de esa decisión.
+3. **Decisión sobre R11 (migración del nodo de Babylon a Rust).** Conviene **aplicar R1-R9**, de coste moderado (R1-R4 en semanas; R5-R9 en meses), y **aplazar R11 hasta que la gobernanza elija la etapa final** (con FINAL C, R11 se sustituye por la etapa C4 del capítulo [13](13-xian-con-scrypto.md#s13)), porque su esfuerzo (30-50 personas-mes) competiría con el de la migración. Si se elige FINAL A, o la decisión se retrasa, R11 vuelve a ser la vía para nodos de 4 GB con margen.
+4. **Alternativa que conviene comparar:** Cardano aumenta la capacidad de su capa 1 con Leios mediante una bifurcación de protocolo en la misma cadena, sin migrar a una red nueva (sección [12.2](12-referencias-otras-redes.md#s12-2)). Antes de decidir, la gobernanza debería comparar la migración a Hyperscale con la opción de seguir mejorando Babylon en su propia cadena y con la de fragmentarla conservando Scrypto (capítulo [13](13-xian-con-scrypto.md#s13)), cuya etapa C0 mide con datos reales cuántas transacciones serían entre fragmentos.
+5. **Recomendación:** que la gobernanza elija primero entre las tres etapas finales (FINAL A, B o C, sección [13.11](13-xian-con-scrypto.md#s13-11)), con los datos de la etapa C0 del capítulo [13](13-xian-con-scrypto.md#s13); si elige Hyperscale, con la estrategia M1 y M2 como apoyo temporal. Mientras tanto, mantener el plan a corto plazo de este informe, cuyo valor no depende de esa decisión.
 
 ---
 

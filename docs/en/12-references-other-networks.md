@@ -1,4 +1,4 @@
-[← Index](../../README.md) · [Previous: Chapter 11: final evolution towards Hyperscale](11-hyperscale-evolution.md) · [Next: Sources, methodology and open questions](sources-and-methodology.md)
+[← Index](../../README.md) · [Previous: Chapter 11: final stage B, migration to Hyperscale](11-hyperscale-evolution.md) · [Next: Chapter 13: alternative final stage, Xi'an with Scrypto](13-xian-with-scrypto.md)
 
 <a id="s12"></a>
 
@@ -19,7 +19,7 @@ Since Radix's goal is to solve everything on **Layer 1**, each reference states 
 | **9.5.** Nodes with little RAM | **Cardano:** moving the ledger to disk (UTxO-HD with LSM) reduced resident memory from ~15-16 GB to ~5.0-5.8 GB (~65 %) in the node's beta release (IOG report, Q2 2026); replaying the chain needed only 4 GB in mainnet tests (Q3 2025). **Ethereum:** the Nimbus consensus client runs in 4 GB. | Moving data from memory to disk greatly reduces RAM. See in section [12.9](#s12-9) why Radix is better placed. |
 | **E2.** A read API inside the node | **Kaspa:** wRPC API built into the node. **Sui:** a gRPC index in the full node. **Cardano:** Acropolis (IOG), a modular Rust node with an API, partly aligned with Blockfrost's, inside the node itself, which synced in ~1 hour instead of 4 days (project wound down in Q2 2026; the code remains published). | Building reads into the node itself, as E2 proposes, has been done. |
 | **E3.** An indexer next to the node | **Solana:** the Geyser interface, where plugins loaded into the validator send accounts, transactions and blocks to external databases. **Aptos:** a transaction stream service (gRPC) for indexers. **Cardano:** Kupo, a lightweight indexer. | Feeding light indexers from the node is a common pattern. |
-| **10.2.** Access-point discovery | **Cardano: Koios**, a community API with "no central instance", where independent operators add themselves to a topology file on GitHub and a monitor only marks up-to-date instances as active. **Kaspa:** a network of public nodes with a *Resolver* service that directs clients to the least-loaded node. **Polkadot:** light clients find nodes over P2P, without relying on RPC servers. | Federated read networks exist, but **none of those analysed publishes its access points in a registry on Layer 1 itself**. The on-ledger discovery proposed in this report would be a new contribution. |
+| **10.2.** Access-point discovery | **Cardano: Koios**, a community API with "no central instance", where independent operators add themselves to a topology file on GitHub. **Kaspa:** a network of public nodes with a *Resolver* service that directs clients to the least-loaded node. **Polkadot:** light clients find nodes over P2P, without relying on RPC servers. | Federated read networks exist, but **none of those analysed publishes its access points in a registry on Layer 1 itself**. The on-ledger discovery proposed in this report would be a new contribution. |
 | **6.2.** Verifiable reads and light client | **Polkadot:** smoldot, a light client that runs in the browser and "does in no way trust" full nodes. **Sui:** a light client that follows end-of-epoch checkpoints signed by validators. **Ethereum:** `eth_getProof` (EIP-1186), sync committees and Helios. | Light clients in the browser or wallet exist in production. |
 | **6.2, item 6.** Incentives for serving reads | **Pocket Network** and **The Graph** pay whoever serves reads or indexes, with proofs of the work done. | They are useful models, but they run as separate networks. In Radix they would have to be implemented on Layer 1 itself. |
 | **R1.** RocksDB memory limits | **Official RocksDB documentation:** by default each column family has its own block cache (32 MB since version 8.2; 8 MB before); index and filter blocks are not counted inside that cache; `max_open_files = -1` preloads all indexes and filters; the Write Buffer Manager caps memtable memory across column families and can charge it to the block cache. | It confirms the memory-use causes described in section [9.2](09-lighter-nodes.md#s9-2) and R1's solution. |
@@ -37,8 +37,8 @@ Since Radix's goal is to solve everything on **Layer 1**, each reference states 
 | **UTxO-HD / LSM** | Layer 1 | Moves the ledger from memory to disk | Node beta 10.7.1/11.0.1: RAM from ~15-16 GB to ~5.0-5.8 GB. Official requirements: 24 GB in memory; 8 GB with the ledger on disk ("pending confirmation"); 250-350 GB disk. |
 | **Koios** | Federated read service | A community API with several operators and no central instance | Running; discovery via a file on GitHub, no on-chain incentives |
 | **cardano-db-sync / Blockfrost** | Read service | A full indexer on PostgreSQL (~438 GB, 64 GB RAM recommended); Blockfrost publishes its backend so anyone can host it | Running. It is the equivalent of Radix's Gateway, and shows its cost. |
-| **Amaru (Rust), Dingo (Go)** | Layer 1 | New node implementations that join first as relays | Amaru runs as a mainnet relay; its block-production date is not verified |
-| **Ouroboros Leios** | Layer 1 (protocol hard fork) | Adds endorser blocks certified by a stake-weighted committee, to increase capacity without changing the main chain (CIP-164, proposed) | Testnet since 23 Jun 2026; code complete targeted for Q4 2026; mainnet date not set. Needs more disk, and more relay resources for those with large stake. |
+| **Amaru (Rust), Dingo (Go)** | Layer 1 | New node implementations | Amaru runs as a mainnet relay and its block production is expected in November 2026 (cardano.org glossary); Dingo supports relay and block-producer roles but is not yet ready for production |
+| **Ouroboros Leios** | Layer 1 (protocol hard fork) | Adds endorser blocks certified by a stake-weighted committee, to increase capacity without changing the main chain (CIP-164, proposed) | Testnet since 23 Jun 2026; code complete targeted for Q4 2026. Intersect has not yet set the mainnet date; IOG's Q2-2026 report targets late 2026. Needs more disk, and more relay resources for those with large stake. |
 
 <a id="s12-3"></a>
 
@@ -47,7 +47,7 @@ Since Radix's goal is to solve everything on **Layer 1**, each reference states 
 | Mechanism | Type | What it does |
 |---|---|---|
 | **Configurable pruning** | Layer 1 | Epochs to retain for objects and for checkpoints; without pruning a node can exceed 7 TB |
-| **Formal snapshots** | Layer 1 | Live state at the end of each epoch, verified against a validator-signed commitment; according to Sui's documentation, about 60 epochs are kept on mainnet |
+| **Formal snapshots** | Layer 1 | Live state at the end of each epoch, verified against a validator-signed commitment; according to Sui's documentation, Mysten's buckets keep those of the last 90 epochs |
 | **Light client** | Layer 1 | Follows end-of-epoch checkpoints, with aggregated BLS validator signatures, from genesis |
 | **Indexer and GraphQL** | Read service | A PostgreSQL indexer and a GraphQL API that users or providers can host; JSON-RPC marked as deprecated |
 | **Full-node hardware** | — | 128 GB RAM and 4 TB NVMe |
@@ -57,7 +57,7 @@ Since Radix's goal is to solve everything on **Layer 1**, each reference states 
 ## 12.4 Aptos
 
 - **Fast sync** (Layer 1): skips history and relies on validator signatures; it usually completes in a few hours.
-- **Pruning** (Layer 1): keeps the latest 150 million transactions by default; archive nodes are deprecated in favour of the indexer.
+- **Pruning** (Layer 1): keeps the latest 150 million transactions by default; archive nodes, which keep everything, are still documented.
 - **Indexer** (read service): a gRPC transaction stream and a GraphQL API, which third parties can host.
 - **Validator hardware:** 128 GB RAM and 3 TB NVMe (official estimate for 2024).
 
@@ -76,7 +76,7 @@ Since Radix's goal is to solve everything on **Layer 1**, each reference states 
 
 - **NEAR** (Layer 1): RPC nodes with 5 epochs by default, and archive nodes with hot (3 TB SSD) and cold (115 TB HDD) storage. Its NEAR Lake data service stopped indexing on 24 Mar 2026. It illustrates the risk of depending on a single read service.
 - **Polkadot** (Layer 1):
-  - state pruning by default (last 256 blocks; block bodies are kept);
+  - state pruning by default (last 256 blocks; finalised block bodies are kept: option `--blocks-pruning`, default `archive-canonical`);
   - warp sync (finality proofs + state);
   - the **smoldot** light client in the browser, which its documentation describes as a "trust-minimized" alternative to public RPC servers, which are "convenient but centralized".
   - Validator: 32 GB RAM and 2 TB NVMe.
@@ -98,18 +98,23 @@ Kaspa is the most direct precedent for two of this report's proposals: **R11** (
 
 ## 12.8 Midnight: how it implements privacy (contrast)
 
+> [!IMPORTANT]
+> - **Is it possible to bring privacy to Radix's Layer 1?** Yes, with conditions: it requires a protocol update (ZK proof verification in the engine and shielded resources).
+> - **Difficulty:** Very high.
+> - **Effort and timeline:** not estimated in this report; it is an optional goal.
+
 **Type:** a separate network, a **partner chain** of Cardano, built with the Partner Chains toolkit (Substrate-based); its block producers must be Cardano stake-pool operators. **It is not a model for Radix**, whose goal is Layer 1. It is analysed for how it implements privacy.
 
 | Element | How it works |
 |---|---|
 | **Zero-knowledge proofs** | zk-SNARKs with the Halo2 system (which replaced Plonk in 2024), adapted for efficient recursion (2024 release notes; later documentation describes a PLONK/KZG stack over BLS12-381). |
 | **Public and private state** | Public state is on chain; private state is kept locally by each user and never exposed. |
-| **Tokens** | NIGHT (public, UTXO model, Schnorr signatures); shielded tokens (with ZK proofs); DUST, a shielded, non-transferable resource generated by holding NIGHT and consumed to pay for transactions. |
+| **Tokens** | NIGHT (public, UTXO model, Schnorr signatures, according to the Midnight Wallet SDK 1.0.0 notes); shielded tokens (with ZK proofs); DUST, a shielded, non-transferable resource generated by holding NIGHT and consumed to pay for transactions. |
 | **Compact language** | A TypeScript-like language that compiles to ZK circuits. Private data enters as *witnesses* from the client; any private value that is to be made public must be marked with `disclose()`, or the compiler rejects the program. |
 | **Proof generation** | In a local "proof server" run by the user; the documentation advises running it on a machine one controls, because it receives private data. |
 | **Selective disclosure** | Viewing keys that let an authorised indexer read a user's shielded history. |
-| **NIGHT distribution (Glacier Drop)** | A balance snapshot across eight networks (11 Jun 2025); the user signs a message with the key of the snapshot address and names a new address; later, Scavenger Mine (open to everyone) and Lost-and-Found (part of the allocation for those who did not claim in time). According to third-party sources, it supported only single-key accounts, not multisig or contracts. |
-| **Launch** | NIGHT was issued as a Cardano asset in December 2025; mainnet was planned for the end of March 2026 (the exact date has not been verified). |
+| **NIGHT distribution (Glacier Drop)** | A balance snapshot across eight networks (11 Jun 2025, according to CoinDesk and Decrypt); the user signs a message with the key of the snapshot address and names a new address; later, Scavenger Mine (open to everyone) and Lost-and-Found (part of the allocation for those who did not claim in time). According to third-party sources, it supported only single-key accounts, not multisig or contracts. |
+| **Launch** | NIGHT was issued as a Cardano asset in December 2025; its mainnet genesis block was created on 17 Mar 2026, with federated validators and in restricted mode (Midnight blog, "State of the Network", March 2026). |
 
 **What could be applied on Radix's Layer 1** (it needs deep engine work and a protocol update):
 
@@ -138,13 +143,13 @@ What would **not** carry over: the separate chain, the federated operators, the 
 5. **Federated read networks exist** (Koios, Kaspa's public nodes), but they coordinate off chain. **Publishing access points on Layer 1 itself**, as this report proposes, would be a new contribution from Radix.
 6. **Depending on a single read service is a real risk:** NEAR Lake stopped indexing in March 2026.
 7. **The phased rewrite in Rust (R11)** has a very similar precedent in **Kaspa**, which moved from Go to Rust while coexisting on the network, with gradual adoption.
-8. **Evolving Layer 1 without changing network is possible** when the new design is compatible with the old one, as Cardano does with Leios. Hyperscale, by contrast, is not compatible with Babylon (section [11.2](11-hyperscale-evolution.md#s11-2)). That is why it requires a migration, and why the community should also weigh the option of improving Babylon on its own chain before deciding.
+8. **Evolving Layer 1 without changing network is possible** when the new design is compatible with the old one, as Cardano does with Leios. Hyperscale, by contrast, is not compatible with Babylon (section [11.2](11-hyperscale-evolution.md#s11-2)). That is why it requires a migration, and why the community should also weigh the option of improving Babylon on its own chain before deciding. Chapter [13](13-xian-with-scrypto.md#s13) describes a third route: sharding Babylon on its own ledger while keeping Scrypto.
 9. **Privacy** can be approached on Layer 1 with ZK proof verification in the engine and shielded resources. It is a major undertaking, which Midnight solves with a separate network.
 
 **Could not be verified:**
 
 - Mithril stake participation in 2025-2026;
-- Amaru's block-production date;
+- Amaru's actual block-production date (expected in November 2026);
 - the exact shutdown date of Sui's JSON-RPC;
 - how Solana verifies snapshots on load;
 - Kaspa's exact pruning window;
@@ -157,4 +162,4 @@ None of these points is used as an argument in the report.
 
 ---
 
-[← Index](../../README.md) · [Previous: Chapter 11: final evolution towards Hyperscale](11-hyperscale-evolution.md) · [Next: Sources, methodology and open questions](sources-and-methodology.md)
+[← Index](../../README.md) · [Previous: Chapter 11: final stage B, migration to Hyperscale](11-hyperscale-evolution.md) · [Next: Chapter 13: alternative final stage, Xi'an with Scrypto](13-xian-with-scrypto.md)

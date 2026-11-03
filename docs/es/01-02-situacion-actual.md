@@ -34,6 +34,7 @@ Las referencias a mecanismos de capa 2 o de cadenas asociadas en otras redes (ca
   - `radixdlt-rust-sdk`;
   - `consultation_v2` y `consultation_v3`;
   - `governance-framework`;
+  - `radixdlt-scrypto` (rama `develop`, commit `a405d7ae48`, ene-2026): motor y transacciones, para el capítulo [13](13-xian-con-scrypto.md#s13);
   - `wallet-agent-ai`;
   - `Radix-Desktop-Tool`;
   - `olympia-wallet`;
@@ -114,7 +115,7 @@ En rojo, los servicios que dependen de un solo operador.
 | Transacciones de usuario/día (muestra de 100 transacciones en cada fecha) | nov-2023: 1,5 mil · mar-2024: 5,5 mil · jul-2024: 11,6 mil · nov-2024: 20,7 mil · **mar-2025: 34,7 mil (pico)** · jul-2025: 8,4 mil · nov-2025: 5,9 mil · mar-2026: 3,4 mil · jul-2026: 2,2 mil · oct-2026: 4,4 mil |
 | Total estimado de transacciones de usuario desde la génesis | **~10-15 millones** (integración aproximada, ±50 %) |
 | Peso de las transacciones de usuario | **~2-3 % de las versiones de estado** en todo el historial (~10-15 millones de ~567 millones); hoy, menos del 1 %. El resto (~97-98 %) son cambios de ronda y de época. |
-| Ventana histórica del nodo | `state_version_history_length = 60 000` versiones por defecto, **≈ 4-5 horas** a la media de 3,6 versiones/s (≈ 3,8 h al ritmo medido hoy) |
+| Ventana histórica del nodo | `state_version_history_length = 60000` versiones por defecto, **≈ 4-5 horas** a la media de 3,6 versiones/s (≈ 3,8 h al ritmo medido hoy) |
 
 **Consecuencia clave.** Probablemente, casi todo el volumen del Gateway viene de guardar la historia completa de cada substate, incluidos los ~555 millones de cambios de ronda. (Es una deducción: no se ha publicado la composición de su base de datos.) Un índice que solo registre lo que necesitan los clientes trabaja con ~10-15 millones de transacciones de usuario. Es un problema **unas 40-55 veces más pequeño**.
 
@@ -216,7 +217,7 @@ flowchart LR
     class AR good
 ```
 
-Radix tuvo una red anterior, **Olympia**, que se migró a Babylon el 28-sep-2023. Se ha comprobado en el ledger real y en el código: **no impide la solución**, pero añade cuatro consideraciones, dos de las cuales requieren trabajo (puntos 1 y 3).
+Radix tuvo una red anterior, **Olympia**, que se migró a Babylon el 28-sep-2023. Se ha comprobado en el ledger real y en el código: **no impide la solución**, pero añade cuatro consideraciones, tres de las cuales requieren trabajo (puntos 1, 3 y 4).
 
 1. **El estado de Olympia está dentro de la génesis de Babylon.**
    - Las versiones de estado 1 a 647 de mainnet son las transacciones de génesis (las 648-669 son ya cambios de ronda). La primera transacción de usuario es la versión 670 (2023-09-28 07:26 UTC).

@@ -30,7 +30,8 @@ Las rutas `fichero:línea` son de `develop` salvo que se indique lo contrario. L
 | Swap recomendado | 8 GB | docs.radixdlt.com, *Optimizing performance* |
 | Tamaño del ledger: snapshot comunitario **comprimido** (zstd) | 6,3 GiB (oct-2023) → 69 GiB (sep-2024) → 180 GiB (sep-2025) → 259 GiB (jul-2026) → **274 GiB (29-sep-2026)** | snapshots.radix.live |
 | Crecimiento reciente | **~5-8 GiB/mes** comprimidos | cálculo sobre la fila anterior |
-| Otro snapshot publicado | 343,9 GB (PublicNode, v1.4.0.0, altura 566 915 789; no se indica si está comprimido) | publicnode.com/snapshots |
+| Otro snapshot publicado | 343,9 GB (PublicNode, v1.4.0.0, altura 566 915 789; lectura puntual, la página se actualiza cada 12 horas; no se indica si está comprimido) | publicnode.com/snapshots |
+| Tamaño en disco de un nodo de mainnet | **~493 GB**, de ellos **217 GB de recibos**; **~600 GB** con el índice de cambios de cuenta; crece **~65 GB/año** | Medición aportada por un miembro de la comunidad (nov-2026); método y versión del nodo no publicados |
 | Peso de los índices opcionales | ~4-5 % (274 frente a 262 GiB sin índices) | snapshots.radix.live |
 | Poda del historial de transacciones | **No existe** | código: solo hay GC del árbol de estado y de pruebas del ledger |
 | Arranque desde un snapshot verificado | **No existe**. Un nodo nuevo reproduce ~567 millones de transacciones desde la génesis, o descarga un snapshot de terceros sin verificación criptográfica. | código; `babylon-nodecli/.../ledger_snapshot/__init__.py:26-80` |
@@ -42,7 +43,7 @@ Las rutas `fichero:línea` son de `develop` salvo que se indique lo contrario. L
 **Conclusión de partida:**
 
 - **RAM:** con lo que se publica hoy, un nodo de mainnet **no cabe en 4 GB**: reserva 12 GB de heap para Java, RocksDB no tiene límites de memoria y la mempool puede ocupar ~1,2 GB. El heap y la memoria directa configurados (12 + 2 GB) ya igualan el límite del contenedor (14 GB); son máximos reservados, no consumo medido: el consumo real (RSS) de un nodo de mainnet no se ha publicado.
-- **Disco:** el ledger comprimido ya ocupa 274 GiB. Descomprimido ocupa bastante más; la cifra exacta no se ha publicado. Así que **500 GB de disco pueden ser ya insuficientes, o lo serán pronto**.
+- **Disco:** el ledger comprimido ya ocupa 274 GiB, y en disco un nodo de mainnet ocupa ~493 GB (~600 GB con el índice de cambios de cuenta), según la medición aportada. Como ese índice está activado por defecto (`RadixNodeModule.java:308`), **un nodo con la configuración por defecto ya supera los 500 GB**; sin él, está en el límite y lo superará en pocos meses al ritmo de ~65 GB/año.
 
 <a id="s9-2"></a>
 
@@ -111,6 +112,10 @@ Unos 555 de los ~567 millones de versiones del ledger (~97-98 %) son **cambios d
 - **Coste permanente estimado por cambio de ronda:** la suma de la tabla da ~6-7,5 KB **sin comprimir** con la ejecución local activada. En ~555 millones de rondas serían **del orden de 3-4 TB sin comprimir**. Son cifras de **límite superior**: buena parte de estos datos (recibos casi idénticos de una ronda a otra) se comprime muy bien, y el snapshot comprimido completo ocupa 274 GiB. El tamaño real en disco solo se puede conocer midiéndolo.
 - **Orden de importancia:** recibos > fragmentos del acumulador > ejecuciones locales > identificadores. Las transacciones en bruto de los cambios de ronda solo suman ~25-30 GB.
 - **Cómo confirmarlo:** el nodo ya publica el tamaño por column family (métricas `raw_db_size`, `SM/metrics.rs:590-640`). El **primer paso** del plan es publicar esas cifras de un nodo de mainnet.
+- **Contraste con la medición aportada:**
+  - Un nodo de mainnet ocupa ~493 GB, muy por debajo del límite superior de 3-4 TB sin comprimir. Confirma que RocksDB comprime buena parte de estos datos.
+  - Los recibos son el componente mayor (217 GB, ~44 %), como prevé el orden de importancia de arriba.
+  - Por eso los ahorros de R3-R7 expresados como «cientos de GB» son límites superiores sin comprimir. El ahorro real se calcula sobre el tamaño medido de cada column family, antes y después de cada cambio.
 - **Causa de fondo:** el campo `CurrentProposalStatistic` del ConsensusManager, ~1,9 KB, se reescribe entero en cada ronda. Su valor previo se guarda en el recibo y su ruta se reescribe en el árbol de estado.
 - **Novedad de `v1.4.0.0`:**
   - Añade la opción **`db.keep_previous_substate_values`**: con `false`, el recibo deja de guardar los valores previos (`rocks_db.rs:705-714` en `v1.4.0.0`), lo que **casi divide por dos el recibo de cada ronda**.
@@ -120,6 +125,8 @@ Unos 555 de los ~567 millones de versiones del ledger (~97-98 %) son **cambios d
 <a id="s9-4"></a>
 
 ## 9.4 Cambios: qué hacer, dónde y cómo
+
+Los cambios R1-R9 y R11 heredan la valoración del recuadro de este capítulo; R10 tiene la suya.
 
 Cada cambio indica:
 
@@ -204,7 +211,7 @@ let cf_opts = |cf: &str| {
 ### R3. Validadores sin índices de API (P0, S)
 
 - **Qué:** en validadores, `db.local_transaction_execution_index.enable=false` y `db.account_change_index.enable=false`.
-- **Dónde:** hoy no se pueden desactivar en una base de datos existente (`traits.rs:124-133` lo rechaza). Hay que permitir el paso de `true` a `false`:
+- **Dónde:** hoy el índice de ejecuciones locales no se puede desactivar en una base de datos existente (`traits.rs:124-133` lo rechaza); el de cambios de cuenta no tiene esa comprobación, pero tampoco un mecanismo para borrar sus datos. En los dos casos hay que permitir el paso de `true` a `false`:
   - borrar las column families (`drop_cf` o `delete_range`);
   - lanzar una compactación manual;
   - guardar el nuevo estado de la opción en `extensions_data`.
@@ -216,7 +223,7 @@ let cf_opts = |cf: &str| {
 
 - **Qué:**
   1. Poner **`db.keep_previous_substate_values=false`** por defecto en validadores (ya existe en `v1.4.0.0`).
-  2. Añadir un **filtro de compactación** de RocksDB en la column family `transaction_receipts` que borre `previous` de los recibos antiguos al compactarlos. Es el mismo bucle de `rocks_db.rs:705-714`, aplicado en el filtro.
+  2. Añadir un **filtro de compactación** de RocksDB en la column family `transaction_receipts` que borre `previous` de los recibos antiguos al compactarlos. Es el mismo bucle de `rocks_db.rs:705-714` en `v1.4.0.0`, aplicado en el filtro.
 - **Ahorro:** ~1,9 KB por cambio de ronda sin comprimir; **del orden de cientos de GB** sobre la historia (*estimación*, a confirmar con `raw_db_size`).
 - **Riesgo:** las APIs dejan de devolver el valor previo; ya lo asume `v1.4.0.0`.
 
@@ -250,11 +257,12 @@ let cf_opts = |cf: &str| {
   - los recibos de cambio de época;
   - el índice `intent_hashes` y los identificadores de transacciones de usuario dentro de la ventana de validez, que necesita `validation.rs:74-81`.
 - **Cambios de código:**
-  1. **Protección contra huecos** en `get_syncable_txns_and_proof` (`rocks_db.rs:1011-1066`): hoy no comprueba que la primera transacción devuelta esté en la versión pedida, así que podría construir una respuesta inconsistente.
+  1. **Protección contra huecos** en `get_syncable_txns_and_proof` (`rocks_db.rs:997-1066`): hoy no comprueba que la primera transacción devuelta esté en la versión pedida, así que podría construir una respuesta inconsistente.
   2. **Anunciar la versión más antigua que se puede servir** en los mensajes de estado de la sincronización (`RemoteSyncService.java:128-166`), para que los demás nodos no pidan lo que ya no hay.
   3. Revisar `max_state_version` y `get_first_proof` (`rocks_db.rs:990-995, 1134-1138`).
 - **Ahorro:** casi todo el historial. Un validador ocuparía el estado más N épocas (**decenas a ~200 GB**, según N; *estimación*).
 - **Riesgo:** la red necesita **suficientes nodos de archivo** para que los nodos nuevos puedan arrancar. Sin R9, los nodos nuevos dependen de ellos.
+- **Regla de exportar antes de podar** (sección [6.5](06-solucion-recomendada.md#s6-5)): un nodo con R8 solo borra, pasado su horizonte, las épocas cuyos segmentos tienen recibo de al menos un número mínimo de archivos independientes. Si los recibos se retrasan, retiene los datos un tiempo limitado y avisa, pero nunca detiene el consenso.
 
 ### R9. Arranque desde un snapshot de estado verificado: «fast sync» (P0 para el objetivo, L)
 
@@ -306,11 +314,16 @@ sequenceDiagram
 
 ### R10. Actualización de protocolo: estadística de propuestas por validador (P2, M; requiere votación de validadores)
 
+> [!IMPORTANT]
+> - **¿Es posible?** Sí, con la votación de los validadores mediante el proceso habitual de actualizaciones de protocolo.
+> - **Dificultad:** Media.
+> - **Esfuerzo y plazo:** tamaño M; no incluido en el total de R1-R9 (estimación).
+
 - **Esfuerzo:** no incluido en los totales de personas-mes de este informe.
 - **Qué:** dividir `CurrentProposalStatistic` (~1,9 KB reescritos en cada ronda) en una colección con una entrada por validador, de modo que cada ronda solo reescriba la del proponente (~20 bytes).
 - **Dónde:**
   - el blueprint ConsensusManager en `radix-engine`;
-  - una nueva actualización de protocolo en `babylon-node` (`protocol/protocol_updates/definitions/`), como las de Bottlenose, Cuttlefish o Eagle Ray.
+  - una nueva actualización de protocolo en `babylon-node` (`protocol/protocol_updates/definitions/`), como las de Bottlenose, Cuttlefish o Eagle Ray (esta última, en `v1.4.0.0`).
 - **Ahorro:** los recibos de ronda y la reescritura del árbol de estado bajan del orden de diez veces (estimación) **para todo lo que se escriba a partir de la actualización**.
 - **Riesgo:** es una actualización de protocolo; necesita pruebas y la señal de preparación de los validadores.
 
@@ -325,34 +338,34 @@ sequenceDiagram
 |---|---|---|
 | Consenso: HotStuff, pacemaker, safety rules, vertex store, épocas | ~17 400 | La persistencia (safety store, vertex store) y el cálculo del siguiente conjunto de validadores |
 | Red P2P: Netty, handshake ECIES tipo RLPx, cifrado AES-CTR + MAC Keccak, descubrimiento, address book | ~9 300 | Solo el almacenamiento del address book (`core-rust/p2p`) |
-| Mensajería y serialización DSON/CBOR (47 tipos de mensaje) | ~5 400 + ~7 400 | No |
+| Mensajería y serialización DSON/CBOR (unos 40 identificadores de serialización registrados) | ~5 400 + ~7 400 | No |
 | Sincronización del ledger y BFT sync | ~4 900 | La parte servidora (`getSyncableTxnsAndProof`) |
 | Retransmisión de la mempool | ~1 700 | La mempool entera |
-| Configuración, Guice y RxJava | ~7 000 | `StateManagerConfig` |
-| System API y Prometheus | ~3 300 | El registro de métricas |
+| Configuración, Guice y RxJava (`config`, `modules`, `environment`) | ~4 500 | `StateManagerConfig` |
+| System API y Prometheus (`api`, `monitoring`, sin código generado) | ~4 300 | El registro de métricas |
 | Claves y keystore | ~750 + criptografía | Primitivas secp256k1 |
 | **Desaparece al migrar:** SBOR en Java, DTOs del puente, capa JNI | ~7 000 + ~14 000 + ~4 000 | — |
 
 **Cómo hacerlo sin poner en riesgo la red** (patrón *strangler*: sustituir pieza a pieza, con el nodo siempre funcionando):
 
-1. **Fase 0: base de pruebas.**
+1. **Paso 0: base de pruebas.**
    - Portar a Rust el arnés determinista de Java (`core/src/test-core`, ~17 800 líneas escritas a mano) o envolverlo para ejecutar los mismos escenarios contra ambas implementaciones.
    - Sirve de referencia el diseño *sans-io* de `hyperscale-rs/crates/core` y su simulador.
-2. **Fase 1: piezas sin red.**
+2. **Paso 1: piezas sin red.**
    - Vertex store y safety rules en Rust, llamados desde Java por JNI. Esto elimina la reserialización completa del vertex store en cada cambio.
    - Retransmisión de la mempool en Rust, que elimina la llamada de vuelta `triggerMempoolRelay`.
    - Configuración en Rust.
-3. **Fase 2: sincronización.** Cliente de sincronización del ledger y BFT sync en Rust. La parte servidora ya está en Rust.
-4. **Fase 3: red P2P en Rust, compatible byte a byte.**
+3. **Paso 2: sincronización.** Cliente de sincronización del ledger y BFT sync en Rust. La parte servidora ya está en Rust.
+4. **Paso 3: red P2P en Rust, compatible byte a byte.**
    - Handshake, cifrado del canal y Snappy.
-   - Códec DSON/CBOR de los 47 mensajes.
+   - Códec DSON/CBOR de los mensajes del protocolo.
    - **Pruebas de compatibilidad** con vectores capturados de nodos Java reales.
    - Desplegar primero en nodos completos, después en validadores. Se pueden reutilizar patrones de `hyperscale-rs/crates/network` (reintentos, *backoff*, registro de handlers).
-5. **Fase 4: consenso en Rust.**
+5. **Paso 4: consenso en Rust.**
    - Portar HotStuff, pacemaker y épocas.
    - Ejecutar en **modo sombra**: el nodo Rust calcula los votos, pero firma el Java, y se comparan.
    - Después, testnet mixta Java/Rust y, por último, mainnet con adopción progresiva.
-6. **Fase 5:** retirar la JVM, el puente JNI y el código Java.
+6. **Paso 5:** retirar la JVM, el puente JNI y el código Java.
 7. **Opcional, más adelante:** nuevo transporte (QUIC/iroh) negociado por capacidad, cuando todos los nodos hablen Rust.
 
 ### El nodo tras migrar a Rust (R11)
@@ -415,7 +428,8 @@ Las cifras son *estimaciones* que hay que validar con la prueba prolongada de R2
 **Lectura de la tabla:**
 
 - Con Java y los ajustes R1-R4, un validador **cabe en 4 GB, pero sin margen**.
-- Tras la migración a Rust cabe con margen suficiente, **incluso un nodo de lectura con indexador**.
+- Tras la migración a Rust cabe con margen suficiente, **incluso un nodo de lectura con indexador** y poco tráfico.
+- La columna del nodo de lectura no incluye la carga de lecturas públicas. Esa cifra sale de la prueba de carga de la sección [6.4](06-solucion-recomendada.md#s6-4).
 - Se recomiendan **4 GB de swap** como red de seguridad.
 
 <a id="s9-6"></a>
@@ -424,8 +438,8 @@ Las cifras son *estimaciones* que hay que validar con la prueba prolongada de R2
 
 - **Hoy:**
   - 274 GiB comprimidos (sep-2026), +5-8 GiB/mes.
-  - El tamaño descomprimido en un nodo real no se ha publicado. La primera tarea es medirlo con las métricas `raw_db_size` por column family.
-  - Con los valores por defecto, un nodo completo **superará los 500 GB**: puede que ya lo haga, o lo hará en pocos años (*estimación*).
+  - En disco, un nodo de mainnet ocupa **~493 GB**, de ellos 217 GB de recibos, y **~600 GB** con el índice de cambios de cuenta; crece ~65 GB/año (medición aportada por un miembro de la comunidad, nov-2026). Hay que confirmarlo con las métricas `raw_db_size` por column family.
+  - Con los valores por defecto, que incluyen el índice de cambios de cuenta, un nodo completo **ya supera los 500 GB**; sin ese índice, está en el límite y lo superará en pocos meses.
 - **Con R3 + R4 + R5 + R6 + R7, sin podar el historial:**
   - Se eliminan la mayoría de los bytes por ronda: recibos de ronda, ejecuciones, acumuladores e índice de hashes.
   - Quedan sobre todo las transacciones en bruto (~25-30 GB de rondas + las de usuario), los identificadores (~110 GB sin comprimir) y el estado.
@@ -438,7 +452,7 @@ Las cifras son *estimaciones* que hay que validar con la prueba prolongada de R2
 flowchart TB
     A["<b>Nodo de archivo</b> · 8-16 GB RAM, 1-4 TB<br/>todo el historial<br/>recibos y acumuladores"]
     V["<b>Validador ligero</b> · 4 GB RAM, 50-250 GB<br/>estado actual · últimas N épocas<br/>pruebas de época"]
-    R["<b>Nodo de lectura</b> · 4 GB tras R11, ≤ 500 GB<br/>estado actual · transacciones de la historia<br/>índices del indexador ligero"]
+    R["<b>Nodo de lectura</b> · 4 GB tras R11 (poco tráfico)<br/>≤ 500 GB con R4-R6<br/>estado actual · transacciones de la historia<br/>índices del indexador ligero"]
     A -->|"snapshots verificables"| V
     A -->|"snapshots verificables<br/>o sincronización completa"| R
 ```
@@ -446,8 +460,48 @@ flowchart TB
 | Tipo de nodo | RAM (estimación) | Disco (estimación) | Qué guarda |
 |---|---|---|---|
 | **Validador ligero** | 4 GB | ≤ 500 GB (estimado: 50-250 GB según la poda) | Estado actual, N épocas, pruebas de época; sin índices de API (R1-R9) |
-| **Nodo de lectura** | 4 GB tras R11; ~4,5 GB antes (suma de la columna Java de 9.5 más el indexador) | Previsiblemente ≤ 500 GB con R4-R6, la compresión e índices ligeros; hay que medirlo (`raw_db_size`) | Historial de transacciones + índices del indexador ligero |
+| **Nodo de lectura** | Poco tráfico: 4 GB tras R11; ~4,5 GB antes (suma de la columna Java de 9.5 más el indexador). Público: según la prueba de carga ([6.4](06-solucion-recomendada.md#s6-4)) | Hoy ~493 GB + 10-50 GB de índices (medición aportada + estimación). Previsiblemente ≤ 500 GB con R4-R6 y sin el índice de cambios de cuenta; R7 da margen a largo plazo (ver abajo) | Historial de transacciones + índices del indexador ligero |
 | **Nodo de archivo** (unos pocos, en varias manos) | 8-16 GB | 1-4 TB, según la compresión (ver [9.3](#s9-3)) | Todo el historial; sirve sincronización completa y genera los snapshots verificables de R9 |
+
+### Qué cambio se aplica a cada tipo de nodo
+
+| Cambio | Validador ligero | Nodo de lectura | Nodo de archivo |
+|---|---|---|---|
+| R1 (memoria de RocksDB) | Sí | Sí | Sí |
+| R2 (perfil «nodo pequeño» de 4 GB) | Sí | Solo con poco tráfico | No |
+| R3 (sin índices de API) | Sí | **En parte:** conserva el índice de ejecuciones locales, que necesita el indexador; puede desactivar el de cambios de cuenta | No |
+| R4 (recibos sin valores previos) | Sí | **Sí:** el indexador no usa los valores previos (ver abajo) | No |
+| R5 (fragmentos del acumulador) | Sí | Sí | No: conserva las pruebas históricas |
+| R6 (hash de los cambios de ronda) | Sí | Sí | Sí |
+| R7 (recibos de cambio de ronda) | Sí | Opcional, tras la primera sincronización del indexador | No |
+| R8 (nodo podado) | Sí | **Solo si** el historial antiguo se sirve desde segmentos exportados ([6.5](06-solucion-recomendada.md#s6-5)); si no, conserva el historial | No |
+| R9 (arranque desde un snapshot) | Sí | Sí para el estado; el historial y los índices llegan de un nodo de archivo o de un snapshot de índices | Genera los snapshots |
+| R10-R11 | Sí | Sí | Sí |
+
+### Qué necesita el indexador del nodo
+
+Comprobado en el código de `babylon-node` (rama `develop`):
+
+- `/core/stream/transactions` exige el índice de ejecuciones locales (`core-api-server/src/core_api/handlers/stream_transactions.rs:41-43`). Por eso un nodo de lectura no aplica R3 completo.
+- Los cambios de saldo (`transaction_format_options.balance_changes`) salen de la **ejecución local**, calculada al confirmar la transacción (`stream_transactions.rs:709-733`; `LocalTransactionReceipt.local_execution`, `state-manager/src/receipt.rs:295-298`), **no de los valores previos** del recibo. Por eso R4 es compatible con el indexador.
+- El índice de cambios de cuenta solo lo usa `/lts/stream/account-transaction-outcomes` (`handlers/lts/stream_account_transaction_outcomes.rs`). El indexador no lo necesita, porque su tabla `entity_tx` cumple esa función. Según la medición aportada, con ese índice el nodo pasa de ~493 a ~600 GB.
+- Los recibos de las transacciones de usuario hacen falta para `transaction/committed-details` (Core `/transaction/receipt`). Los de los cambios de ronda solo se leen para contarlos durante la primera sincronización. Aplicar R7 en un nodo de lectura exige que `/stream/transactions` devuelva los cambios de ronda antiguos sin recibo (cambio de código).
+
+**Primera sincronización del indexador.** Recorre el ledger desde la versión 1, así que necesita una fuente con **todo el historial de transacciones y sus recibos**. Hay tres formas:
+
+1. Sincronizarlo contra el propio nodo de lectura, mientras este conserve el historial completo (antes de aplicar R7).
+2. Sincronizarlo una vez contra un nodo de archivo y seguir después con el nodo propio.
+3. Importar un **snapshot de índices** (módulo `snapshot`, sección [10.1](10-guia-de-implementacion.md#s10-1)). Los índices se calculan de forma determinista a partir del ledger: varios operadores pueden generarlos por separado y publicar su hash, y quien importe uno puede comprobar que coinciden.
+
+**Proyección para un nodo de lectura** (estimación a partir de la medición aportada):
+
+- **Hoy:** ~493 GB sin el índice de cambios de cuenta, más 10-50 GB de índices propios.
+- **R4:** quita los valores previos de los recibos, lo que en los cambios de ronda **casi divide por dos el recibo** (sección [9.3](#s9-3)). Los recibos suman 217 GB y la mayoría de las versiones son cambios de ronda, así que el ahorro previsible es de **decenas de GB, hasta ~100 GB** (depende de cuánto comprimen los valores previos).
+- **R5 y R6:** eliminan datos de cada ronda que apenas comprimen (hashes).
+- **Resultado:** con R4 + R5 + R6, un nodo de lectura con sus índices queda previsiblemente **por debajo de 500 GB**, pero sigue creciendo con cada ronda. Para el largo plazo, R7 (opcional en nodos de lectura) elimina la mayor parte del crecimiento restante de los recibos.
+- **Cómo confirmarlo:** medir cada column family antes y después de aplicar cada cambio.
+
+**Con el historial exportado (sección [6.5](06-solucion-recomendada.md#s6-5))**, un nodo de lectura **también puede podar** (R8): guarda el estado, una ventana reciente con sus índices (por ejemplo, de 7 a 90 días) y pide el historial antiguo a los servicios de historial. Su disco pasaría a ser del orden del de un validador podado más sus índices (estimación). Como referencia, el Gateway mínimo de un miembro de la comunidad, con un día de estado, funciona con 100-150 GB de disco, 2 CPU y 4-6 GB de RAM, aunque hoy sigue necesitando un nodo completo con índices de 550-600 GB.
 
 <a id="s9-7"></a>
 
@@ -455,9 +509,10 @@ flowchart TB
 
 - **¿Es posible un nodo de 4-8 GB de RAM y 500 GB de disco?** **Sí, previsiblemente (estimación):** 8 GB como máximo parece alcanzable y 4 GB es plausible.
   - Con **R1-R4** (semanas de trabajo, sin tocar el consenso), un validador bajaría a ~3,6 GB de RAM (estimación) y dejaría de crecer en memoria con el ledger.
-  - Con **R5-R9** (meses), el disco queda muy por debajo de 500 GB, y los nodos nuevos arrancan en horas desde un snapshot verificado.
-  - Con **R11** (más de un año) hay margen holgado, y también caben en 4 GB los nodos de lectura que sustituyen al Gateway.
-- **Lo más urgente:** medir el tamaño real por column family en un nodo de mainnet, y aplicar R1 y R2. Tienen un coste bajo y eliminan la causa principal de los 16 GB actuales.
+  - Con **R5-R9** (meses), el disco de un validador queda muy por debajo de 500 GB, y los nodos nuevos arrancan en horas desde un snapshot verificado.
+  - Con **R11** (más de un año) hay margen holgado, y también caben en 4 GB los nodos de lectura de poco tráfico. Los nodos de lectura públicos se dimensionan con la prueba de carga de la sección [6.4](06-solucion-recomendada.md#s6-4).
+  - Un nodo de lectura solo puede podar (R8) si el historial antiguo se sirve desde segmentos exportados (sección [6.5](06-solucion-recomendada.md#s6-5)). Si no, con R4-R6 y sin el índice de cambios de cuenta se mantiene previsiblemente por debajo de 500 GB (sección [9.6](#s9-6)).
+- **Lo más urgente:** confirmar por column family la medición aportada (~493 GB en un nodo de mainnet), y aplicar R1 y R2. Tienen un coste bajo y eliminan la causa principal de los 16 GB actuales.
 - **Dificultad:**
 
   | Cambios | Dificultad |

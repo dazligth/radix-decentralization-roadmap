@@ -9,7 +9,7 @@ Este repositorio es de código abierto y está pensado para que la comunidad de 
 | Tipo de aportación | Ejemplos | Dónde |
 |---|---|---|
 | **Correcciones** | Un dato erróneo, una referencia `fichero:línea` desactualizada, un enlace roto, una errata, una traducción imprecisa | PR sobre el documento afectado en `docs/es/` y `docs/en/` |
-| **Datos y mediciones** | Tamaño real del ledger por *column family* en un nodo de mainnet, consumo de RAM medido, tiempo de sincronización, tamaño de los índices de un prototipo | PR que actualice la cifra y cite la medición (método, fecha, versión del nodo) |
+| **Datos y mediciones** | Tamaño real del ledger por *column family* en un nodo de mainnet, consumo de RAM medido, tiempo de sincronización, tamaño de los índices de un prototipo, rendimiento de lectura de un nodo de lectura (peticiones por segundo, latencia p50/p99, si sigue el ledger sin retraso) | PR que actualice la cifra y cite la medición (método, fecha, versión del nodo) |
 | **Nuevas estrategias** | Una alternativa al indexador ligero, otra forma de migrar a Hyperscale, otro modelo de incentivos | Primero un *issue* con la plantilla «Nueva estrategia»; después, una nota en `community/` o un PR al capítulo correspondiente |
 | **Ideas y notas de la comunidad** | Opiniones, propuestas, experiencias de operadores, dudas razonadas | Un fichero en `community/` (ver [community/README.md](community/README.md)) |
 | **Implementación** | Enlaces a prototipos, repositorios o PR en `babylon-node`, Sargon, la RDT, etc. que avancen alguna de las propuestas | PR que añada el enlace en la sección correspondiente y en la hoja de ruta |

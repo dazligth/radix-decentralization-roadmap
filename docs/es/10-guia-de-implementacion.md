@@ -1,4 +1,4 @@
-[← Índice](../../README.es.md) · [Anterior: Capítulo 9: nodos más ligeros (RAM y disco) y migración de Java a Rust](09-nodos-ligeros.md) · [Siguiente: Capítulo 11: evolución final hacia Hyperscale](11-evolucion-hyperscale.md)
+[← Índice](../../README.es.md) · [Anterior: Capítulo 9: nodos más ligeros (RAM y disco) y migración de Java a Rust](09-nodos-ligeros.md) · [Siguiente: Capítulo 11: etapa final B, migración a Hyperscale](11-evolucion-hyperscale.md)
 
 <a id="s10"></a>
 
@@ -11,7 +11,9 @@ Las secciones de este capítulo heredan la valoración (¿es posible?, dificulta
 - 10.3 → recuadro de la estrategia E2 (capítulo [4](04-05-estrategias.md#s4));
 - 10.4 → recuadro de la sección [10.2](#s10-2) y tabla de la conclusión;
 - 10.5 → su propio recuadro;
-- 10.6 → recuadro de la sección [6.2](06-solucion-recomendada.md#s6-2).
+- 10.6 → recuadro de la sección [6.2](06-solucion-recomendada.md#s6-2);
+- 10.7 → sin valoración propia (es un procedimiento);
+- 10.8 → su propio recuadro.
 
 Este capítulo explica **cómo** construir las piezas principales. Los fragmentos de código son **orientativos**: muestran la forma de la solución, no código listo para producción, y hay que ajustarlos a la versión exacta de cada dependencia.
 
@@ -92,6 +94,8 @@ loop {
 2. **Ancestro global de un vault.** El recibo dice qué vault cambió. Para saber de qué cuenta o componente es, se usa la ascendencia del nodo: se guarda al ver la creación del vault, o se consulta `/entity/info` la primera vez.
 3. **Escritura atómica.** Los índices y el cursor se escriben en el mismo lote. Si el proceso se cae, se reanuda desde el cursor y repetir trabajo no causa problemas, porque las escrituras son idempotentes.
 4. **Rendimiento.** Para la primera sincronización (~567 millones de versiones), descargar lotes grandes en paralelo y escribir en orden. Los cambios de ronda solo se cuentan.
+5. **Datos que pide al nodo.** Pedir `transaction_format_options.balance_changes=true` y usar esos cambios de saldo, que salen de la ejecución local y no de los valores previos del recibo. Así el nodo de lectura puede aplicar R4. El nodo necesita el índice de ejecuciones locales, pero no el de cambios de cuenta (sección [9.6](09-nodos-ligeros.md#s9-6)).
+6. **Caché de respuestas.** Guardar en memoria las respuestas por entidad junto con su `state_version`, e invalidarlas cuando el bucle de ingesta indexe una transacción que toque esa entidad (sección [6.4](06-solucion-recomendada.md#s6-4)).
 
 ### Capa de API
 
@@ -347,7 +351,7 @@ La ventana del árbol de estado ya conserva las versiones recientes (`state_hash
 
 ## 10.7 Cómo probar y desplegar cada fase sin cortes
 
-1. **Stokenet primero.** Cada cambio se despliega antes en Stokenet, que gestiona la comunidad desde junio de 2026 según radix.wiki, con nodos de distintos operadores.
+1. **Stokenet primero.** Cada cambio se despliega antes en Stokenet, que gestiona la comunidad desde junio de 2026 según radix.wiki. Según la misma fuente, la mayor parte de sus nodos los aloja un solo operador, así que conviene sumar nodos de otros operadores para las pruebas.
 2. **Métricas.** Las métricas de tamaño por column family (`raw_db_size`), el RSS del proceso, las rondas perdidas por validador, la latencia de la API y el retraso del indexador se publican en un panel compartido.
 3. **Opciones desactivadas por defecto.** Los cambios de almacenamiento entran como opciones. Se activan primero en nodos completos y después en validadores.
 4. **Vuelta atrás.**
@@ -355,6 +359,43 @@ La ventana del árbol de estado ya conserva las versiones recientes (`state_hash
    - Para las opciones del nodo, conservar una copia (checkpoint) antes de activar las que borran datos (R3, R4, R5, R7, R8).
 5. **Actualizaciones de protocolo** (R10, índices verificables): siguen el proceso habitual de señal de preparación de los validadores.
 
+<a id="s10-8"></a>
+
+## 10.8 Exportador de historial: el primer experimento
+
+> [!IMPORTANT]
+> - **¿Es posible?** Sí, sin cambiar el nodo.
+> - **Dificultad:** Baja-media.
+> - **Esfuerzo y plazo:** ~1-2 personas-mes; semanas (estimación).
+
+**Qué se quiere demostrar:** la propiedad de la que depende todo el diseño de la sección [6.5](06-solucion-recomendada.md#s6-5). **Dos exportadores independientes, junto a dos nodos distintos, producen segmentos idénticos byte a byte.** Esta prueba la propuso el miembro de la comunidad que aportó el diseño. En Babylon hay un solo fragmento, así que la prueba aísla la exportación.
+
+**Pasos:**
+
+1. **Leer del nodo:** `/core/stream/transactions` con `transaction_format_options.raw_ledger_transaction=true` (transacciones en bruto) y `/core/stream/proofs` (pruebas firmadas, incluidos los cambios de época).
+2. **Fijar los límites:** un segmento cubre un número fijo de épocas, decidido solo por el número de época. Por ejemplo, 12 épocas son aproximadamente una hora. Nunca se usa el reloj del nodo.
+3. **Codificar de forma determinista:**
+   - una cabecera con la red, las épocas y versiones de estado cubiertas y el hash del segmento anterior (cadena de hashes);
+   - las transacciones en bruto, en orden;
+   - la cabecera de fin de cada época (raíces de estado, transacciones y recibos, y versión);
+   - las firmas, en un fichero aparte que no entra en el hash comparado, porque cada nodo puede guardar un subconjunto distinto de firmas de la misma prueba (`core-api-schema.yaml:844-849`);
+   - una codificación binaria con longitudes explícitas (por ejemplo, SBOR), sin marcas de tiempo locales ni campos opcionales que puedan variar entre nodos.
+4. **Verificar** cada segmento antes de subirlo:
+   - las firmas de cada prueba suman más de 2/3 del stake del conjunto de validadores de esa época;
+   - el árbol de transacciones de cada época, recalculado desde la raíz anterior, coincide con el `transaction_tree_hash` firmado.
+5. **Subir** a un almacenamiento compatible con S3, con el hash del segmento como nombre. La subida es idempotente: si dos exportadores suben lo mismo, el resultado es igual.
+6. **Ejecutar dos exportadores** junto a dos nodos de Stokenet, a ser posible de operadores distintos (hoy la mayor parte de Stokenet la aloja un solo operador, según radix.wiki), durante varias semanas, y comparar el hash de cada segmento. Repetir con nodos de versiones distintas.
+7. **Prototipo de recibos:** un servicio que descarga cada segmento, lo verifica y publica un recibo firmado (hash y épocas). Así se prueba la regla de exportar antes de podar sin tocar el nodo.
+8. **Métricas:** última época exportada, última con recibo, retraso y bytes pendientes.
+
+**Criterio de éxito:**
+
+- el 100 % de los segmentos son idénticos entre exportadores;
+- la verificación pasa;
+- se publica el tamaño medido por época.
+
+**Después:** añadir los recibos en forma canónica cuando exista N10, llevar el exportador dentro del nodo y conectar la regla de recibos con la poda de R8.
+
 ---
 
-[← Índice](../../README.es.md) · [Anterior: Capítulo 9: nodos más ligeros (RAM y disco) y migración de Java a Rust](09-nodos-ligeros.md) · [Siguiente: Capítulo 11: evolución final hacia Hyperscale](11-evolucion-hyperscale.md)
+[← Índice](../../README.es.md) · [Anterior: Capítulo 9: nodos más ligeros (RAM y disco) y migración de Java a Rust](09-nodos-ligeros.md) · [Siguiente: Capítulo 11: etapa final B, migración a Hyperscale](11-evolucion-hyperscale.md)

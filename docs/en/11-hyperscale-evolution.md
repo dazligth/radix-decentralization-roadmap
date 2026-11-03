@@ -2,16 +2,21 @@
 
 <a id="s11"></a>
 
-# 11. Final evolution: from Babylon to Hyperscale
+# 11. Final stage B: migrating from Babylon to Hyperscale
 
 > [!IMPORTANT]
 > - **Is it possible?** Yes, with conditions: the network and funds can migrate; Scrypto contracts and dApps cannot, they must be rewritten. With the current code (in development) it is not yet possible in production.
 > - **Difficulty:** Very high.
 > - **Effort and timeline:** ~110-210 person-months excluding dApps; 2-4 years (estimate).
 
-**Purpose of this chapter.** To describe what it would take for Radix to adopt Hyperscale as the final evolution of the network, who would have to do it, and how difficult it would be.
+**Purpose of this chapter.** To describe what it would take for Radix to adopt Hyperscale as the final evolution of the network (FINAL B), who would have to do it, and how difficult it would be. The alternatives, keeping improving Babylon (FINAL A) and Xi'an with Scrypto (FINAL C), are compared in section [13.11](13-xian-with-scrypto.md#s13-11).
+
+Sections [11.1](#s11-1) to [11.8](#s11-8) develop the assessment in this chapter's box; section [11.4](#s11-4) has its own.
 
 Hyperscale is open source and the Foundation is in maintenance mode. So if the community decides to adopt it, the community itself will have to adapt the Radix code and lead the migration.
+
+> [!NOTE]
+> **Alternative without migrating:** chapter [13](13-xian-with-scrypto.md#s13) describes a third final stage (FINAL C) in which Babylon evolves on its own ledger into a sharded network, as Xi'an promised, **keeping Scrypto**. The three options are compared there.
 
 ## Verdict: is it possible to migrate Radix using the Hyperscale code?
 
@@ -34,16 +39,18 @@ flowchart TB
     O["<b>Olympia</b><br/>2021-2023"] -->|"genesis migration<br/>Sep 2023"| B["<b>Babylon</b> · 2023-today<br/>with a central Gateway"]
     B -->|"chapters 6, 9 and 10 · 2027"| BS["<b>Babylon without Gateway</b><br/>4-8 GB nodes"]
     BS -->|"section 6.2"| BV["<b>Babylon with verifiable reads</b>"]
-    BV -.->|"governance decision (chapter 11)<br/>the same pieces carry over"| H["<b>Hyperscale</b><br/>sharded network · 2-4 years"]
+    BV -.->|"FINAL B · chapter 11"| H["<b>Hyperscale</b><br/>sharded network · 2-4 years"]
     classDef old fill:#eeeeee,stroke:#888,color:#000
     classDef bad fill:#ffd6d6,stroke:#c00,color:#000
     classDef good fill:#d9f7d9,stroke:#080,color:#000
     class O old
     class B bad
-    class BS,BV,H good
+    BV -.->|"FINAL C · chapter 13"| X["<b>Xi'an with Scrypto</b><br/>sharded Babylon · 3-5 years"]
+    BV -.->|"FINAL A · chapter 9"| A["<b>Keep improving Babylon</b><br/>node in Rust (R11) · 1-3 years"]
+    class BS,BV,H,X,A good
 ```
 
-### Final stage: what would move from Babylon to Hyperscale
+### Final stage B: what would move from Babylon to Hyperscale
 
 **Is it possible?** Yes, with conditions: the network and funds can migrate with strategy M1 (genesis and verifiable claims), although with the current Hyperscale code, still in development, it is not yet possible in production. **Difficulty:** very high. **Scrypto is not compatible:** contracts and dApps would have to be rewritten. Green: moves directly; yellow: moves with changes; red: does not move.
 
@@ -97,8 +104,8 @@ Hyperscale is a **sharded** network design: state is split across several shards
 | Networking | QUIC via iroh |
 | Validator signatures | BLS12-381, with signature aggregation |
 | User signatures | Ed25519, secp256k1 (the same as Babylon) and ML-DSA-65 (post-quantum) |
-| Tests published by the Foundation | 500,000 TPS sustained and peaks above 800,000 on 128 shards (Feb 2026). They used the "Hyperscale" code whose author partially published it at `github.com/DanoshiFusermoto/Hyperscale`; the article does not mention `hyperscale-rs`, and that repository publishes no performance figures. |
-| Project status (according to radix.wiki, a secondary source, Nov 2026; original RFC on RadixTalk) | `hyperscale-rs` was proposed as the production candidate in a community RFC (20 Apr 2026); only the first of six milestones was funded. On 3 Sep 2026 its developer stopped proposals, grants and engagements with Radix but kept developing the code, and considers Radix one of several candidate networks rather than the only one. He has said an upgrade path to Hyperscale exists and that he would guide it. |
+| Tests published by the Foundation | 500,000 TPS sustained in the public test (posted 31 Jan 2026, with more than 100 shards and peaks above 700,000); the closing post (20 Feb 2026) mentions 128 shards and peaks above 800,000. They used the "Hyperscale" code whose author partially published it at `github.com/DanoshiFusermoto/Hyperscale`; the article does not mention `hyperscale-rs`, and that repository publishes no performance figures. |
+| Project status (according to radix.wiki, a secondary source, Nov 2026; original RFC on RadixTalk) | `hyperscale-rs` was proposed as the production candidate in a community RFC (20 Apr 2026); only the first of six milestones was funded. On 3 Sep 2026 its developer stopped proposals, grants and engagements with Radix but kept developing the code, and considers Radix one of several candidate networks rather than the only one. The developer has said an upgrade path to Hyperscale exists and that they would guide it. |
 
 ```mermaid
 flowchart TB
@@ -256,6 +263,7 @@ It means running the Radix Engine inside Hyperscale, or translating Scrypto to i
 | Rewrite each contract with the Hyperscale SDK | Yes | Medium-high per project |
 | Tools that help translate simple Scrypto contracts to the Hyperscale SDK | Partly | High |
 | Fork Hyperscale to run the Radix Engine (M3) | Only with limitations: those contracts would lose cross-shard composability | Very high |
+| Shard Babylon while keeping Scrypto, without Hyperscale (chapter [13](13-xian-with-scrypto.md#s13)): each transaction declares the global entities it uses, which preserves composability across shards | Yes, with conditions | Very high |
 
 <a id="s11-5"></a>
 
@@ -266,7 +274,7 @@ It means running the Radix Engine inside Hyperscale, or translating Scrypto to i
 | **Hyperscale for mainnet** | Replace development values (e.g. `SHARD_CAPACITY=4`, provisional fee ratios); independent security audits; extend formal verification (bounded today); operator tooling (an equivalent of `babylon-nodecli`, *vnode* deployment); decide economic parameters (emission, fees, minimum stake) and make XRD the fee token | Very high |
 | **Genesis and claims** | Extend Hyperscale genesis (other resources, stakes) or write the M1 claim contract; a tool to export Babylon's final state with proofs | High |
 | **Babylon (exit side)** | Orderly freeze (moratorium), publication of the signed final root, a Merkle-proof endpoint (section [10.6](10-implementation-guide.md#s10-6)), archive nodes | Medium |
-| **Hyperscale read API and indexer** | They do not exist today. State reads, events, receipts and history need adding, all shard-aware. The design of this report's light indexer, on-ledger discovery and light client can be reused. | High |
+| **Hyperscale read API and indexer** | They do not exist today. State reads, events, receipts and history need adding, all shard-aware. The design of this report's light indexer, on-ledger discovery and light client can be reused. A derived global order for the current API (section [13.9](13-xian-with-scrypto.md#s13-9)) and per-shard history export (section [6.5](06-recommended-solution.md#s6-5)) are also needed. | High |
 | **Sargon and iOS/Android wallets** | Support for HBOR, the new addresses and transaction envelopes, and shards; coexistence with Babylon during the transition; the claim flow; an address book linking old and new addresses. With the proposed `LedgerBackend` interface (section [10.4](10-implementation-guide.md#s10-4)), Hyperscale would be just another backend. | Very high |
 | **Hardware wallet (Ledger)** | A new signing app for the Hyperscale format | Medium |
 | **RDT, ROLA and Radix Connect** | New request types and login verification. Radix Connect (relay, WebRTC or iroh) can be reused as the channel. | Medium |
@@ -286,7 +294,7 @@ These are order-of-magnitude estimates for planning, not budgets:
 | Read API, indexer and explorer for Hyperscale | 15-30 person-months |
 | Migration: freeze, export, genesis, claims and temporary bridge | 15-30 person-months |
 | Sargon, wallets, Ledger, RDT and ROLA | 40-70 person-months |
-| **Core total (excluding third-party dApps)** | **~110-210 person-months**, in the order of **2-4 years** with a small team |
+| **Core total (excluding third-party dApps)** | **~110-210 person-months**, of the order of **2-4 years** with a small team |
 
 **Overall difficulty of the migration to Hyperscale: very high.** It is the largest project in this report.
 
@@ -315,9 +323,9 @@ These are order-of-magnitude estimates for planning, not budgets:
    - Merkle proofs and the light client.
 
    These same pieces are what Hyperscale and M1's claims need.
-3. **Decision on R11 (migrating the Babylon node to Rust).** It makes sense to **apply R1-R9**, of moderate cost (R1-R4 in weeks; R5-R9 in months), and **postpone R11 until governance decides on Hyperscale**, because its effort (30-50 person-months) would compete with the migration. If Hyperscale is not adopted or is delayed, R11 is again the route to 4 GB nodes with headroom.
-4. **An alternative worth comparing:** Cardano increases its Layer-1 capacity with Leios through a protocol hard fork on the same chain, without migrating to a new network (section [12.2](12-references-other-networks.md#s12-2)). Before deciding, governance should compare migrating to Hyperscale with continuing to improve Babylon on its own chain.
-5. **Recommendation:** governance should first decide whether to adopt Hyperscale and with which strategy (M1, with M2 as temporary support). Meanwhile, keep this report's short-term plan, whose value does not depend on that decision.
+3. **Decision on R11 (migrating the Babylon node to Rust).** It makes sense to **apply R1-R9**, of moderate cost (R1-R4 in weeks; R5-R9 in months), and **postpone R11 until governance chooses the final stage** (with FINAL C, R11 is replaced by chapter [13](13-xian-with-scrypto.md#s13)'s stage C4), because its effort (30-50 person-months) would compete with the migration. If FINAL A is chosen, or the decision is delayed, R11 is again the route to 4 GB nodes with headroom.
+4. **An alternative worth comparing:** Cardano increases its Layer-1 capacity with Leios through a protocol hard fork on the same chain, without migrating to a new network (section [12.2](12-references-other-networks.md#s12-2)). Before deciding, governance should compare migrating to Hyperscale with continuing to improve Babylon on its own chain and with sharding it while keeping Scrypto (chapter [13](13-xian-with-scrypto.md#s13)), whose stage C0 measures with real data how many transactions would cross shards.
+5. **Recommendation:** governance should first choose between the three final stages (FINAL A, B or C, section [13.11](13-xian-with-scrypto.md#s13-11)), using the data from chapter [13](13-xian-with-scrypto.md#s13)'s stage C0; if it chooses Hyperscale, with strategy M1 and M2 as temporary support. Meanwhile, keep this report's short-term plan, whose value does not depend on that decision.
 
 ---
 

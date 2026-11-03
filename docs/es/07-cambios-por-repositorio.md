@@ -75,9 +75,10 @@ Esfuerzo: **S** días · **M** 1-3 semanas · **L** más de un mes · **XL** var
 | N2 | Índice opcional `db.non_fungible_location_index.enable` y `/core/state/non-fungible-location` | P1 / M |
 | N3 | Índice de cambios por entidad global (no solo cuentas), con cambios de NFT, clase de manifiesto y filtros | P1 / L |
 | N4 | Índice inverso de reglas de rol y `/core/extra/entities-by-role-requirement` | P1 / M |
-| N5 | Nodo de archivo: `state_version_history_length` sin límite práctico, `LedgerStateSelector::ByTimestamp` (ya está previsto en el esquema, `engine-state-api-schema.yaml:592`) y `at_ledger_state` en la LTS | P1 / M |
-| N7 | Endpoints por lotes (metadatos y estado de varias entidades a la vez) | P2 / S |
+| N5 | Nodo de archivo: `state_version_history_length` sin límite práctico, `LedgerStateSelector::ByTimestamp` (ya está previsto en el esquema, `engine-state-api-schema.yaml:595`) y `at_ledger_state` en la LTS | P1 / M |
+| N7 | Endpoints por lotes: metadatos y estado de varias entidades a la vez, leídos en una sola instantánea con `MultiGet` de RocksDB. Necesarios para los nodos de lectura públicos (sección [6.4](06-solucion-recomendada.md#s6-4)) | P1 / S-M |
 | N8-N9 | Toques de lockers y emisiones de validadores | P2 / S |
+| N10 | **Exportación canónica del historial:** opción para que `/stream/transactions` devuelva el recibo registrado en la cadena (`LedgerTransactionReceipt`) codificado en SBOR, y regla de exportar antes de podar en R8 (sección [6.5](06-solucion-recomendada.md#s6-5)) | P1 / S-M |
 | (D) | Convención de metadatos del validador `api_endpoints` (lista de URLs con capacidades) y documentación para operadores | P0 / S |
 
 Los cambios para **reducir la RAM y el disco del nodo** (R1-R11: ajustes de RocksDB, poda, arranque desde un snapshot verificado, actualización de protocolo de la estadística de propuestas y migración de Java a Rust) están en el **capítulo [9](09-nodos-ligeros.md#s9)**, con el detalle de cada uno en la sección [9.4](09-nodos-ligeros.md#s9-4).
@@ -247,7 +248,7 @@ No usan el Gateway, pero son infraestructura P1 que también depende de un únic
 
 - **P0/S.** URLs fijas en `src/network-config.ts:14-22`; la red se deduce de la URL (`:33-36`, `weft.ts:211-225`).
 - **P1/S, al migrar.** Hoy consulta el Gateway (`src/core/RadixClient.ts:123`) y compara el estado con `"Rejected"` / `"PermanentlyRejected"` (`:143`), valores que el Gateway sí devuelve. Al pasar a la LTS del nodo hay que traducir `PermanentRejection` y `FateUncertainButLikelyRejection`; además, hoy no trata `LikelyButNotCertainRejection` del Gateway.
-- **P1/M.** Crear la interfaz `LedgerReader` para las ~25 llamadas `fetch`.
+- **P1/M.** Crear la interfaz `LedgerReader` para sus ~25 llamadas `fetch` al Gateway.
 - **P1/S.** `waitForOwnerApproval` (`AgentWallet.ts:697-722`) debe vigilar el estado del componente en vez de filtrar el stream.
 - **P2.** La API de Astrolescent debe admitir una instancia propia.
 
@@ -296,7 +297,22 @@ No usan el Gateway, pero son infraestructura P1 que también depende de un únic
 - **`reference/hyperscale-rs`:**
   - Otra red, no compatible con Babylon.
   - Su RPC (`crates/production/src/rpc/routes.rs:13-35`) no tiene lecturas de estado.
-  - Según la Foundation, con Xi'an habría que construir un acceso nuevo de todos modos. La interfaz `LedgerBackend` de los clientes es donde se añadiría esa tercera implementación.
+  - Según la Foundation, con el Xi'an basado en Hyperscale habría que construir un acceso nuevo de todos modos. La interfaz `LedgerBackend` de los clientes es donde se añadiría esa tercera implementación. Con Xi'an con Scrypto (capítulo [13](13-xian-con-scrypto.md#s13)), el acceso actual se mantiene, adaptado a cada fragmento.
+
+<a id="s7-18"></a>
+
+## 7.18 Nuevo repositorio: `radix-history` (historial descentralizado)
+
+Implementa la sección [6.5](06-solucion-recomendada.md#s6-5), y comparte su valoración (¿es posible?, dificultad y esfuerzo). Estructura propuesta:
+
+| Módulo | Qué hace |
+|---|---|
+| `segment-format` | Especificación versionada y biblioteca del formato de segmento: cabecera, transacciones en bruto, recibos (con N10), pruebas, hash del segmento anterior. Es el contrato entre nodos y servicios de historial. |
+| `exporter` | Proceso junto al nodo: lee `/core/stream/transactions` y `/core/stream/proofs`, corta segmentos por épocas, los codifica de forma determinista y los sube con dirección por contenido. Más adelante, el mismo código entra en `babylon-node` (N10). |
+| `verifier` | Comprueba un segmento: firmas de las pruebas (más de 2/3 del stake de la época), árbol de transacciones de cada época contra `transaction_tree_hash` y, con N10, recibos contra `receipt_tree_hash`. |
+| `archive` | Recibe segmentos, los verifica, los replica y publica **recibos** firmados (hash del segmento y épocas cubiertas). |
+| `composer` y `query` | Construyen y sirven los índices de consulta (por cuenta, recurso y fecha) en el mismo formato de API que el indexador ligero. Son reconstruibles: si tienen un error, se regeneran desde los segmentos. |
+| `mirrors` | Herramientas para replicar en S3, IPFS y Arweave, y comprobar que cada réplica conserva todos los segmentos. |
 
 ---
 

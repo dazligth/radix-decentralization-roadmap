@@ -34,6 +34,7 @@ References to Layer-2 or partner-chain mechanisms in other networks (chapter [12
   - `radixdlt-rust-sdk`;
   - `consultation_v2` and `consultation_v3`;
   - `governance-framework`;
+  - `radixdlt-scrypto` (`develop` branch, commit `a405d7ae48`, Jan 2026): engine and transactions, for chapter [13](13-xian-with-scrypto.md#s13);
   - `wallet-agent-ai`;
   - `Radix-Desktop-Tool`;
   - `olympia-wallet`;
@@ -105,7 +106,7 @@ In red, services that depend on a single operator.
 
 <a id="s1-2"></a>
 
-## 1.2 Independent mainnet measurements (3 Nov 2026, via the public API)
+## 1.2 Mainnet measurements for this report (3 Nov 2026, via the public API)
 
 | Measure | Value |
 |---|---|
@@ -114,7 +115,7 @@ In red, services that depend on a single operator.
 | User transactions per day (100-transaction sample at each date) | Nov 2023: 1.5k · Mar 2024: 5.5k · Jul 2024: 11.6k · Nov 2024: 20.7k · **Mar 2025: 34.7k (peak)** · Jul 2025: 8.4k · Nov 2025: 5.9k · Mar 2026: 3.4k · Jul 2026: 2.2k · Oct 2026: 4.4k |
 | Estimated user transactions since genesis | **~10-15 million** (rough integration, ±50 %) |
 | Share of user transactions | **~2-3 % of state versions** over the whole history (~10-15 million of ~567 million); today, under 1 %. The rest (~97-98 %) are round and epoch changes. |
-| Node historical window | `state_version_history_length = 60,000` versions by default, **≈ 4-5 hours** at the average of 3.6 versions/s (≈ 3.8 h at today's measured rate) |
+| Node historical window | `state_version_history_length = 60000` versions by default, **≈ 4-5 hours** at the average of 3.6 versions/s (≈ 3.8 h at today's measured rate) |
 
 **Key consequence.** Most of the Gateway's volume probably comes from storing the full history of every substate, including ~555 million round updates. (This is an inference: the composition of its database has not been published.) An index that records only what clients need deals with ~10-15 million user transactions. That is a problem **about 40-55 times smaller**.
 
@@ -216,7 +217,7 @@ flowchart LR
     class AR good
 ```
 
-Radix had an earlier network, **Olympia**, which was migrated to Babylon on 28 Sep 2023. This was checked against the live ledger and the code: it **does not block the solution**, but it adds four considerations, two of which require work (items 1 and 3).
+Radix had an earlier network, **Olympia**, which was migrated to Babylon on 28 Sep 2023. This was checked against the live ledger and the code: it **does not block the solution**, but it adds four considerations, three of which require work (items 1, 3 and 4).
 
 1. **Olympia's state is inside the Babylon genesis.**
    - Mainnet state versions 1 to 647 are genesis transactions (648-669 are already round updates). The first user transaction is version 670 (2023-09-28 07:26 UTC).

@@ -1,4 +1,4 @@
-[← Index](../../README.md) · [Previous: Chapter 9: lighter nodes (RAM and disk) and the Java to Rust migration](09-lighter-nodes.md) · [Next: Chapter 11: final evolution towards Hyperscale](11-hyperscale-evolution.md)
+[← Index](../../README.md) · [Previous: Chapter 9: lighter nodes (RAM and disk) and the Java to Rust migration](09-lighter-nodes.md) · [Next: Chapter 11: final stage B, migration to Hyperscale](11-hyperscale-evolution.md)
 
 <a id="s10"></a>
 
@@ -11,7 +11,9 @@ The sections of this chapter inherit the assessment (is it possible?, difficulty
 - 10.3 → the box of strategy E2 (chapter [4](04-05-strategies.md#s4));
 - 10.4 → the box of section [10.2](#s10-2) and the conclusion table;
 - 10.5 → its own box;
-- 10.6 → the box of section [6.2](06-recommended-solution.md#s6-2).
+- 10.6 → the box of section [6.2](06-recommended-solution.md#s6-2);
+- 10.7 → no assessment of its own (it is a procedure);
+- 10.8 → its own box.
 
 This chapter explains **how** to build the main pieces. Code snippets are **indicative**: they show the shape of the solution, not production-ready code, and must be adjusted to the exact version of each dependency.
 
@@ -92,6 +94,8 @@ loop {
 2. **A vault's global ancestor.** The receipt says which vault changed. To know which account or component owns it, use the node's ancestry: store it when the vault is created, or query `/entity/info` the first time.
 3. **Atomic writes.** Indexes and cursor are written in the same batch. If the process crashes, it resumes from the cursor, and repeated work is harmless because writes are idempotent.
 4. **Performance.** For the first sync (~567 million versions), fetch large batches in parallel and write in order. Round updates are only counted.
+5. **Data it requests from the node.** Request `transaction_format_options.balance_changes=true` and use those balance changes, which come from the local execution and not from the receipt's previous values. That way the read node can apply R4. The node needs the local execution index, but not the account change index (section [9.6](09-lighter-nodes.md#s9-6)).
+6. **Response cache.** Keep per-entity responses in memory together with their `state_version`, and invalidate them when the ingestion loop indexes a transaction that touches that entity (section [6.4](06-recommended-solution.md#s6-4)).
 
 ### API layer
 
@@ -347,7 +351,7 @@ The state tree window already keeps recent versions (`state_hash_tree.*`). For t
 
 ## 10.7 How to test and roll out each phase without downtime
 
-1. **Stokenet first.** Every change goes to Stokenet first, which the community has run since June 2026 according to radix.wiki, with nodes from different operators.
+1. **Stokenet first.** Every change goes to Stokenet first, which the community has run since June 2026 according to radix.wiki. According to the same source, most of its nodes are hosted by a single operator, so nodes from other operators should be added for testing.
 2. **Metrics.** Per-column-family size metrics (`raw_db_size`), process RSS, missed rounds per validator, API latency and indexer lag are published on a shared dashboard.
 3. **Options off by default.** Storage changes ship as options. They are enabled on full nodes first, then validators.
 4. **Rollback.**
@@ -355,6 +359,43 @@ The state tree window already keeps recent versions (`state_hash_tree.*`). For t
    - For node options, take a checkpoint before enabling those that delete data (R3, R4, R5, R7, R8).
 5. **Protocol updates** (R10, verifiable indexes) follow the usual validator readiness-signalling process.
 
+<a id="s10-8"></a>
+
+## 10.8 History exporter: the first experiment
+
+> [!IMPORTANT]
+> - **Is it possible?** Yes, without changing the node.
+> - **Difficulty:** Low-medium.
+> - **Effort and timeline:** ~1-2 person-months; weeks (estimate).
+
+**What it sets out to show:** the property the whole design in section [6.5](06-recommended-solution.md#s6-5) depends on. **Two independent exporters, next to two different nodes, produce byte-identical segments.** This test was proposed by the community member who contributed the design. Babylon has a single shard, so the test isolates the export itself.
+
+**Steps:**
+
+1. **Read from the node:** `/core/stream/transactions` with `transaction_format_options.raw_ledger_transaction=true` (raw transactions) and `/core/stream/proofs` (signed proofs, including epoch changes).
+2. **Fix the boundaries:** a segment covers a fixed number of epochs, decided only by the epoch number. For example, 12 epochs are about an hour. The node's clock is never used.
+3. **Encode deterministically:**
+   - a header with the network, the epochs and state versions covered and the hash of the previous segment (a hash chain);
+   - the raw transactions, in order;
+   - the end-of-epoch header (state, transaction and receipt roots, and version);
+   - the signatures, in a separate file that is not part of the compared hash, because each node may keep a different subset of signatures on the same proof (`core-api-schema.yaml:844-849`);
+   - a binary encoding with explicit lengths (for example SBOR), with no local timestamps or optional fields that could differ between nodes.
+4. **Verify** each segment before uploading it:
+   - each proof's signatures add up to more than 2/3 of the stake of that epoch's validator set;
+   - each epoch's transaction tree, recomputed from the previous root, matches the signed `transaction_tree_hash`.
+5. **Upload** to S3-compatible storage, named by the segment's hash. Uploading is idempotent: if two exporters upload the same thing, the result is the same.
+6. **Run two exporters** next to two Stokenet nodes, ideally run by different operators (today most of Stokenet is hosted by a single operator, according to radix.wiki), for several weeks, and compare the hash of every segment. Repeat with nodes on different versions.
+7. **Receipt prototype:** a service that downloads each segment, verifies it and publishes a signed receipt (hash and epochs). This tests the export-then-prune rule without touching the node.
+8. **Metrics:** last exported epoch, last receipted epoch, lag and pending bytes.
+
+**Success criterion:**
+
+- 100 % of segments are identical across exporters;
+- verification passes;
+- the measured size per epoch is published.
+
+**Afterwards:** add receipts in canonical form once N10 exists, move the exporter into the node and connect the receipt rule to R8's pruning.
+
 ---
 
-[← Index](../../README.md) · [Previous: Chapter 9: lighter nodes (RAM and disk) and the Java to Rust migration](09-lighter-nodes.md) · [Next: Chapter 11: final evolution towards Hyperscale](11-hyperscale-evolution.md)
+[← Index](../../README.md) · [Previous: Chapter 9: lighter nodes (RAM and disk) and the Java to Rust migration](09-lighter-nodes.md) · [Next: Chapter 11: final stage B, migration to Hyperscale](11-hyperscale-evolution.md)

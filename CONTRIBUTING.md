@@ -9,7 +9,7 @@ This repository is open source and intended to be improved by the Radix communit
 | Type of contribution | Examples | Where |
 |---|---|---|
 | **Corrections** | A wrong figure, an outdated `file:line` reference, a broken link, a typo, an inaccurate translation | A PR on the affected document in `docs/en/` and `docs/es/` |
-| **Data and measurements** | The real per-column-family ledger size on a mainnet node, measured RAM use, sync time, the index size of a prototype | A PR that updates the figure and cites the measurement (method, date, node version) |
+| **Data and measurements** | The real per-column-family ledger size on a mainnet node, measured RAM use, sync time, the index size of a prototype, read performance of a read node (requests per second, p50/p99 latency, whether it keeps up with the ledger) | A PR that updates the figure and cites the measurement (method, date, node version) |
 | **New strategies** | An alternative to the light indexer, another way to migrate to Hyperscale, another incentive model | First an issue using the "New strategy" template; then a note in `community/` or a PR to the relevant chapter |
 | **Community ideas and notes** | Opinions, proposals, operator experience, reasoned questions | A file in `community/` (see [community/README.md](community/README.md)) |
 | **Implementation** | Links to prototypes, repositories or PRs in `babylon-node`, Sargon, the RDT, etc. that advance any of the proposals | A PR that adds the link in the relevant section and in the roadmap |

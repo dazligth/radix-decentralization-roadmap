@@ -18,7 +18,7 @@
   - `/stream/{transactions, proofs}`
   - `/state/{consensus-manager, account, component, validator, access-controller, resource, non-fungible, package}`
 - **Engine State API (puerto 3336):**
-  - `/entity/info`, `/blueprint/info`
+  - `/entity/info`, `/blueprint/info`, `/entity/schema/entry`
   - `/object/field`, `/object/collection/{iterator, entry}`
   - `/kv-store/{iterator, entry}`
   - `/object/attached-modules/{metadata/iterator, metadata/entry, role-assignment, royalty}`
