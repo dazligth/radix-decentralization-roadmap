@@ -301,7 +301,12 @@ flowchart TB
 flowchart TB
     subgraph ROW1[" "]
         direction LR
-        S0["<b>TODAY</b><br/>central Gateway<br/>16 GB nodes"] --> S1["<b>STAGE 1 · months</b><br/>light indexer (E3)<br/>no Gateway · R1-R4"] --> S2["<b>STAGE 2 · 2027</b><br/>indexes in the node (E2)<br/>4-8 GB nodes · R9"]
+        subgraph S0["<b>TODAY</b>"]
+            direction LR
+            S0A["<b>Gateway</b><br/>central, single operator"]
+            S0B["<b>Network nodes</b><br/>16 GB of RAM"]
+        end
+        S0 --> S1["<b>STAGE 1 · months</b><br/>light indexer (E3)<br/>no Gateway · R1-R4"] --> S2["<b>STAGE 2 · 2027</b><br/>indexes in the node (E2)<br/>4-8 GB nodes · R9"]
     end
     subgraph ROW2[" "]
         direction LR
@@ -318,7 +323,8 @@ flowchart TB
     classDef decision fill:#fff3c4,stroke:#b58900,color:#000
     classDef final fill:#d9f7d9,stroke:#080,color:#000
     classDef row fill:none,stroke:none
-    class S0 today
+    class S0A,S0B today
+    style S0 fill:#fff5f5,stroke:#c00,color:#000
     class S1,S2,S3 step
     class D decision
     class FA,FB final

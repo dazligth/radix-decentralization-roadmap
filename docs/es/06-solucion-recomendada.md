@@ -262,7 +262,12 @@ sequenceDiagram
 flowchart TB
     subgraph ROW1[" "]
         direction LR
-        S0["<b>HOY</b><br/>Gateway central<br/>nodos de 16 GB"] --> S1["<b>ETAPA 1 · meses</b><br/>indexador ligero (E3)<br/>sin Gateway · R1-R4"] --> S2["<b>ETAPA 2 · 2027</b><br/>índices en el nodo (E2)<br/>nodos de 4-8 GB · R9"]
+        subgraph S0["<b>HOY</b>"]
+            direction LR
+            S0A["<b>Gateway</b><br/>central, un solo operador"]
+            S0B["<b>Nodos de la red</b><br/>16 GB de RAM"]
+        end
+        S0 --> S1["<b>ETAPA 1 · meses</b><br/>indexador ligero (E3)<br/>sin Gateway · R1-R4"] --> S2["<b>ETAPA 2 · 2027</b><br/>índices en el nodo (E2)<br/>nodos de 4-8 GB · R9"]
     end
     subgraph ROW2[" "]
         direction LR
@@ -279,7 +284,8 @@ flowchart TB
     classDef decision fill:#fff3c4,stroke:#b58900,color:#000
     classDef final fill:#d9f7d9,stroke:#080,color:#000
     classDef row fill:none,stroke:none
-    class S0 today
+    class S0A,S0B today
+    style S0 fill:#fff5f5,stroke:#c00,color:#000
     class S1,S2,S3 step
     class D decision
     class FA,FB final
