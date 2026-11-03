@@ -11,7 +11,7 @@
 > - **Dificultad:** Media-alta.
 > - **Esfuerzo y plazo:** 15-25 personas-mes en clientes (estimación).
 
-- **Cobertura:** parcial (9 de 19 capacidades completas y 2 en parte, sección [3.2](03-que-ofrece-el-nodo.md#s3-2)). Pierde N1-N5: historial completo, ubicación de NFT, búsqueda inversa por rol, snapshots y estado de pre-autorizaciones.
+- **Cobertura:** parcial (9 de 19 capacidades completas y 2 en parte, sección [3.2](03-que-ofrece-el-nodo.md#s3-2)). Pierde N1-N5: estado de pre-autorizaciones (N1), ubicación de NFT (N2), historial completo (N3), búsqueda inversa por rol (N4) y estado histórico (N5).
 - **Cambios en clientes:** grandes. Todos los clientes necesitan un backend nuevo.
 - **Coste para el operador:** nulo si ya tiene nodo. Necesita un proxy público.
 - **Problema:** experiencia de usuario degradada y casos de uso que dejan de funcionar. **No cumple «todos los casos de uso».**
@@ -26,7 +26,7 @@
 - **Cobertura:** 100 % de lo que usan los clientes hoy, salvo la historia arbitraria de substates (ver E3).
 - **Cambios en clientes:** muchos, como en E1, salvo que el nodo responda también en el formato de API que usan hoy los wallets; en ese caso no hacen falta para funcionar.
 - **Coste por operador:** marginal (índices opcionales).
-- **Descentralización:** máxima. Cualquier nodo, incluidos los 100 validadores activos, puede servir.
+- **Descentralización:** máxima. Cualquier nodo completo puede servir lecturas (se desaconseja en los validadores, sección [6.1](06-solucion-recomendada.md#s6-1)).
 - **Problema:**
   - Requiere desarrollo en Java y Rust dentro del nodo y una publicación del nodo.
   - La Foundation está en mantenimiento, así que depende de desarrolladores de la comunidad y de la gobernanza.
@@ -52,14 +52,14 @@ Es un proceso aparte, en Rust y con RocksDB o SQLite. Funciona así:
   - (g) emisiones de validadores;
   - (h), (i) y (j) para exploradores: titulares, estadísticas y búsqueda.
 - **No contiene nada del software del Gateway:** ni DataAggregator, ni PostgreSQL, ni historia de substates. Solo conserva el **formato de la API, peticiones y respuestas** (el contrato OpenAPI), para que los wallets ya publicados funcionen sin actualizarse. Cuando los clientes adopten la API nativa del nodo (E2), esa capa de compatibilidad se puede quitar.
-- Responde a las peticiones **con las mismas rutas y el mismo JSON que usan hoy los wallets y dApps** (los de la sección [2](01-02-situacion-actual.md#s2), unas 25 rutas). Así las apps ya publicadas funcionan cambiando solo la URL. Es una cuestión de formato: detrás no hay ningún Gateway. Las lecturas de estado actual las delega en vivo al nodo (Core y Engine State API); solo usa sus índices para lo que el nodo no sabe.
+- Responde a las peticiones **con las mismas rutas y el mismo JSON que usan hoy los wallets y dApps** (los de la capítulo [2](01-02-situacion-actual.md#s2), unas 25 rutas). Así las apps ya publicadas funcionan cambiando solo la URL. Es una cuestión de formato: detrás no hay ningún Gateway. Las lecturas de estado actual las delega en vivo al nodo (Core y Engine State API); solo usa sus índices para lo que el nodo no sabe.
 
 Evaluación:
 
 - **Cobertura:** ~100 % de lo que usan wallets, RDT, ROLA, extensión y SDK.
   - **No incluye** `at_ledger_state` arbitrario. Hoy el único uso relevante es el de consultation; Sargon lo usa para dar coherencia a lecturas paginadas, lo que se resuelve fijando la versión.
 - **Cambios en clientes:** **ninguno para funcionar.** Los wallets ya permiten añadir una URL personalizada (Ajustes → Gateways) que apunte al indexador, y la RDT tiene `gatewayBaseUrl`. Hacen falta cambios menores para elegir el nodo automáticamente.
-- **Tamaño:** **~10-50 GB**, frente a ~2,5 TB. Base del cálculo: ~10-15 millones de transacciones de usuario × ~0,5-1 KB por marcador (supuesto, a validar con un prototipo), más la tabla de ubicación de NFT. Se descartan los ~555 millones de cambios de ronda. *Es una estimación que hay que validar con un prototipo.*
+- **Tamaño:** **~10-50 GB**, frente a ~2,5 TB. Base del cálculo: ~10-15 millones de transacciones de usuario × ~0,5-1 KB por marcador (supuesto, a validar con un prototipo) dan ~5-15 GB; el resto del margen cubre las tablas de ubicación de NFT, titulares, búsqueda y auxiliares. Se descartan los ~555 millones de cambios de ronda. *Es una estimación que hay que validar con un prototipo.*
 - **Primera sincronización:** recorrer ~567 millones de versiones del stream. Suponiendo un ritmo de ingesta de 2 000-5 000 versiones/s para un proceso sin Postgres (supuesto, a validar), son ~1,3-3,3 días. Se puede acortar con snapshots firmados. *Estimación.*
 - **Coste por operador:** marginal sobre un nodo existente (disco y algo de CPU).
 - **Descentralización:** alta. Cualquier operador de nodo puede ejecutarlo.
@@ -111,16 +111,16 @@ Escala de puntuación: 1 = malo, 5 = muy bueno.
 
 | Criterio | E1 Nodo directo | E2 Nodo de lectura | **E3 Indexador ligero** | E4 Cliente | E5 Cliente ligero | E6 En cadena |
 |---|---|---|---|---|---|---|
-| Cobertura de casos de uso | 2 (parcial: 9 de 19 capacidades) | 5 | **5 (~100 %; sin historia arbitraria)** | 1 | 2 | 1-2 |
-| Exploradores de transacciones completos | 1 (sin historial, titulares ni estadísticas) | 4 (si se añaden h, i, j) | **5 (con h, i, j)** | 1 | 1 | [1](01-02-situacion-actual.md#s1) |
-| Elimina el Gateway como servicio central | 5 | 5 | **5** (no queda ningún Gateway; solo se reutiliza el formato de las peticiones) | 5 | 5 | [3](03-que-ofrece-el-nodo.md#s3) |
+| Cobertura de casos de uso | 2 (parcial: 9 de 19 completas y 2 en parte) | 5 | **5 (~100 %; sin historia arbitraria)** | 1 | 2 | 1-2 |
+| Exploradores de transacciones completos | 1 (sin historial, titulares ni estadísticas) | 4 (si se añaden h, i, j) | **5 (con h, i, j)** | 1 | 1 | 1 |
+| Elimina el Gateway como servicio central | 5 | 5 | **5** (no queda ningún Gateway; solo se reutiliza el formato de las peticiones) | 5 | 5 | 3 |
 | Almacenamiento por operador | 0 extra | Decenas de GB (est.) | **~10-50 GB (est.)** | — | — | — |
 | Coste mensual por operador | ~0 sobre el nodo | ~0 | **~0-20 € sobre el nodo (est.)** | — | — | — |
 | Cambios necesarios en clientes | Muchos | Muchos (ninguno si el nodo sirve también el formato actual) | **Ninguno para funcionar** | Muchos | Muchos | Por dApp |
 | ¿Disponible antes de diciembre de 2026? | Parcial | No | **Prototipo con el subconjunto crítico: posible** | No | No | No |
 | Trabajo de desarrollo (est.) | 15-25 personas-mes | 6-10 personas-mes (nodo) + ~4-6 (clientes) | **4-7 personas-mes** (+1-2 para índices de exploradores) | — | Años | Por dApp |
 | Riesgo técnico | Medio | Medio-alto (núcleo del nodo) | **Medio** | Alto | Muy alto | Bajo |
-| Válido con Xi'an / Hyperscale | No | No | Parcial (interfaz reutilizable) | — | Sí | Sí |
+| Válido con Xi'an / Hyperscale | No | No | Parcial (interfaz reutilizable) | — | Parcial (habría que adaptarlo) | No (habría que reescribirlos) |
 
 **Lectura de la tabla:**
 

@@ -4,6 +4,8 @@
 
 # 10. Guía de implementación paso a paso
 
+Las secciones de este capítulo heredan la valoración (¿es posible?, dificultad y esfuerzo) de lo que implementan: E3 (sección [10.1](#s10-1)), el descubrimiento ([10.2](#s10-2), con su propio recuadro), E2 ([10.3](#s10-3)), los cambios en clientes (capítulo [7](07-cambios-por-repositorio.md#s7)), el archivo de Olympia ([10.5](#s10-5)) y la solución ideal ([6.2](06-solucion-recomendada.md#s6-2)).
+
 Este capítulo explica **cómo** construir las piezas principales. Los fragmentos de código son **orientativos**: muestran la forma de la solución, no código listo para producción, y hay que ajustarlos a la versión exacta de cada dependencia.
 
 <a id="s10-1"></a>
@@ -46,6 +48,7 @@ Todas las claves van en orden de bytes, para recorrerlas por rangos.
 | `stats_hourly` | `hora` | contadores | cada transacción | estadísticas |
 | `search_terms` | `término normalizado ‖ entity` | — | metadatos `name`, `symbol`, `tags` | búsqueda |
 | `validator_epoch` | `validator ‖ epoch` | propuestas hechas y perdidas | eventos de cambio de época | uptime |
+| `locker_touch` | `cuenta ‖ locker` | `state_version` del último cambio | cambios en account lockers | `state/account-lockers/touched-at` (índice f) |
 | `cursor` | `"cursor"` | última `state_version` procesada | cada lote | reanudar |
 
 ### Bucle de ingesta
@@ -114,6 +117,8 @@ Cada ruta resuelve sus datos de una de estas formas:
 | `extensions/entities-by-role-requirement/lookup` | índice `role_badges` |
 | `extensions/resource-holders/page` | índice `holders` |
 | `statistics/validators/uptime` | índice `validator_epoch` |
+| `state/account-lockers/touched-at` | índice `locker_touch` |
+| `state/account-locker/page/vaults`, `state/account/page/{resource-preferences, authorized-depositors}`, `state/entity/page/{metadata, fungible-vaults, non-fungible-vaults}` | Engine State API (colecciones y metadatos) y Core |
 
 **Lecturas coherentes.**
 

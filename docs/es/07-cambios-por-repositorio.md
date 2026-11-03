@@ -4,6 +4,8 @@
 
 # 7. Cambios por repositorio
 
+Cada cambio indica su prioridad y su esfuerzo. La valoración global de cada bloque está en los capítulos [4](04-05-estrategias.md#s4), 6 y 9.
+
 Prioridad: **P0** imprescindible · **P1** necesario para todos los casos de uso · **P2** mejora.
 Esfuerzo: **S** días · **M** 1-3 semanas · **L** más de un mes · **XL** varios meses o más. Como referencia aproximada: S < 0,5 personas-mes; M ≈ 0,25-0,75; L ≈ 1 o más; XL > 3.
 
@@ -78,7 +80,7 @@ Esfuerzo: **S** días · **M** 1-3 semanas · **L** más de un mes · **XL** var
 | N8-N9 | Toques de lockers y emisiones de validadores | P2 / S |
 | D | Convención de metadatos del validador `api_endpoints` (lista de URLs con capacidades) y documentación para operadores | P0 / S |
 
-Los cambios para **reducir la RAM y el disco del nodo** (R1-R11: ajustes de RocksDB, poda, arranque desde un snapshot verificado, actualización de protocolo de la estadística de propuestas y migración de Java a Rust) están en la **sección [9](09-nodos-ligeros.md#s9)**, con el detalle de cada uno en la sección [9.4](09-nodos-ligeros.md#s9-4).
+Los cambios para **reducir la RAM y el disco del nodo** (R1-R11: ajustes de RocksDB, poda, arranque desde un snapshot verificado, actualización de protocolo de la estadística de propuestas y migración de Java a Rust) están en la **capítulo [9](09-nodos-ligeros.md#s9)**, con el detalle de cada uno en la sección [9.4](09-nodos-ligeros.md#s9-4).
 
 Todos los índices deben ser **flags opcionales**, como los que ya existen, para no penalizar a los validadores que no quieran servir lecturas.
 
@@ -109,7 +111,7 @@ Todos los índices deben ser **flags opcionales**, como los que ya existen, para
 Esta sección describe **qué** cambiar; la sección [10.4](10-guia-de-implementacion.md#s10-4) explica **cómo** hacerlo paso a paso.
 
 1. **P0/M — Trait `LedgerBackend`.**
-   - `GatewayClient` (`crates/gateway/client-and-api/src/client/gateway_client.rs:11-40`) es una struct concreta. Hay que extraer un trait con los métodos de `methods/state_methods.rs` y `methods/transaction_methods.rs`, y devolverlo desde `SargonOS::gateway_client()` (`system/os/os/src/sargon_os_gateway_client.rs:8-17`).
+   - `GatewayClient` (`crates/gateway/client-and-api/src/client/gateway_client.rs:11-40`) es una estructura (*struct*) concreta. Hay que extraer un trait con los métodos de `methods/state_methods.rs` y `methods/transaction_methods.rs`, y devolverlo desde `SargonOS::gateway_client()` (`system/os/os/src/sargon_os_gateway_client.rs:8-17`).
    - Hay cinco sitios que crean su propio cliente y deben pasar a usar el trait:
      - `transaction_intent_builder.rs:58`
      - `xrd_balances_fetcher.rs:46`
@@ -142,7 +144,7 @@ Esta sección describe **qué** cambiar; la sección [10.4](10-guia-de-implement
   - `ResolveAccountsLedgerStateRepository`
 
   La paginación y la agregación están en `data/gateway/extensions/StateEntityDetailsApiHelper.kt`.
-- **P1/S.** Hacer configurables con fallback:
+- **P1/S.** Hacer configurables, con una alternativa de respaldo:
   - `image-service.radixdlt.com` (`app/build.gradle:70,112`, `Thumbnail.kt:523`), cargando la imagen original si no está disponible;
   - `dapps-list.radixdlt.com` (`DAppDirectoryRepository.kt:81-87`);
   - los enlaces al dashboard (`NetworkIdExtensions.kt:50-56`).
@@ -151,7 +153,7 @@ Esta sección describe **qué** cambiar; la sección [10.4](10-guia-de-implement
 
 ## 7.7 `radixdlt/babylon-wallet-ios`
 
-Es simétrico al de Android. Los clientes de DI (`DependencyKey`) permiten sustituir la `liveValue`:
+Los cambios son simétricos a los de Android. Los clientes de DI (`DependencyKey`) permiten sustituir la `liveValue`:
 
 - **P0/S:**
   - conmutación por error y descubrimiento en `GatewaysClient` y `NetworkSwitchingClient` (`NetworkSwitchingClient+Live.swift:30`).
@@ -198,7 +200,7 @@ Es simétrico al de Android. Los clientes de DI (`DependencyKey`) permiten susti
 
 <a id="s7-11"></a>
 
-## 7.11 Transporte de Radix Connect: `radix-connect-iroh`, `radix-connect-webrtc` y los repos oficiales `radix-connect-relay` y `signaling-server`
+## 7.11 Transporte de Radix Connect: `radix-connect-iroh`, `radix-connect-webrtc` y los repositorios oficiales `radix-connect-relay` y `signaling-server`
 
 No usan el Gateway, pero son infraestructura P1 que también depende de un único operador:
 
@@ -242,7 +244,7 @@ No usan el Gateway, pero son infraestructura P1 que también depende de un únic
 ## 7.14 `wallet-agent-ai`
 
 - **P0/S.** URLs fijas en `src/network-config.ts:14-22`; la red se deduce de la URL (`:33-36`, `weft.ts:211-225`).
-- **P0/S, fallo actual.** Comprueba `"Rejected"` / `"PermanentlyRejected"` (`src/core/RadixClient.ts:122`).
+- **P0/S, fallo actual.** Compara el estado con `"Rejected"` / `"PermanentlyRejected"` (`src/core/RadixClient.ts:122`), pero la Core API devuelve `PermanentRejection`, así que el rechazo no se detecta.
 - **P1/M.** Crear la interfaz `LedgerReader` para las ~25 llamadas `fetch`.
 - **P1/S.** `waitForOwnerApproval` (`AgentWallet.ts:697-722`) debe vigilar el estado del componente en vez de filtrar el stream.
 - **P2.** La API de Astrolescent debe admitir una instancia propia.
@@ -252,7 +254,7 @@ No usan el Gateway, pero son infraestructura P1 que también depende de un únic
 ## 7.15 `Radix-Desktop-Tool`
 
 - La URL ya se puede cambiar en la interfaz (`src/views/LocalSettings.vue`). Con E3 funciona sin cambios.
-- **P2/M.** Para la API nativa del nodo hay que hacer un fork de `@atlantis-l/radix-tool`.
+- **P2/M.** Para la API nativa del nodo hay que bifurcar `@atlantis-l/radix-tool`.
 - **P1.** El historial (`HistoryCheck.vue:999`) depende del índice (a) de E3, o de N3.
 
 <a id="s7-16"></a>
@@ -288,7 +290,7 @@ No usan el Gateway, pero son infraestructura P1 que también depende de un únic
 - **`olympia-wallet`:** su uso actual (exportar cuentas) es fuera de línea. **P2/S:** cuando exista el archivo de Olympia ([2.2](01-02-situacion-actual.md#s2-2)), apuntar a él en vez de a `olympia-gateway.radixdlt.com` (`src/helpers/network.ts:14-39`).
 - **`radixdlt/explorer`** (explorador de Olympia): **P1/S:** servir el historial desde el archivo estático de Olympia en vez de desde el Gateway de Olympia; o integrarlo en el explorador de referencia ([7.16](#s7-16)).
 - **`wallet-compatible-derivation`:** derivación de claves fuera de línea, sin red.
-- **`governance-framework`:** solo lo dicho en 7.13.
+- **`governance-framework`:** solo lo dicho en la sección [7.13](#s7-13).
 - **`reference/hyperscale-rs`:**
   - Otra red, no compatible con Babylon.
   - Su RPC (`crates/production/src/rpc/routes.rs:13-35`) no tiene lecturas de estado.

@@ -6,7 +6,7 @@ labels: ["correction"]
 ---
 
 **Documento y sección / Document and section:**
-<!-- p. ej. docs/es/07-nodos-ligeros.md, 9.3 / e.g. docs/en/07-lighter-nodes.md, 9.3 -->
+<!-- p. ej. docs/es/09-nodos-ligeros.md, 9.3 / e.g. docs/en/09-lighter-nodes.md, 9.3 -->
 
 **Qué dice ahora / What it says now:**
 

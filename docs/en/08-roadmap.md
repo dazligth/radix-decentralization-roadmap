@@ -6,7 +6,7 @@
 
 > [!IMPORTANT]
 > - **Is it possible?** Only partly before 31 Dec 2026: the critical subset of the light indexer can have a prototype if work starts now; the rest of the plan arrives in 2027 and later years.
-> - **Difficulty:** Medium (the schedule) and very high (the final phases).
+> - **Difficulty:** Medium for the short-term schedule; very high for phases F4-F5.
 > - **Effort and timeline:** dates assume a dedicated team of about 4-5 full-time people (an assumption of this report); with fewer people, timelines lengthen.
 
 ```mermaid
@@ -42,7 +42,7 @@ gantt
 | **F2** | Feb-Apr 2027 | Clients: lists with failover and discovery (Sargon, wallets, RDT, ROLA, extension, SDK). Resubmission in Sargon. Fixes (`BaseUrlInterceptor`, hard-coded mainnet, hard-coded services). | No central default provider |
 | **F3** | 2027 | `babylon-node`: N1, N6, N5b, then N2-N4. R3-R8 (disk reduction and pruned node) and R9 (verified snapshot bootstrap). Snapshot capture in consultation. | Every node is an access point; the indexer becomes optional |
 | **F4** | 2027-2029 | Phased migration of the core to Rust (R11), **if governance does not adopt Hyperscale or postpones it** (section [11.8](11-hyperscale-evolution.md#s11-8)). Protocol update R10. Verifiable reads and light client ([6.2](06-recommended-solution.md#s6-2), [10.6](10-implementation-guide.md#s10-6)). | 4 GB nodes with headroom; access without trusting the node |
-| **F5** | After the governance decision | Migration to Hyperscale (section [11](11-hyperscale-evolution.md#s11)): mainnet readiness, read API and indexer, wallets, genesis with verifiable claims, dApp rewrites. | Final evolution of Radix, if the community adopts it |
+| **F5** | After the governance decision | Migration to Hyperscale (chapter [11](11-hyperscale-evolution.md#s11)): mainnet readiness, read API and indexer, wallets, genesis with verifiable claims, dApp rewrites. | Final evolution of Radix, if the community adopts it |
 
 ---
 

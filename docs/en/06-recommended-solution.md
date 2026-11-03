@@ -9,7 +9,7 @@
 > - **Difficulty:** Medium.
 > - **Effort and timeline:** 7-12 person-months for the minimum viable solution; months (estimate).
 
-## Short-term infrastructure: no Gateway
+### Short-term infrastructure: no Gateway
 
 ```mermaid
 flowchart TB
@@ -66,7 +66,7 @@ flowchart LR
     Z1 --> R
 ```
 
-## How a read node works
+### How a read node works
 
 ```mermaid
 flowchart TB
@@ -90,7 +90,7 @@ flowchart TB
     RES --> CORE
 ```
 
-## Submitting a transaction without the Gateway
+### Submitting a transaction without the Gateway
 
 ```mermaid
 sequenceDiagram
@@ -122,11 +122,11 @@ sequenceDiagram
 **Why:**
 
 1. **Time.** The Gateway is funded only until 31 Dec 2026. E3 is the only option that can **serve today's wallets without new releases**, because they already accept a custom Gateway URL.
-2. **Cost.** It goes from the ~2.5 TB and ~€300-400/month the Gateway requires to ~10-50 GB (estimate) added to a node that already exists. The measured data explains why: ~97-98 % of state versions are round updates that do not need indexing.
+2. **Cost.** It goes from the Gateway's ~2.5 TB, and the ~€300-400/month a community proposal estimated for running it (section [1.1](01-02-current-situation.md#s1-1)), to ~10-50 GB (estimate) added to a node that already exists. The measured data explains why: ~97-98 % of state versions are round updates that do not need indexing.
 3. **Real decentralisation.** If every validator or full node can serve the API at near-zero cost and announce itself on ledger, the "default provider" disappears. That is the condition for the network to serve any user without depending on a particular provider.
 4. **Upgrade path.**
    - E3's indexes later move into `babylon-node` (E2).
-   - The clients' `LedgerBackend` interface lets them switch to the node's native API later, to the light client (E5) and, if adopted, to Hyperscale (section [11](11-hyperscale-evolution.md#s11)), without rewriting application logic.
+   - The clients' `LedgerBackend` interface lets them switch to the node's native API later, to the light client (E5) and, if adopted, to Hyperscale (chapter [11](11-hyperscale-evolution.md#s11)), without rewriting application logic.
 5. **Contained risk.** It does not touch consensus or the node core. It is a separate process that can be stopped or restarted without affecting the node.
 
 **What E3 does not provide, and how it is covered:**
@@ -195,7 +195,7 @@ The short-term solution (E3) removes the Gateway, but the client **still has to 
 - `/stream/proofs` already delivers the signed proofs, including epoch changes, which say which validators sign the next epoch.
 - **What is missing** is an endpoint that returns the **Merkle proof** for a specific piece of data, and a client that verifies it.
 
-## Long-term infrastructure: the ideal solution
+### Long-term infrastructure: the ideal solution
 
 ```mermaid
 flowchart TB
@@ -226,7 +226,7 @@ flowchart TB
     class W,DAPP,V,N1,N2,A,SNAP,HIST good
 ```
 
-### How the wallet verifies a response
+#### How the wallet verifies a response
 
 ```mermaid
 sequenceDiagram
@@ -254,14 +254,14 @@ sequenceDiagram
 | 2 | **Reads with proofs** | Each response includes the data, its Merkle proof against `state_tree_hash`, `transaction_tree_hash` or `receipt_tree_hash`, and the validator-signed ledger proof. This covers balances, NFTs, metadata, component state, transactions and receipts. Consensus does not change. |
 | 3 | **Light client in wallets and dApps** | In Sargon (Rust), and in WebAssembly for the browser (RDT, ROLA, explorers). It follows epoch changes from a checkpoint shipped with the app and checks that more than 2/3 of stake signed each proof. With that, it verifies every response. **The client stops trusting the node.** |
 | 4 | **Verifiable indexes** | A Merkle proof shows that a piece of data *is there*, but not that a list (history, holders) is *complete*. That needs a protocol update: the engine keeps, in state, an accumulator of each entity's history and holders, so they fall under `state_tree_hash` and can be proven too. Until then, several independent nodes are cross-checked. |
-| 5 | **Discovery and transport without intermediaries** | An on-ledger registry of read nodes (validator metadata or another component), and a direct QUIC/iroh connection between wallet and node. This avoids depending on DNS, TLS certificates and central relays; the same technology is already used in Radix Connect. |
+| 5 | **Discovery and transport without intermediaries** | An on-ledger registry of read nodes (validator metadata or another component), and a direct QUIC/iroh connection between wallet and node. This reduces the dependency on DNS and TLS certificates, and relays can be self-hosted or many; the same technology is already used in Radix Connect. |
 | 6 | **Incentives to serve reads** | A share of network emissions or fees, or per-query XRD micropayments, for those who run read nodes. Governance decides. Without incentives, the service depends on operators' voluntary commitment. |
 | 7 | **Verifiable historical archive** | Old history (Olympia included) lives in distributed storage (IPFS or Arweave). Its integrity is checked against `transaction_tree_hash` and `receipt_tree_hash`. No node has to keep all of it. |
 | 8 | **Ready for Hyperscale** | Hyperscale already uses JMT multiproofs. The light client and the native API can be adapted to that network. The full migration to Hyperscale is analysed in section [11](11-hyperscale-evolution.md#s11). |
 
 **Comparison with the short-term solution:**
 
-| | Short term (E3 → E2) | Ideal ([6.2](#s6-2)) |
+| | Short term (E3 → E2) | Ideal |
 |---|---|---|
 | Gateway | Removed | Removed |
 | Does the client trust the node? | Yes, though it can compare several | **No, it verifies every response** |

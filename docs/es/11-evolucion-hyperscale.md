@@ -63,7 +63,7 @@ Hyperscale es un diseño de red **fragmentada** (*sharded*): el estado se repart
 | Firmas de validadores | BLS12-381, con agregación de firmas |
 | Firmas de usuarios | Ed25519, secp256k1 (las mismas que Babylon) y ML-DSA-65 (post-cuántica) |
 | Pruebas publicadas por la Foundation | 500 000 TPS sostenidas y picos de más de 800 000 en 128 fragmentos (feb-2026). Se hicieron con el código «Hyperscale» cuyo autor publicó parcialmente en `github.com/DanoshiFusermoto/Hyperscale`; el artículo no menciona `hyperscale-rs`, y este repositorio no publica cifras de rendimiento. |
-| Situación del proyecto (según radix.wiki, fuente secundaria, nov-2026; RFC original en RadixTalk) | `hyperscale-rs` fue propuesto como candidato de producción en un RFC de la comunidad (20-abr-2026); solo se financió el primero de seis hitos. El 3-sep-2026 su desarrollador dejó las propuestas, subvenciones y colaboraciones con Radix, pero siguió desarrollando el código, y considera a Radix una de varias redes candidatas, no la única. Ha indicado que existe una vía de actualización y que la guiaría. |
+| Situación del proyecto (según radix.wiki, fuente secundaria, nov-2026; RFC original en RadixTalk) | `hyperscale-rs` fue propuesto como candidato de producción en un RFC de la comunidad (20-abr-2026); solo se financió el primero de seis hitos. El 3-sep-2026 su desarrollador dejó las propuestas, subvenciones y colaboraciones con Radix, pero siguió desarrollando el código, y considera a Radix una de varias redes candidatas, no la única. Ha indicado que existe una vía para pasar a Hyperscale (en sus palabras, *upgrade path*) y que la guiaría. |
 
 ```mermaid
 flowchart TB
@@ -116,8 +116,8 @@ flowchart TB
 > [!NOTE]
 > **Referencia en otras redes:** Cosmos Hub migró su estado a una nueva génesis (`cosmoshub-3` → `cosmoshub-4`, 2021), y el contrato `MerkleDistributor` de Uniswap implementa reclamaciones con prueba de Merkle. Ver capítulo [12](12-referencias-otras-redes.md#s12).
 
-1. **Congelar Babylon** en una época acordada. `v1.4.0.0` ya incluye un mecanismo de «moratoria» de transacciones de usuario que puede servir de base.
-2. **Publicar la raíz final del estado** de Babylon (`state_tree_hash` firmado por los validadores en la última época) y archivar el ledger en nodos de archivo y almacenamiento distribuido (capítulo [9](09-nodos-ligeros.md#s9), R9; sección [10.5](10-guia-de-implementacion.md#s10-5)).
+1. **Congelar Babylon** en una época acordada. `v1.4.0.0` ya incluye un mecanismo de «moratoria» de transacciones de usuario (commit `8ea6cf97`, «Add support for user transaction moratoriums») que puede servir de base.
+2. **Publicar la raíz final del estado** de Babylon (`state_tree_hash` firmado por los validadores en la última época) y archivar el ledger en nodos de archivo y almacenamiento distribuido (secciones [9.4](09-nodos-ligeros.md#s9-4), R9, y 9.6; procedimiento análogo al del archivo de Olympia, sección [10.5](10-guia-de-implementacion.md#s10-5)).
 3. **Génesis de Hyperscale** con los saldos de XRD que se puedan asignar directamente: cuentas cuya clave pública ya es conocida porque la cuenta ha firmado alguna vez.
 4. **Contrato de reclamación en Hyperscale** para todo lo demás. El usuario presenta:
    - una **prueba de Merkle** de su saldo contra la raíz final de Babylon;
@@ -277,7 +277,7 @@ Son estimaciones de orden de magnitud, para planificar, no presupuestos:
 
 ## 11.8 Cómo encaja con el resto del informe
 
-1. **Babylon tiene que seguir funcionando durante años**, porque la migración llevaría de 2 a 4 años. El trabajo para eliminar el Gateway y aligerar los nodos (capítulos [6](06-solucion-recomendada.md#s6), [9](09-nodos-ligeros.md#s9) y [10](10-guia-de-implementacion.md#s10)) sigue siendo necesario.
+1. **Babylon tiene que seguir funcionando durante años**, porque la migración llevaría de 2 a 4 años. El trabajo para eliminar el Gateway y aligerar los nodos (capítulos [6](06-solucion-recomendada.md#s6), 9 y 10) sigue siendo necesario.
 2. **Muchas piezas se reutilizan:**
    - la interfaz `LedgerBackend` de los clientes;
    - el descubrimiento de nodos en la cadena;

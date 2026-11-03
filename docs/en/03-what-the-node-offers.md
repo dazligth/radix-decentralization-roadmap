@@ -32,7 +32,7 @@
   | `db.account_change_index.enable` | `true` | Per-account history, fungibles only |
   | `db.historical_substate_values.enable` | `false` | Historical reads |
   | `state_hash_tree.state_version_history_length` | `60000` | Size of the historical window |
-  | `db.entity_listing_indices.enable` | — | `/extra/entity-search` |
+  | `db.entity_listing_indices.enable` | `false` (in the Java node) | `/extra/entity-search` |
   | `api.core.flags.enable_unbounded_endpoints` | `true` | Endpoints with unbounded cost |
 
 <a id="s3-2"></a>
@@ -57,9 +57,9 @@
 | **N5** Historical state of any age | Partly: only ≈ 4-5 h, behind a flag that is off by default |
 | **N5b** `last_updated_at_state_version` for metadata | No: used by account recovery |
 | **N7** Batch reads (20 entities per call) | No: one call per entity |
-| **N8-N9** locker `touched-at` and validator uptime; resource holders (light-indexer index h) | No |
+| Locker `touched-at` and validator uptime (**N8-N9**); resource holders (light-indexer index h) | No |
 | **N6** Safe public access (CORS, read-only, rate limiting, TLS) | No |
-| Resubmission of pending transactions | No: The Gateway does it. With a node, it becomes the client's responsibility: keep the payload and resubmit with backoff while the epoch window is valid. |
+| Resubmission of pending transactions | No: the Gateway does it. With a node, it becomes the client's responsibility: keep the payload and resubmit with backoff while the epoch window is valid. |
 
 ---
 

@@ -49,7 +49,7 @@ References to Layer-2 or partner-chain mechanisms in other networks (chapter [12
   - `radixdlt/explorer`, the Olympia explorer (see [2.2](#s2-2)).
 - **Not public:** the source of the Radix Dashboard and the Developer Console is not in the `radixdlt` GitHub organisation. They are treated as black-box clients.
 
-# Current infrastructure
+## Current infrastructure
 
 ```mermaid
 flowchart TB
@@ -128,7 +128,7 @@ In red, services that depend on a single operator.
 
 <a id="s1-2"></a>
 
-## 1.2 Own mainnet measurements (3 Nov 2026, via the public API)
+## 1.2 Independent mainnet measurements (3 Nov 2026, via the public API)
 
 | Measure | Value |
 |---|---|
@@ -150,7 +150,7 @@ To better understand what the Gateway does and what would have to be replaced, i
 | Query | Result | What it implies |
 |---|---|---|
 | State of the XRD resource at version 10,000 (`at_ledger_state`, 28 Sep 2023) | It answers: total supply of 12,660,434,555 XRD then, versus 13,565,348,962 today | The Gateway serves **full history from genesis**. The node only keeps a few hours (section [3.1](03-what-the-node-offers.md#s3-1)). That arbitrary history is what takes most space and what the light indexer does not replicate; whoever needs it would run an archive node (sections [6.2](06-recommended-solution.md#s6-2) and [9.6](09-lighter-nodes.md#s9-6)). |
-| XRD holders (`/extensions/resource-holders/page`) | `total_count`: **435,605** | It gives the order of magnitude of the holder index (h). At ~100 bytes per row (an assumption), XRD would take about 44 MB, consistent with the light indexer's 10-50 GB estimate. |
+| XRD holders (`/extensions/resource-holders/page`) | `total_count`: **435,605** | It gives the order of magnitude of the holder index (h). At ~100 bytes per row (an assumption), XRD would take about 44 MB: a tiny fraction of the light indexer's estimated total (10-50 GB). |
 | Response headers | `server: cloudflare`, `cf-cache-status: DYNAMIC` | The public Gateway sits behind Cloudflare and its responses are not served from cache. It is another central dependency; read nodes need their own protection against attacks (N6). |
 | `/status/gateway-status` and `/status/network-configuration` | Version 1.10.6 (image v1.10.7); network `mainnet`, id 1 and well-known addresses | The light indexer can obtain the same data from the node (`/status/network-configuration`). |
 
@@ -201,13 +201,13 @@ An explorer is the **most demanding** client: it needs global indexes that neith
 | Packages: blueprints, code, schemas | Yes, in the node: `/core/state/package`, `/blueprint/info`, `/entity/schema/entry` |
 | Component KV stores | Yes, in the node: `/kv-store/iterator` |
 | **Transaction history of any entity**, filtered by type, resource or event | No: E3 index (a), or N3 |
-| **Holders of a resource**, ranked by balance | No: New index (h): `resource → (entity, balance)` |
+| **Holders of a resource**, ranked by balance | No: new index (h): `resource → (entity, balance)` |
 | **Where an NFT is** | No: E3 index (b), or N2 |
 | Validators: uptime, stake history, APY | No: E3 index (g), or N9. Current stake comes from the node. |
-| Account or resource state at a past date | No: Archive node (N5), or balance-change index (a) + (h) |
-| Statistics: TPS, transactions per day, active accounts, fees burned | No: New index (i): hourly and daily aggregates |
-| Search by name or symbol (metadata) | No: New index (j): text of `name`, `symbol`, `tags` → entity |
-| Search by address | Yes: The address encodes its type; `/entity/info` is enough |
+| Account or resource state at a past date | No: archive node (N5), or balance-change index (a) + (h) |
+| Statistics: TPS, transactions per day, active accounts, fees burned | No: new index (i): hourly and daily aggregates |
+| Search by name or symbol (metadata) | No: new index (j): text of `name`, `symbol`, `tags` → entity |
+| Search by address | Yes: the address encodes its type; `/entity/info` is enough |
 
 **Consequences for the strategy:**
 
@@ -252,7 +252,7 @@ Radix had an earlier network, **Olympia**, which was migrated to Babylon on 28 S
    - Importing Olympia accounts into the Babylon wallet is **offline**: export with `olympia-wallet`, and `MigrateOlympiaAccountsUseCase` in the Android wallet.
    - ROLA verifies secp256k1 accounts by derivation, without querying the ledger.
    - The **recovery scan** with an Olympia seed phrase (BIP44 path, `ResolveDerivationPathsForRecoveryScanUseCase.kt:42-79`) uses the same ledger queries as everything else. It works against a node: genesis-created accounts exist and are detected with `/entity/info`, even without `last_updated_at_state_version`.
-3. **Olympia transaction history (before 28 Sep 2023) is NOT in the Babylon ledger.**
+3. **Olympia transaction history (before 28 Sep 2023) is **not** in the Babylon ledger.**
    - It is served only by the **Olympia Gateway**, `olympia-gateway.radixdlt.com`. It is still live today, running Gateway API 1.1.14, frozen at version 337,759,839 from 2023-09-28T06:33:34Z.
    - It is used by `olympia-wallet` (`src/helpers/network.ts:14-39`) and the Olympia explorer (`radixdlt/explorer`).
    - It is **another central service**, and it does not appear in the transition service lists published by the Foundation that were reviewed.

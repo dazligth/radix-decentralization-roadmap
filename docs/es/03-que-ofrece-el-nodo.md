@@ -32,7 +32,7 @@
   | `db.account_change_index.enable` | `true` | Historial por cuenta, solo fungibles |
   | `db.historical_substate_values.enable` | `false` | Lecturas históricas |
   | `state_hash_tree.state_version_history_length` | `60000` | Tamaño de la ventana histórica |
-  | `db.entity_listing_indices.enable` | — | `/extra/entity-search` |
+  | `db.entity_listing_indices.enable` | `false` (en el nodo Java) | `/extra/entity-search` |
   | `api.core.flags.enable_unbounded_endpoints` | `true` | Endpoints de coste no acotado |
 
 <a id="s3-2"></a>
@@ -57,9 +57,9 @@
 | **N5** Estado histórico de cualquier antigüedad | En parte: solo ≈ 4-5 h, y con un flag desactivado por defecto |
 | **N5b** `last_updated_at_state_version` de los metadatos | No: lo usa la recuperación de cuentas |
 | **N7** Lecturas por lotes (20 entidades por llamada) | No: hay que hacer una llamada por entidad |
-| **N8-N9** `touched-at` de lockers y uptime de validadores; titulares de un recurso (índice h del indexador ligero) | No |
+| `touched-at` de lockers y uptime de validadores (**N8-N9**); titulares de un recurso (índice h del indexador ligero) | No |
 | **N6** Acceso público seguro (CORS, solo lectura, límite de peticiones, TLS) | No |
-| Reenvío de transacciones pendientes | No: Lo hace el Gateway. Con el nodo pasa a ser responsabilidad del cliente: guardar la transacción notarizada y reenviar con espera exponencial mientras la época sea válida. |
+| Reenvío de transacciones pendientes | No: lo hace el Gateway. Con el nodo pasa a ser responsabilidad del cliente: guardar la transacción notarizada y reenviar con espera exponencial mientras la época sea válida. |
 
 ---
 

@@ -2,12 +2,12 @@
 
 <a id="s9"></a>
 
-# 9. Lighter nodes: target of 4 GB RAM and 500 GB disk
+# 9. Lighter nodes: target of 4-8 GB RAM and 500 GB disk or less
 
 > [!IMPORTANT]
 > - **Is it possible?** Yes. A node of at most 8 GB of RAM looks achievable, and 4 GB is plausible, with under 500 GB of disk (estimates to be confirmed by measuring a real node).
 > - **Difficulty:** Medium while on Java (R1-R9); very high for comfortable headroom (R11, migration to Rust).
-> - **Effort and timeline:** 8-14 person-months (R1-R9); 30-50 person-months (R11) (estimates).
+> - **Effort and timeline:** 8-14 person-months for R1-R9, including Stokenet testing, review and rollout (assumption); 30-50 person-months for R11 (estimates).
 
 **Goal.** A mainnet validator or full node should run on **4 GB of RAM and 500 GB of disk**, and the network should keep working without the Gateway.
 
@@ -86,7 +86,7 @@ flowchart LR
 | RocksDB: index and filter blocks of every SST file | **Unbounded**; grows with the ledger | `max_open_files=-1` and `cache_index_and_filter_blocks=false` (defaults) keep the indexes of **all** open files in memory, ~0.5-1.5 % of database size (*estimate*) | Counted inside a shared **512 MB** cache |
 | RocksDB: memtables | 64 MB × 2 per column family with no global cap; ~0.6-1.3 GB in practice (*estimate*) | Defaults (RocksDB documentation, chapter [12](12-references-other-networks.md#s12)) | **256 MB** in total with `WriteBufferManager` |
 | RocksDB: block cache | a separate one per column family: 26 × 32 MB ≈ 0.8 GB with RocksDB 10.4 (`v1.4.0.0`); 26 × 8 MB with RocksDB 8.1 (`develop`) | Defaults | A single shared cache (the one above) |
-| Mempool | ~~1.2 GB | 512 MiB default | **64-128 MB** on small validators |
+| Mempool | ~1.2 GB | 512 MiB default | **64-128 MB** on small validators |
 | Vertex store (consensus, Java) | up to 150 MB, fully re-serialised on every change | `VertexStoreJavaImpl.java:223-238` | Same, without re-serialisation, once it moves to Rust |
 | Result and execution caches (Rust) | 3 LRUs of 10,000 entries and the staging cache | `state_manager.rs:257-264` | Configurable size |
 
@@ -109,7 +109,7 @@ About 555 of the ledger's ~567 million versions (~97-98 %) are **round updates**
 | Ledger proofs | ~5-8 KB | Yes, after 12 epochs ~1 in 1,000 remain | Sync |
 | State tree (JMT) nodes | ~3-6 KB | Yes, 60,000-version window | Consensus (state root) |
 
-- **Estimated permanent cost per round update:** the table adds up to ~6-7.5 KB **uncompressed** with local executions enabled. Over ~555 million rounds that is **in the order of 3-4 TB uncompressed**. These are **upper-bound** figures: much of this data (receipts that are nearly identical from one round to the next) compresses very well, and the full compressed snapshot is 274 GiB. The real on-disk size can only be known by measuring it.
+- **Estimated permanent cost per round update:** the table adds up to ~6-6.5 KB **uncompressed** with local executions enabled. Over ~555 million rounds that is **in the order of 3-4 TB uncompressed**. These are **upper-bound** figures: much of this data (receipts that are nearly identical from one round to the next) compresses very well, and the full compressed snapshot is 274 GiB. The real on-disk size can only be known by measuring it.
 - **Order of importance:** receipts > accumulator slices > local executions > identifiers. Raw round-update transactions only add up to ~25-30 GB.
 - **How to confirm:** the node already publishes per-column-family sizes (`raw_db_size` metrics, `SM/metrics.rs:590-640`). The **first step** of the plan is to publish those figures from a mainnet node.
 - **Root cause:** the ConsensusManager's `CurrentProposalStatistic` field, ~1.9 KB, is rewritten in full every round. Its previous value is stored in the receipt and its path is rewritten in the state tree.
@@ -178,7 +178,7 @@ let cf_opts = |cf: &str| {
 - **New properties:**
   - `db.rocksdb.block_cache_mb` (512);
   - `db.rocksdb.memtable_budget_mb` (256);
-  - `db.rocksdb.max_open_files` ([1](01-02-current-situation.md#s1),024);
+  - `db.rocksdb.max_open_files` (1,024);
   - `db.rocksdb.compression` (`lz4+zstd`).
 - **Tests:**
   - sync a Stokenet node, and a mainnet node from a snapshot;
@@ -210,7 +210,7 @@ let cf_opts = |cf: &str| {
   - run a manual compaction;
   - store the new option state in `extensions_data`.
 - **Savings:** ~0.7-1.5 KB per version, **possibly hundreds of GB** on mainnet (uncompressed estimate: ~555 million round updates × 0.7-1.5 KB ≈ 0.4-0.8 TB, before compression).
-- **What is lost:** on that node, `/stream/transactions`, `/transaction/receipt` and the LTS history. Read nodes (section [6](06-recommended-solution.md#s6)) keep them.
+- **What is lost:** on that node, `/stream/transactions`, `/transaction/receipt` and the LTS history. Read nodes (chapter [6](06-recommended-solution.md#s6)) keep them.
 - **Risk:** low; the API handlers already check the option.
 
 ### R4. Receipts without previous values, old ones included (P0, S)
@@ -392,7 +392,7 @@ flowchart LR
 
 **Risk:** high, because it touches consensus. Mitigated by shadow mode, a mixed testnet and gradual adoption.
 
-**Relationship with Xi'an/hyperscale-rs:** it is a new network, with another virtual machine, BLS signatures and sharding. It does not replace Babylon in the short term and has no launch date (section [11](11-hyperscale-evolution.md#s11)). Migrating the Babylon node to Rust still makes sense. Patterns from hyperscale-rs (networking, memory-bounded RocksDB storage, deterministic testing) can be reused, but not its protocol.
+**Relationship with Xi'an/hyperscale-rs:** it is a new network, with another virtual machine, BLS signatures and sharding. It does not replace Babylon in the short term and has no launch date (chapter [11](11-hyperscale-evolution.md#s11)). Migrating the Babylon node to Rust still makes sense. Patterns from hyperscale-rs (networking, memory-bounded RocksDB storage, deterministic testing) can be reused, but not its protocol.
 
 <a id="s9-5"></a>
 
@@ -403,7 +403,7 @@ flowchart LR
 
 These figures are *estimates* to be validated with R2's long-running test.
 
-| Component | Validator with Java (R1-R4) | Validator without Java (after R11) | Read node with light indexer (section [6](06-recommended-solution.md#s6)), no Java |
+| Component | Validator with Java (R1-R4) | Validator without Java (after R11) | Read node with light indexer (chapter [6](06-recommended-solution.md#s6)), no Java |
 |---|---|---|---|
 | Operating system and other | 0.4 GB | 0.4 GB | 0.4 GB |
 | JVM: heap + metaspace + threads + direct memory | 1.5 + 0.4 GB | — | — |
@@ -447,7 +447,7 @@ flowchart LR
         R2["Historical transactions"]
         R3["Light-indexer indexes"]
     end
-    subgraph A["Archive node: 8-16 GB RAM, 1-2 TB"]
+    subgraph A["Archive node: 8-16 GB RAM, 1-4 TB"]
         A1["Full history"]
         A2["Receipts and accumulators"]
     end
@@ -466,8 +466,8 @@ flowchart LR
 
 ## 9.7 Conclusion of this chapter
 
-- **Is a 4 GB RAM / 500 GB disk node possible?** **Yes.**
-  - With **R1-R4** (weeks of work, no consensus changes), a validator would drop to ~3.6 GB of RAM (estimate) and its memory stops growing with the ledger.
+- **Is a 4-8 GB RAM / 500 GB disk node possible?** **Yes, probably (estimate):** at most 8 GB looks achievable and 4 GB is plausible.
+  - With **R1-R4** (weeks of work, no consensus changes), a validator would drop to ~3.6 GB of RAM (estimate) and its memory would stop growing with the ledger.
   - With **R5-R9** (months), disk stays well under 500 GB, and new nodes start in hours from a verified snapshot.
   - With **R11** (more than a year) there is comfortable headroom, and the read nodes that replace the Gateway also fit in 4 GB.
 - **Most urgent:** measure the real per-column-family size on a mainnet node, and apply R1 and R2. They are low-cost and remove the main cause of today's 16 GB.

@@ -3,7 +3,7 @@ title: ""            # Título / Title
 author: ""           # Nombre o usuario de GitHub / Name or GitHub handle
 date: ""             # AAAA-MM-DD / YYYY-MM-DD
 type: ""             # idea | estrategia/strategy | nota/note | medición/measurement | experiencia/experience
-related: ""          # Sección del informe / Report section (e.g. docs/es/04-solucion-recomendada.md, 6.2)
+related: ""          # Sección del informe / Report section (e.g. docs/es/06-solucion-recomendada.md, 6.2)
 status: "propuesta"  # propuesta/proposal | en debate/under discussion | incorporada/incorporated
 ---
 

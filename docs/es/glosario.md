@@ -8,10 +8,10 @@ Términos usados en el informe, explicados de forma breve.
 |---|---|
 | **Babylon** | La versión actual de la red Radix, en funcionamiento desde septiembre de 2023. |
 | **Olympia** | La versión anterior de la red Radix (2021-2023). Su estado se migró a Babylon. |
-| **Hyperscale** | El diseño de nueva generación de Radix: una red fragmentada (*sharded*) que escala añadiendo fragmentos. Su implementación en Rust, `hyperscale-rs`, es de código abierto. |
+| **Hyperscale** | El diseño de nueva generación de Radix: una red fragmentada (*sharded*) que escala añadiendo fragmentos. Hay una implementación independiente en Rust, `hyperscale-rs`, de código abierto (capítulo [11](11-evolucion-hyperscale.md#s11)). |
 | **Xi'an** | Nombre que la hoja de ruta de Radix dio a la etapa de la red basada en Hyperscale. |
 | **Gateway (Babylon Network Gateway)** | Servicio central que indexa la red y ofrece una API a wallets, dApps y exploradores. Es una base de datos PostgreSQL (~2,5 TB), un indexador (DataAggregator) y una API. |
-| **Nodo completo** | Ordenador que mantiene una copia del ledger y valida todas las transacciones, sin participar en el consenso. |
+| **Nodo completo** | Ordenador que mantiene una copia del ledger y valida todas las transacciones. Si además participa en el consenso, es un validador. |
 | **Validador** | Nodo completo que además participa en el consenso y firma los bloques. Mainnet tiene unos 100 activos. |
 | **Nodo de lectura** | Propuesta de este informe: nodo completo con un indexador ligero, que atiende las consultas de wallets, dApps y exploradores. |
 | **Nodo de archivo** | Nodo que conserva todo el historial y genera snapshots verificables para otros nodos. |
@@ -69,7 +69,7 @@ Términos usados en el informe, explicados de forma breve.
 | **Vault** | Contenedor de recursos (tokens o NFT) dentro de una cuenta o componente. |
 | **Royalties** | Comisión que un desarrollador puede cobrar cuando se usa su paquete o componente. |
 | **Intent hash** | Identificador de una transacción en Radix. |
-| **Moratoria** | Mecanismo añadido en `v1.4.0.0` para detener temporalmente las transacciones de usuario. |
+| **Moratoria** | Mecanismo añadido en `v1.4.0.0` (commit `8ea6cf97`) para detener temporalmente las transacciones de usuario. |
 | **Códigos del informe** | E1-E6: estrategias (capítulo [4](04-05-estrategias.md#s4)). N1-N9: capacidades que faltan en el nodo (capítulo [3](03-que-ofrece-el-nodo.md#s3) y sección [7.2](07-cambios-por-repositorio.md#s7-2)). R1-R11: cambios para aligerar los nodos (capítulo [9](09-nodos-ligeros.md#s9)). M1-M3: estrategias de migración a Hyperscale (capítulo [11](11-evolucion-hyperscale.md#s11)). (a)-(j): índices del indexador ligero (sección [7.1](07-cambios-por-repositorio.md#s7-1)). |
 | **Prioridad P0-P2 / esfuerzo S-XL** | P0 imprescindible, P1 necesario, P2 mejora. S días, M 1-3 semanas, L más de un mes, XL varios meses o más. |
 | **Punto de acceso (*endpoint*)** | Dirección de red a la que una aplicación envía sus peticiones. |

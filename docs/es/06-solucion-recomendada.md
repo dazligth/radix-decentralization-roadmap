@@ -9,7 +9,7 @@
 > - **Dificultad:** Media.
 > - **Esfuerzo y plazo:** 7-12 personas-mes la solución mínima viable; meses (estimación).
 
-## Infraestructura a corto plazo: sin Gateway
+### Infraestructura a corto plazo: sin Gateway
 
 ```mermaid
 flowchart TB
@@ -66,7 +66,7 @@ flowchart LR
     Z1 --> R
 ```
 
-## Cómo funciona un nodo de lectura
+### Cómo funciona un nodo de lectura
 
 ```mermaid
 flowchart TB
@@ -90,7 +90,7 @@ flowchart TB
     RES --> CORE
 ```
 
-## Envío de una transacción sin Gateway
+### Envío de una transacción sin Gateway
 
 ```mermaid
 sequenceDiagram
@@ -122,11 +122,11 @@ sequenceDiagram
 **Por qué:**
 
 1. **Tiempo.** El Gateway está financiado solo hasta el 31-dic-2026. E3 es la única opción que puede **dar servicio a los wallets actuales sin publicar versiones nuevas**, porque ya permiten configurar la URL del Gateway.
-2. **Coste.** Pasa de los ~2,5 TB y ~300-400 €/mes que requiere el Gateway a ~10-50 GB (estimación) añadidos a un nodo que ya existe. Los datos medidos lo explican: ~97-98 % de las versiones de estado son cambios de ronda que no hace falta indexar.
+2. **Coste.** Pasa de los ~2,5 TB del Gateway, y de los ~300-400 €/mes que estimó una propuesta comunitaria para operarlo (sección [1.1](01-02-situacion-actual.md#s1-1)), a ~10-50 GB (estimación) añadidos a un nodo que ya existe. Los datos medidos lo explican: ~97-98 % de las versiones de estado son cambios de ronda que no hace falta indexar.
 3. **Descentralización real.** Si cada validador o nodo completo puede servir la API con coste casi nulo y anunciarse en la cadena, desaparece el «proveedor por defecto». Es la condición para que la red dé servicio a cualquier usuario sin depender de un proveedor concreto.
 4. **Camino de evolución.**
    - Los índices de E3 se integran luego en `babylon-node` (E2).
-   - La interfaz `LedgerBackend` de los clientes permite pasar después a la API nativa del nodo, al cliente ligero (E5) y, si se adopta, a Hyperscale (sección [11](11-evolucion-hyperscale.md#s11)), sin rehacer la lógica de las aplicaciones.
+   - La interfaz `LedgerBackend` de los clientes permite pasar después a la API nativa del nodo, al cliente ligero (E5) y, si se adopta, a Hyperscale (capítulo [11](11-evolucion-hyperscale.md#s11)), sin rehacer la lógica de las aplicaciones.
 5. **Riesgo controlado.** No toca el consenso ni el núcleo del nodo. Es un proceso aparte que se puede detener o reiniciar sin afectar al nodo.
 
 **Lo que E3 no da, y cómo se cubre:**
@@ -195,7 +195,7 @@ La solución a corto plazo (E3) elimina el Gateway, pero el cliente **sigue teni
 - `/stream/proofs` ya entrega las pruebas firmadas, incluidos los cambios de época, que dicen qué validadores firman la época siguiente.
 - **Lo que falta** es un endpoint que devuelva la **prueba de Merkle** de un dato concreto, y un cliente que la verifique.
 
-## Infraestructura a largo plazo: solución ideal
+### Infraestructura a largo plazo: solución ideal
 
 ```mermaid
 flowchart TB
@@ -226,7 +226,7 @@ flowchart TB
     class W,DAPP,V,N1,N2,A,SNAP,HIST good
 ```
 
-### Cómo verifica el wallet una respuesta
+#### Cómo verifica el wallet una respuesta
 
 ```mermaid
 sequenceDiagram
@@ -254,14 +254,14 @@ sequenceDiagram
 | 2 | **Lecturas con prueba** | Cada respuesta incluye el dato, su prueba de Merkle contra `state_tree_hash`, `transaction_tree_hash` o `receipt_tree_hash`, y la prueba del ledger firmada por los validadores. Sirve para saldos, NFT, metadatos, estado de componentes, transacciones y recibos. No cambia el consenso. |
 | 3 | **Cliente ligero en los wallets y dApps** | En Sargon (Rust) y en WebAssembly para navegador (RDT, ROLA, exploradores). Sigue los cambios de época desde un punto de control incluido en la app y comprueba que más de 2/3 del stake firmó cada prueba. Con eso verifica cada respuesta. **El cliente deja de confiar en el nodo.** |
 | 4 | **Índices verificables** | Una prueba de Merkle demuestra que un dato *está*, pero no que una lista (historial, titulares) esté *completa*. Para eso hace falta una actualización de protocolo: que el motor guarde en el estado, para cada entidad, un acumulador de su historial y de sus titulares. Así entran bajo `state_tree_hash` y también se pueden demostrar. Mientras tanto, se contrastan varios nodos independientes. |
-| 5 | **Descubrimiento y transporte sin intermediarios** | Registro de nodos de lectura en la cadena (metadatos de validadores u otro componente) y conexión directa por QUIC/iroh entre wallet y nodo. Esto evita depender de DNS, de certificados TLS y de relés centrales; la misma tecnología ya se usa en Radix Connect. |
+| 5 | **Descubrimiento y transporte sin intermediarios** | Registro de nodos de lectura en la cadena (metadatos de validadores u otro componente) y conexión directa por QUIC/iroh entre wallet y nodo. Esto reduce la dependencia de DNS y de certificados TLS, y los relés pueden ser propios o varios; la misma tecnología ya se usa en Radix Connect. |
 | 6 | **Incentivos para servir lecturas** | Una parte de las emisiones o comisiones de la red, o micropagos en XRD por consulta, para quien opere nodos de lectura. Lo decide la gobernanza. Sin incentivos, el servicio depende del compromiso voluntario de los operadores. |
 | 7 | **Archivo histórico verificable** | La historia antigua (incluido Olympia) se guarda en almacenamiento distribuido (IPFS o Arweave). Su integridad se comprueba contra `transaction_tree_hash` y `receipt_tree_hash`. Ningún nodo necesita guardarla entera. |
 | 8 | **Preparado para Hyperscale** | Hyperscale ya usa multipruebas JMT. El cliente ligero y la API nativa se pueden adaptar a esa red. La migración completa a Hyperscale se analiza en la sección [11](11-evolucion-hyperscale.md#s11). |
 
 **Comparación con la solución a corto plazo:**
 
-| | Corto plazo (E3 → E2) | Ideal ([6.2](#s6-2)) |
+| | Corto plazo (E3 → E2) | Ideal |
 |---|---|---|
 | Gateway | Eliminado | Eliminado |
 | ¿El cliente confía en el nodo? | Sí, aunque puede comparar varios | **No, verifica cada respuesta** |

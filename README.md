@@ -6,6 +6,15 @@ Technical analysis and roadmap for the Radix network to serve all of its users *
 
 Report dated 3 November 2026.
 
+## Goals
+
+1. **Remove the Gateway completely**, so that wallets, dApps, ROLA sign-in, explorers and tools work directly with the network's nodes.
+2. **Access to the network that depends on no one:** many independent operators, discovered on ledger.
+3. **Lighter nodes:** 4-8 GB of RAM and 500 GB of disk or less, so that more people can run them.
+4. **Everything on Layer 1**, without Layer-2 solutions.
+5. **Preserve Olympia's history** in a verifiable way.
+6. **Prepare the final evolution towards Hyperscale**, if the community decides to adopt it.
+
 ### Key figures
 
 | | |
@@ -23,7 +32,7 @@ Report dated 3 November 2026.
 
 ## Reading guide
 
-| If you are… | Read first |
+| Profile | Where to start |
 |---|---|
 | A community member or XRD holder | The summary, the conclusion and the final reflection on this page |
 | A node operator or validator | [Chapter 9: lighter nodes (RAM and disk) and the Java to Rust migration](docs/en/09-lighter-nodes.md) |
@@ -52,7 +61,7 @@ Report dated 3 November 2026.
 1. **The Gateway is currently a single point of failure for the ecosystem.**
    - No official client talks to nodes directly: not the wallets (Sargon), the RDT, ROLA, the Connector Extension or the Dashboard.
    - According to the Foundation, its operation is **funded only until 31 December 2026**, and there is no public plan for afterwards.
-2. **Nodes already handle the most common operations directly** (submitting transactions, checking their status, balances, NFTs, metadata, validators), according to the `babylon-node` code: of the 19 capabilities in the table in section [3.2](docs/en/03-what-the-node-offers.md#s3-2), [9](docs/en/09-lighter-nodes.md#s9) are fully covered and 2 partly. Six main capabilities are missing (N1-N6, section [3](docs/en/03-what-the-node-offers.md#s3)), plus some minor ones (N7-N9, section [7.2](docs/en/07-per-repository-changes.md#s7-2)).
+2. **Nodes already handle the most common operations directly** (submitting transactions, checking their status, balances, NFTs, metadata, validators), according to the `babylon-node` code: of the 19 capabilities in the table in section [3.2](docs/en/03-what-the-node-offers.md#s3-2), 9 are fully covered and 2 partly. Six main capabilities are missing (N1-N6, chapter [3](docs/en/03-what-the-node-offers.md#s3)), plus some minor ones (N7-N9, section [7.2](docs/en/07-per-repository-changes.md#s7-2)).
 3. **Six strategies were compared.** Based on the measured data, the most suitable combines two (E3 and E2), with E6 as a complement:
    - **Short term (E3): a light indexer next to each node**, which replaces the Gateway. The Gateway ceases to exist.
      - So that already-released wallets and dApps keep working without an update, the indexer accepts the same requests those applications send today. Only the **API format (requests and responses)** is kept, not the Gateway software.
@@ -60,17 +69,17 @@ Report dated 3 November 2026.
      - It includes what **transaction explorers** need, and is complemented by an **open-source reference explorer**.
    - **Medium term (E2): build those indexes and a public read mode into the node itself.** Every node in the network becomes an access point.
    - **On-ledger discovery:** applications get the list of access points from validator metadata instead of using a fixed address.
-4. **Lighter nodes (section [9](docs/en/09-lighter-nodes.md#s9)).**
+4. **Lighter nodes (chapter [9](docs/en/09-lighter-nodes.md#s9)).**
    - Today a mainnet node reserves 12 GB of memory for Java, runs RocksDB with no memory limits and keeps the full history; the compressed ledger is already 274 GiB.
    - With specific code changes (tuning RocksDB, pruning data used only by APIs, bootstrapping from a verified snapshot and, later, migrating the core from Java to Rust), a validator or full node **could run with at most 8 GB of RAM, and probably 4 GB, with 500 GB of disk or less** (estimates to be confirmed by measuring a real node).
-5. **Final evolution towards Hyperscale (section [11](docs/en/11-hyperscale-evolution.md#s11)).**
+5. **Final evolution towards Hyperscale (chapter [11](docs/en/11-hyperscale-evolution.md#s11)).**
    - Hyperscale is open source, but it is **a new network**: a different virtual machine, different addresses and no Scrypto compatibility. Adopting it means migrating balances and **rewriting applications**.
    - The work would fall to the community. The recommended strategy is a genesis with **verifiable claims** of balances using cryptographic proofs.
    - Its difficulty is **very high**, with an estimated 2-4 year timeline. Meanwhile, Babylon must keep running, so the rest of the plan remains useful.
 
 6. **References from other networks (chapter [12](docs/en/12-references-other-networks.md#s12)).** Cardano, Sui, Aptos, Solana, NEAR, Polkadot, Kaspa, Ethereum and Cosmos already use techniques equivalent to the proposals (verified snapshots, pruning, reads in the node, light clients, rewriting in Rust), which confirms they are feasible. How Midnight implements privacy is also analysed, as a reference for Radix's Layer 1.
 
-The "Conclusion" section below summarises feasibility and difficulty for each goal. Section [9.4](docs/en/09-lighter-nodes.md#s9-4) details each node change, section [10](docs/en/10-implementation-guide.md#s10) explains step by step how to build the main pieces, and the glossary at the end explains technical terms.
+The "Conclusion" section below summarises feasibility and difficulty for each goal. Section [9.4](docs/en/09-lighter-nodes.md#s9-4) details each node change, chapter [10](docs/en/10-implementation-guide.md#s10) explains step by step how to build the main pieces, and the glossary at the end explains technical terms.
 
 ## Conclusion
 
@@ -94,16 +103,16 @@ The "Conclusion" section below summarises feasibility and difficulty for each go
 
 | Goal | Is it possible? | Difficulty | Estimated effort |
 |---|---|---|---|
-| dApps, ROLA sign-in, transaction submission and tracking, balances | **Yes** | **Low-medium** | ~1-2 person-months |
+| dApps, ROLA sign-in, transaction submission and tracking, balances | **Yes** | **Low-medium** | ~1-2 person-months (RDT and ROLA changes, sections [7.8](docs/en/07-per-repository-changes.md#s7-8) and [7.9](docs/en/07-per-repository-changes.md#s7-9)) |
 | Current wallets working without the Gateway (E3, no new releases) | **Yes** | **Medium** | ~4-7 person-months for the light indexer |
 | Full transaction explorers without the Gateway (dedicated indexes and an open-source reference explorer) | **Yes** | **Medium** | ~1-2 person-months of indexes + ~2-3 for the explorer |
 | Effective decentralisation: many operators, on-ledger discovery, failover and resubmission in clients | **Yes** | **Medium** | ~3-5 person-months in clients |
 | All features inside the node itself (E2), full history and governance snapshots | **Yes** | **High** | ~6-10 person-months in the node + ~4-6 in clients |
 | Verifiable archive of Olympia's history | **Yes** (urgent) | **Low** | Weeks |
-| Nodes with 4-8 GB RAM and ≤ 500 GB disk, still on Java (R1-R9, section [9](docs/en/09-lighter-nodes.md#s9)) | **Yes** (estimate: 8 GB achievable, 4 GB plausible) | **Medium** | ~8-14 person-months |
+| Nodes with 4-8 GB RAM and ≤ 500 GB disk, still on Java (R1-R9, chapter [9](docs/en/09-lighter-nodes.md#s9)) | **Yes** (estimate: 8 GB achievable, 4 GB plausible) | **Medium** | ~8-14 person-months |
 | Migrating the node core from Java to Rust (R11): enough headroom in 4 GB, including for read nodes | **Yes** | **Very high** | ~30-50 person-months |
 | Access without trusting the node: verifiable reads with a light client (section [6.2](docs/en/06-recommended-solution.md#s6-2)) | **Yes** | **Very high** | ~40-80 person-months, several years |
-| Migration to Hyperscale as the final evolution (section [11](docs/en/11-hyperscale-evolution.md#s11)) | **Yes, with conditions**: the network and funds yes; dApps must be rewritten; not yet production-ready | **Very high** | ~110-210 person-months, 2-4 years, excluding dApps |
+| Migration to Hyperscale as the final evolution (chapter [11](docs/en/11-hyperscale-evolution.md#s11)) | **Yes, with conditions**: the network and funds yes; dApps must be rewritten; not yet production-ready | **Very high** | ~110-210 person-months, 2-4 years, excluding dApps |
 | Keeping Scrypto contracts on Hyperscale (section [11.4](docs/en/11-hyperscale-evolution.md#s11-4)) | **No** with Hyperscale's current design | **Very high** if attempted (fork) | Not recommended |
 
 ### What to do for each goal: best strategy and technology
@@ -120,7 +129,7 @@ The "Conclusion" section below summarises feasibility and difficulty for each go
 | **Bootstrap new nodes in hours without trusting third parties** | Export and import state, verifying it against the signed root | **A verified end-of-epoch snapshot (R9)**, like Sui's formal snapshots or Polkadot's warp sync | Babylon already signs `state_tree_hash` in its proofs; it is the standard technique in modern networks | [9.4](docs/en/09-lighter-nodes.md#s9-4) (R9), [12.9](docs/en/12-references-other-networks.md#s12-9) |
 | **Comfortable headroom in 4 GB and a simpler node** | Replace the Java part of the node with Rust | **A phased migration coexisting on the network (R11)**, as Kaspa did moving from Go to Rust | It removes the JVM and the JNI bridge; risk is contained by gradual adoption | [9.4](docs/en/09-lighter-nodes.md#s9-4) (R11) |
 | **Not having to trust any node** | A Merkle-proof endpoint in the node and a light client in wallets and browsers | **Verifiable reads with a Rust light client compiled to WebAssembly**, like smoldot (Polkadot) or Helios (Ethereum) | It is the strongest guarantee: the wallet checks every response | [6.2](docs/en/06-recommended-solution.md#s6-2), [10.6](docs/en/10-implementation-guide.md#s10-6) |
-| **Final evolution with Hyperscale** | Prepare Hyperscale for mainnet, read API, wallets, balance migration and dApp rewrites | **Genesis with verifiable claims (M1)**: a Merkle proof against Babylon's final root plus a signature, with a long window and support for securified accounts, combining the `MerkleDistributor` contract and Midnight's Glacier Drop | It requires no trust in a bridge and leaves no one out; first, compare with improving Babylon on its own chain, as Cardano does with Leios | [11](docs/en/11-hyperscale-evolution.md#s11), [12.9](docs/en/12-references-other-networks.md#s12-9) |
+| **Final evolution with Hyperscale** | Prepare Hyperscale for mainnet, read API, wallets, balance migration and dApp rewrites | **Genesis with verifiable claims (M1)**: a Merkle proof against Babylon's final root plus a signature, with a long window and support for securified accounts, combining the `MerkleDistributor` contract and Midnight's Glacier Drop | It requires no trust in a bridge and leaves no one out; first, compare with improving Babylon on its own chain, as Cardano does with Leios | [11](docs/en/11-hyperscale-evolution.md#s11), [12.1](docs/en/12-references-other-networks.md#s12-1), [12.8](docs/en/12-references-other-networks.md#s12-8) |
 | **Scrypto contracts on Hyperscale** | Rewrite them with the Hyperscale SDK | **Rewriting assisted by translation tools**, taking advantage of both using Rust and similar concepts | Keeping Scrypto is not possible with Hyperscale's current design | [11.4](docs/en/11-hyperscale-evolution.md#s11-4) |
 | **Privacy on Layer 1** (optional) | ZK proof verification in the engine and shielded resources | **A native ZK proof-verification primitive** in the Radix Engine (for example Halo2, like Midnight) and shielded resources | It keeps the Layer-1 principle, without a separate network | [12.8](docs/en/12-references-other-networks.md#s12-8) |
 
@@ -133,13 +142,13 @@ The "Conclusion" section below summarises feasibility and difficulty for each go
 **Recommended short-term solution:** the **light indexer next to each node (E3)**, which replaces the Gateway, followed by integrating it into `babylon-node` (E2) and on-ledger discovery. The measured data supports it:
 
 - it takes ~10-50 GB (estimate), versus ~2.5 TB;
-- its cost per operator is close to zero (estimate), versus the ~€300-400/month it costs to run the Gateway;
+- its cost per operator is close to zero (estimate), versus the ~€300-400/month a community proposal estimated for running the Gateway (section [1.1](docs/en/01-02-current-situation.md#s1-1));
 - it works with current wallets without new releases;
 - it is the only option that can be ready before funding ends.
 
 **Is it possible?** Yes. **Difficulty:** medium.
 
-**4 GB / 500 GB nodes** (section [9](docs/en/09-lighter-nodes.md#s9)). **Is it possible?** Yes: with R1-R2, a node of at most 8 GB looks achievable, and 4 GB is plausible (estimates to be measured). Radix is better placed than other networks because its state is already on disk, its validator set is small and its load is low (section [12.9](docs/en/12-references-other-networks.md#s12-9)). **Difficulty:** medium while on Java (R1-R9); very high for comfortable headroom (R11).
+**4-8 GB / 500 GB nodes** (chapter [9](docs/en/09-lighter-nodes.md#s9)). **Is it possible?** Yes: with R1-R2, a node of at most 8 GB looks achievable, and 4 GB is plausible (estimates to be measured). Radix is better placed than other networks because its state is already on disk, its validator set is small and its load is low (section [12.9](docs/en/12-references-other-networks.md#s12-9)). **Difficulty:** medium while on Java (R1-R9); very high for comfortable headroom (R11).
 
 - **R1-R2:** remove the main cause of today's 16 GB (unbounded RocksDB and 12 GB reserved for Java); **R3-R4** reduce disk. All four are low cost (weeks). **Difficulty: low.**
 - **R5-R9:** pruning and bootstrapping from a verified snapshot keep disk under 500 GB even as the network grows. **Difficulty: low-medium to medium** (R9, medium-high).
@@ -150,7 +159,7 @@ The "Conclusion" section below summarises feasibility and difficulty for each go
 - Babylon already signs the Merkle roots of state, transactions and receipts; what is missing is exposing those proofs and verifying them in clients.
 - It is the end goal within Babylon. Its difficulty is **very high** (several years), and the short-term solution is its first stage.
 
-**Final evolution with Hyperscale** (section [11](docs/en/11-hyperscale-evolution.md#s11)). **Is it possible?** Yes, with conditions. **Difficulty:** very high.
+**Final evolution with Hyperscale** (chapter [11](docs/en/11-hyperscale-evolution.md#s11)). **Is it possible?** Yes, with conditions. **Difficulty:** very high.
 
 - **Is it possible to migrate Radix using the Hyperscale code? Yes, with conditions.** The network and funds can migrate; Scrypto contracts and dApps cannot, because they must be rewritten. With the current code, still in development, it is not yet possible in production.
 - **Can Scrypto be kept with Hyperscale?** Not with the current design: Hyperscale lists Scrypto compatibility as a non-goal. The Hyperscale SDK also uses Rust and `#[blueprint]` and has similar concepts (resources, badges, virtual accounts), which makes rewriting contracts easier, but they do have to be rewritten (section [11.4](docs/en/11-hyperscale-evolution.md#s11-4)).
@@ -188,8 +197,8 @@ The "Conclusion" section below summarises feasibility and difficulty for each go
 
 | Decision | Deadline | Information needed | Where |
 |---|---|---|---|
-| Fund the minimum viable solution (7-12 person-months, estimate) | Before 31 Dec 2026 | This report; team proposals | Conclusion, section [6](docs/en/06-recommended-solution.md#s6) |
-| Contingency plan if the replacement is not ready in time | Before 31 Dec 2026 | Prototype status | Section [6.3](docs/en/06-recommended-solution.md#s6-3) |
+| Fund the minimum viable solution (7-12 person-months, estimate) | Before 31 Dec 2026 | This report; team proposals | Conclusion, chapter [6](docs/en/06-recommended-solution.md#s6) |
+| Prioritise the critical subset if the full replacement is not ready in time | Before 31 Dec 2026 | Prototype status | Section [6.3](docs/en/06-recommended-solution.md#s6-3) |
 | Who produces and signs the Olympia archive | As soon as possible | Availability of a copy of its database | Section [2.2](docs/en/01-02-current-situation.md#s2-2) |
 | Adopt `api_endpoints` as the discovery convention | 2027 | Indexer prototype | Section [10.2](docs/en/10-implementation-guide.md#s10-2) |
 | Incentives for read nodes, paid on Layer 1 | 2027 | Number of volunteer operators | Sections [6.2](docs/en/06-recommended-solution.md#s6-2) and [12.1](docs/en/12-references-other-networks.md#s12-1) |
@@ -371,7 +380,7 @@ The report's data makes it possible to state what each side requires:
   There are signs in both directions:
   - **in favour:** the community has run Stokenet since June 2026 (according to [radix.wiki](https://radix.wiki/ecosystem/radix-accountability-council), a secondary source), and XRD holder consultations have drawn over one billion XRD ([Foundation Update](https://www.radixdlt.com/blog/foundation-update-moving-to-maintenance-mode));
   - **against:** of the six milestones proposed for `hyperscale-rs`, only the first was funded, because the DAO treasury was not yet available (according to [radix.wiki](https://radix.wiki/contents/tech/releases/radix-mainnet-xian), a secondary source; [original RFC](https://radixtalk.com/t/rfc-xian-delivering-hyperscale-for-radix/2280)).
-- **Precedents.** Other communities have done it: Kaspa rewrote its node in Rust, and Cardano maintains Koios with independent operators (chapter [12](docs/en/12-references-other-networks.md#s12)).
+- **Precedents.** Other communities have done it: Kaspa rewrote its node in Rust, and the Cardano community maintains Koios with independent operators (chapter [12](docs/en/12-references-other-networks.md#s12)).
 
 **Technology is not the obstacle.** The outcome will depend on whether the Radix community decides to prioritise this work, gathers the necessary talent and funds it in time. This report aims to make that decision easier, and is itself an invitation to contribute.
 

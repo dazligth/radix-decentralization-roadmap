@@ -6,9 +6,9 @@ Esta carpeta recoge **ideas, estrategias alternativas, experiencias y opiniones*
 
 **Cómo añadir una nota:**
 
-1. Copia [`TEMPLATE.md`](TEMPLATE.md) con el nombre `AAAA-MM-DD-tema-breve.md` (por ejemplo, `2026-11-10-incentivos-nodos-lectura.md`).
-2. Rellena la cabecera y el contenido. Puede estar en español, en inglés o en ambos.
-3. Abre un pull request. Si la nota propone cambiar el informe, enlaza el *issue* correspondiente.
+1. Copiar [`TEMPLATE.md`](TEMPLATE.md) con el nombre `AAAA-MM-DD-tema-breve.md` (por ejemplo, `2026-11-10-incentivos-nodos-lectura.md`).
+2. Rellenar la cabecera y el contenido. Puede estar en español, en inglés o en ambos.
+3. Abrir un pull request. Si la nota propone cambiar el informe, enlazar el *issue* correspondiente.
 
 Las notas que alcancen consenso pueden incorporarse después a los capítulos del informe.
 

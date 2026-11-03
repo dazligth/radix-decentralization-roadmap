@@ -6,7 +6,7 @@
 
 > [!IMPORTANT]
 > - **¿Es posible?** Solo en parte antes del 31-dic-2026: el subconjunto crítico del indexador ligero puede tener un prototipo si se empieza ya; el resto del plan llega en 2027 y años siguientes.
-> - **Dificultad:** Media (el calendario) y muy alta (las fases finales).
+> - **Dificultad:** Media para el calendario a corto plazo; muy alta para las fases F4-F5.
 > - **Esfuerzo y plazo:** las fechas suponen un equipo dedicado de unas 4-5 personas a tiempo completo (supuesto de este informe); con menos personas, los plazos se alargan.
 
 ```mermaid
@@ -42,7 +42,7 @@ gantt
 | **F2** | feb.-abr. 2027 | Clientes: listas con conmutación por error y descubrimiento (Sargon, wallets, RDT, ROLA, extensión, SDK). Reenvío en Sargon. Correcciones (`BaseUrlInterceptor`, mainnet fijo, servicios fijos). | Sin proveedor por defecto central |
 | **F3** | 2027 | `babylon-node`: N1, N6, N5b, después N2-N4. R3-R8 (reducción de disco y nodo podado) y R9 (arranque desde snapshot verificado). Captura de snapshots en consultation. | Cada nodo es un punto de acceso; el indexador pasa a ser opcional |
 | **F4** | 2027-2029 | Migración del núcleo a Rust (R11) por fases, **si la gobernanza no adopta Hyperscale o lo aplaza** (sección [11.8](11-evolucion-hyperscale.md#s11-8)). Actualización de protocolo R10. Lecturas verificables y cliente ligero ([6.2](06-solucion-recomendada.md#s6-2), [10.6](10-guia-de-implementacion.md#s10-6)). | Nodos de 4 GB con margen; acceso sin confiar en el nodo |
-| **F5** | Tras la decisión de la gobernanza | Migración a Hyperscale (sección [11](11-evolucion-hyperscale.md#s11)): preparación para mainnet, API de lectura e indexador, wallets, génesis con reclamación verificable, reescritura de dApps. | Evolución final de Radix, si la comunidad la adopta |
+| **F5** | Tras la decisión de la gobernanza | Migración a Hyperscale (capítulo [11](11-evolucion-hyperscale.md#s11)): preparación para mainnet, API de lectura e indexador, wallets, génesis con reclamación verificable, reescritura de dApps. | Evolución final de Radix, si la comunidad la adopta |
 
 ---
 

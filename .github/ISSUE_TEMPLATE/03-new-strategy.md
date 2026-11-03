@@ -11,7 +11,7 @@ labels: ["strategy"]
 
 **Valoración / Assessment:**
 - **¿Es posible? / Is it possible?**
-- **Dificultad / Difficulty:** Baja / Media / Alta / Muy alta — Low / Medium / High / Very high
+- **Dificultad / Difficulty:** Baja / Baja-media / Media / Media-alta / Alta / Muy alta — Low / Low-medium / Medium / Medium-high / High / Very high
 - **Esfuerzo y plazo / Effort and timeline (estimación / estimate):**
 
 **Ventajas e inconvenientes frente a las estrategias actuales / Pros and cons versus the current strategies:**

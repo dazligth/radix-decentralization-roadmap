@@ -11,7 +11,7 @@
 > - **Difficulty:** Medium-high.
 > - **Effort and timeline:** 15-25 person-months in clients (estimate).
 
-- **Coverage:** partial (9 of 19 capabilities fully and 2 partly, section [3.2](03-what-the-node-offers.md#s3-2)). It loses N1-N5: full history, NFT location, reverse role lookup, snapshots and pre-authorisation status.
+- **Coverage:** partial (9 of 19 capabilities fully and 2 partly, section [3.2](03-what-the-node-offers.md#s3-2)). It loses N1-N5: pre-authorisation status (N1), NFT location (N2), full history (N3), reverse role lookup (N4) and historical state (N5).
 - **Client changes:** large. Every client needs a new backend.
 - **Cost for the operator:** zero if a node already exists. It needs a public proxy.
 - **Problem:** degraded user experience and use cases that stop working. It **does not meet "every use case"**.
@@ -26,7 +26,7 @@
 - **Coverage:** 100 % of what clients use today, except arbitrary substate history (see E3).
 - **Client changes:** many, as in E1, unless the node also answers in the API format wallets use today; in that case none are needed to keep working.
 - **Cost per operator:** marginal (optional indexes).
-- **Decentralisation:** maximum. Any node, including the 100 active validators, can serve.
+- **Decentralisation:** maximum. Any full node can serve reads (discouraged on validators, section [6.1](06-recommended-solution.md#s6-1)).
 - **Problem:**
   - It needs Java and Rust work inside the node, and a node release.
   - With the Foundation in maintenance mode, it depends on community developers and governance.
@@ -52,14 +52,14 @@ It is a separate process, written in Rust with RocksDB or SQLite. It works like 
   - (g) validator emissions;
   - (h), (i) and (j) for explorers: holders, statistics and search.
 - **It contains none of the Gateway software:** no DataAggregator, no PostgreSQL, no substate history. It only keeps the **API format, requests and responses** (the OpenAPI contract), so already-released wallets work without an update. Once clients adopt the node's native API (E2), that compatibility layer can be removed.
-- It answers requests **with the same routes and the same JSON that wallets and dApps use today** (those in section [2](01-02-current-situation.md#s2), about 25 routes). Already-released apps then work by changing only the URL. It is a matter of format: there is no Gateway behind it. Current-state reads are delegated live to the node (Core and Engine State APIs); its own indexes are used only for what the node cannot answer.
+- It answers requests **with the same routes and the same JSON that wallets and dApps use today** (those in chapter [2](01-02-current-situation.md#s2), about 25 routes). Already-released apps then work by changing only the URL. It is a matter of format: there is no Gateway behind it. Current-state reads are delegated live to the node (Core and Engine State APIs); its own indexes are used only for what the node cannot answer.
 
 Assessment:
 
 - **Coverage:** ~100 % of what wallets, the RDT, ROLA, the extension and the SDK use.
   - It does **not** include arbitrary `at_ledger_state`. Today the only significant use is consultation's. Sargon uses it to keep paged reads consistent, which is solved by pinning the version.
 - **Client changes:** **none to get it working.** The wallets already let users add a custom URL (Settings → Gateways) pointing to the indexer, and the RDT has `gatewayBaseUrl`. Small changes are needed for automatic endpoint selection.
-- **Size:** **~10-50 GB**, versus ~2.5 TB. The basis is ~10-15 million user transactions × ~0.5-1 KB per marker (an assumption to validate with a prototype), plus the NFT location table, skipping the ~555 million round updates. *This is an estimate to validate with a prototype.*
+- **Size:** **~10-50 GB**, versus ~2.5 TB. The basis is ~10-15 million user transactions × ~0.5-1 KB per marker (an assumption to validate with a prototype), giving ~5-15 GB; the rest of the range covers the NFT-location, holder, search and auxiliary tables, skipping the ~555 million round updates. *This is an estimate to validate with a prototype.*
 - **First sync:** walk ~567 million stream versions. Assuming an ingestion rate of 2,000-5,000 versions/s for a process without Postgres (an assumption to validate), that is ~1.3-3.3 days. Signed snapshots can shorten it. *Estimate.*
 - **Cost per operator:** marginal on top of an existing node (disk and a little CPU).
 - **Decentralisation:** high. Any node operator can run it.
@@ -111,16 +111,16 @@ Scoring scale: 1 = bad, 5 = very good.
 
 | Criterion | E1 Direct node | E2 Read node | **E3 Light indexer** | E4 Client | E5 Light client | E6 On ledger |
 |---|---|---|---|---|---|---|
-| Use-case coverage | 2 (partial: 9 of 19 capabilities) | 5 | **5 (~100 %; no arbitrary history)** | 1 | 2 | 1-2 |
-| Full transaction explorers | 1 (no history, holders or statistics) | 4 (if h, i, j are added) | **5 (with h, i, j)** | 1 | 1 | [1](01-02-current-situation.md#s1) |
-| Removes the Gateway as a central service | 5 | 5 | **5** (no Gateway remains; only the request format is reused) | 5 | 5 | [3](03-what-the-node-offers.md#s3) |
+| Use-case coverage | 2 (partial: 9 of 19 fully and 2 partly) | 5 | **5 (~100 %; no arbitrary history)** | 1 | 2 | 1-2 |
+| Full transaction explorers | 1 (no history, holders or statistics) | 4 (if h, i, j are added) | **5 (with h, i, j)** | 1 | 1 | 1 |
+| Removes the Gateway as a central service | 5 | 5 | **5** (no Gateway remains; only the request format is reused) | 5 | 5 | 3 |
 | Storage per operator | 0 extra | Tens of GB (est.) | **~10-50 GB (est.)** | — | — | — |
 | Monthly cost per operator | ~0 on top of the node | ~0 | **~€0-20 on top of the node (est.)** | — | — | — |
 | Client changes required | Many | Many (none if the node also serves the current format) | **None to get it working** | Many | Many | Per dApp |
 | Available before December 2026? | Partly | No | **Prototype of the critical subset: possible** | No | No | No |
 | Development effort (est.) | 15-25 person-months | 6-10 person-months (node) + ~4-6 (clients) | **4-7 person-months** (+1-2 for explorer indexes) | — | Years | Per dApp |
 | Technical risk | Medium | Medium-high (node core) | **Medium** | High | Very high | Low |
-| Valid for Xi'an / Hyperscale | No | No | Partly (interface reusable) | — | Yes | Yes |
+| Valid for Xi'an / Hyperscale | No | No | Partly (interface reusable) | — | Partly (would need adapting) | No (they must be rewritten) |
 
 **Reading the table:**
 

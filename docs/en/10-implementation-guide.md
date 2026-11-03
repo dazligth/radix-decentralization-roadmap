@@ -4,6 +4,8 @@
 
 # 10. Step-by-step implementation guide
 
+The sections of this chapter inherit the assessment (is it possible?, difficulty and effort) of what they implement: E3 (section [10.1](#s10-1)), discovery ([10.2](#s10-2), with its own box), E2 ([10.3](#s10-3)), client changes (chapter [7](07-per-repository-changes.md#s7)), the Olympia archive ([10.5](#s10-5)) and the ideal solution ([6.2](06-recommended-solution.md#s6-2)).
+
 This chapter explains **how** to build the main pieces. Code snippets are **indicative**: they show the shape of the solution, not production-ready code, and must be adjusted to the exact version of each dependency.
 
 <a id="s10-1"></a>
@@ -46,6 +48,7 @@ All keys are byte-ordered so they can be scanned by range.
 | `stats_hourly` | `hour` | counters | every transaction | statistics |
 | `search_terms` | `normalised term ‖ entity` | — | `name`, `symbol`, `tags` metadata | search |
 | `validator_epoch` | `validator ‖ epoch` | proposals made and missed | epoch-change events | uptime |
+| `locker_touch` | `account ‖ locker` | `state_version` of the last change | account-locker changes | `state/account-lockers/touched-at` (index f) |
 | `cursor` | `"cursor"` | last processed `state_version` | each batch | resume |
 
 ### Ingestion loop
@@ -114,6 +117,8 @@ Each route resolves its data in one of these ways:
 | `extensions/entities-by-role-requirement/lookup` | `role_badges` index |
 | `extensions/resource-holders/page` | `holders` index |
 | `statistics/validators/uptime` | `validator_epoch` index |
+| `state/account-lockers/touched-at` | `locker_touch` index |
+| `state/account-locker/page/vaults`, `state/account/page/{resource-preferences, authorized-depositors}`, `state/entity/page/{metadata, fungible-vaults, non-fungible-vaults}` | Engine State API (collections and metadata) and Core |
 
 **Consistent reads.**
 

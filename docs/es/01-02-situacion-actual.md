@@ -49,7 +49,7 @@ Las referencias a mecanismos de capa 2 o de cadenas asociadas en otras redes (ca
   - `radixdlt/explorer`, el explorador de Olympia (ver [2.2](#s2-2)).
 - **No públicos:** el código del Radix Dashboard y de la Developer Console no está en la organización `radixdlt` de GitHub. Se tratan como clientes de caja negra.
 
-# Infraestructura actual
+## Infraestructura actual
 
 ```mermaid
 flowchart TB
@@ -134,7 +134,7 @@ En rojo, los servicios que dependen de un solo operador.
 |---|---|
 | `state_version` actual | 567 005 616 (época 355 117) |
 | Ritmo de versiones de estado | **~3,6/s de media** desde junio de 2026; 4,4/s en la muestra de hoy. Cada ronda de consenso es una versión. |
-| Transacciones de usuario/día (muestra de 100 transacciones en cada fecha) | nov-2023: 1,5k · mar-2024: 5,5k · jul-2024: 11,6k · nov-2024: 20,7k · **mar-2025: 34,7k (pico)** · jul-2025: 8,4k · nov-2025: 5,9k · mar-2026: 3,4k · jul-2026: 2,2k · oct-2026: 4,4k |
+| Transacciones de usuario/día (muestra de 100 transacciones en cada fecha) | nov-2023: 1,5 mil · mar-2024: 5,5 mil · jul-2024: 11,6 mil · nov-2024: 20,7 mil · **mar-2025: 34,7 mil (pico)** · jul-2025: 8,4 mil · nov-2025: 5,9 mil · mar-2026: 3,4 mil · jul-2026: 2,2 mil · oct-2026: 4,4 mil |
 | Total estimado de transacciones de usuario desde la génesis | **~10-15 millones** (integración aproximada, ±50 %) |
 | Peso de las transacciones de usuario | **~2-3 % de las versiones de estado** en todo el historial (~10-15 millones de ~567 millones); hoy, menos del 1 %. El resto (~97-98 %) son cambios de ronda y de época. |
 | Ventana histórica del nodo | `state_version_history_length = 60 000` versiones por defecto, **≈ 4-5 horas** a la media de 3,6 versiones/s (≈ 3,8 h al ritmo medido hoy) |
@@ -150,7 +150,7 @@ Para entender mejor qué hace el Gateway y qué habría que sustituir, se hicier
 | Consulta | Resultado | Qué implica |
 |---|---|---|
 | Estado del recurso XRD en la versión 10 000 (`at_ledger_state`, 28-sep-2023) | Responde: suministro total de 12 660 434 555 XRD entonces, frente a 13 565 348 962 hoy | El Gateway sirve **historia completa desde la génesis**. El nodo solo conserva unas horas (sección [3.1](03-que-ofrece-el-nodo.md#s3-1)). Esa historia arbitraria es lo que más ocupa y lo que el indexador ligero no replica; quien la necesite tendría un nodo de archivo (secciones [6.2](06-solucion-recomendada.md#s6-2) y [9.6](09-nodos-ligeros.md#s9-6)). |
-| Titulares de XRD (`/extensions/resource-holders/page`) | `total_count`: **435 605** | Da el orden de magnitud del índice de titulares (h). Con ~100 bytes por fila (supuesto), XRD ocuparía unos 44 MB, coherente con la estimación de 10-50 GB del indexador ligero. |
+| Titulares de XRD (`/extensions/resource-holders/page`) | `total_count`: **435 605** | Da el orden de magnitud del índice de titulares (h). Con ~100 bytes por fila (supuesto), XRD ocuparía unos 44 MB: una fracción mínima del total estimado para el indexador ligero (10-50 GB). |
 | Cabeceras de respuesta | `server: cloudflare`, `cf-cache-status: DYNAMIC` | El Gateway público está detrás de Cloudflare y sus respuestas no se sirven desde caché. Es otra dependencia central; los nodos de lectura necesitan su propia protección frente a ataques (N6). |
 | `/status/gateway-status` y `/status/network-configuration` | Versión 1.10.6 (imagen v1.10.7); red `mainnet`, identificador 1 y direcciones conocidas | El indexador ligero puede obtener los mismos datos del nodo (`/status/network-configuration`). |
 
@@ -200,14 +200,14 @@ Un explorador es el cliente **más exigente**: necesita índices globales que ni
 | Página de una cuenta, componente o recurso (estado actual, saldos, NFT, metadatos, roles, royalties) | Sí, en el nodo: Core y Engine State API |
 | Paquetes: blueprints, código, esquemas | Sí, en el nodo: `/core/state/package`, `/blueprint/info`, `/entity/schema/entry` |
 | KV-stores de un componente | Sí, en el nodo: `/kv-store/iterator` |
-| **Historial de transacciones de cualquier entidad**, con filtros por tipo, recurso o evento | No: Índice (a) de E3, o N3 |
-| **Titulares de un recurso**, ordenados por saldo | No: Índice nuevo (h): `resource → (entidad, saldo)` |
-| **Dónde está un NFT** | No: Índice (b) de E3, o N2 |
-| Validadores: uptime, historial de stake, APY | No: Índice (g) de E3, o N9. El stake actual sale del nodo. |
-| Estado de la cuenta o del recurso en una fecha pasada | No: Nodo de archivo (N5), o índice de cambios de saldo (a) + (h) |
-| Estadísticas: TPS, transacciones/día, cuentas activas, comisiones quemadas | No: Índice nuevo (i): agregados por hora y día |
-| Buscar por nombre o símbolo (metadatos) | No: Índice nuevo (j): texto `name`, `symbol`, `tags` → entidad |
-| Buscar por dirección | Sí: La dirección indica su tipo; basta con `/entity/info` |
+| **Historial de transacciones de cualquier entidad**, con filtros por tipo, recurso o evento | No: índice (a) de E3, o N3 |
+| **Titulares de un recurso**, ordenados por saldo | No: índice nuevo (h): `resource → (entidad, saldo)` |
+| **Dónde está un NFT** | No: índice (b) de E3, o N2 |
+| Validadores: uptime, historial de stake, APY | No: índice (g) de E3, o N9. El stake actual sale del nodo. |
+| Estado de la cuenta o del recurso en una fecha pasada | No: nodo de archivo (N5), o índice de cambios de saldo (a) + (h) |
+| Estadísticas: TPS, transacciones/día, cuentas activas, comisiones quemadas | No: índice nuevo (i): agregados por hora y día |
+| Buscar por nombre o símbolo (metadatos) | No: índice nuevo (j): texto `name`, `symbol`, `tags` → entidad |
+| Buscar por dirección | Sí: la dirección indica su tipo; basta con `/entity/info` |
 
 **Consecuencias para la estrategia:**
 
@@ -252,7 +252,7 @@ Radix tuvo una red anterior, **Olympia**, que se migró a Babylon el 28-sep-2023
    - Importar cuentas de Olympia al wallet de Babylon se hace **sin red**: exportación con `olympia-wallet` y `MigrateOlympiaAccountsUseCase` en el wallet Android.
    - ROLA verifica las cuentas secp256k1 por derivación, sin consultar el ledger.
    - El **escaneo de recuperación** con frase semilla de Olympia (ruta BIP44, `ResolveDerivationPathsForRecoveryScanUseCase.kt:42-79`) usa las mismas consultas al ledger que el resto. Con el nodo funciona: las cuentas creadas en la génesis existen y se detectan con `/entity/info`, aunque no exista `last_updated_at_state_version`.
-3. **El historial de transacciones de Olympia (antes del 28-sep-2023) NO está en el ledger de Babylon.**
+3. **El historial de transacciones de Olympia (antes del 28-sep-2023) **no** está en el ledger de Babylon.**
    - Solo lo sirve el **Gateway de Olympia**, `olympia-gateway.radixdlt.com`. Sigue activo hoy, con Gateway API 1.1.14, congelado en la versión 337 759 839 del 2023-09-28T06:33:34Z.
    - Lo usan `olympia-wallet` (`src/helpers/network.ts:14-39`) y el explorador de Olympia (`radixdlt/explorer`).
    - Es **otro servicio central**, y no aparece en las listas de servicios de la transición publicadas por la Foundation que se han revisado.

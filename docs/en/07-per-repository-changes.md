@@ -4,6 +4,8 @@
 
 # 7. Per-repository changes
 
+Each change states its priority and effort. The overall assessment of each block is in chapters [4](04-05-strategies.md#s4), 6 and 9.
+
 Priority: **P0** essential · **P1** needed for every use case · **P2** improvement.
 Effort: **S** days · **M** 1-3 weeks · **L** more than a month · **XL** several months or more. As a rough reference: S < 0.5 person-months; M ≈ 0.25-0.75; L ≈ 1 or more; XL > 3.
 
@@ -78,7 +80,7 @@ Effort: **S** days · **M** 1-3 weeks · **L** more than a month · **XL** sever
 | N8-N9 | Locker touches; validator emissions | P2 / S |
 | D | Validator metadata convention `api_endpoints` (list of URLs with capabilities), and operator documentation | P0 / S |
 
-The changes that **reduce node RAM and disk** (R1-R11: RocksDB tuning, pruning, verified snapshot bootstrap, the proposal-statistics protocol update and the Java-to-Rust migration) are in **section [9](09-lighter-nodes.md#s9)**, with each one detailed in section [9.4](09-lighter-nodes.md#s9-4).
+The changes that **reduce node RAM and disk** (R1-R11: RocksDB tuning, pruning, verified snapshot bootstrap, the proposal-statistics protocol update and the Java-to-Rust migration) are in **chapter [9](09-lighter-nodes.md#s9)**, with each one detailed in section [9.4](09-lighter-nodes.md#s9-4).
 
 Every index should be an **optional flag**, like the existing ones, so validators who do not want to serve reads are not penalised.
 
@@ -151,7 +153,7 @@ This section describes **what** to change; section [10.4](10-implementation-guid
 
 ## 7.7 `radixdlt/babylon-wallet-ios`
 
-Symmetric to Android. The DI clients (`DependencyKey`) allow the `liveValue` to be replaced:
+The changes mirror Android's. The DI clients (`DependencyKey`) allow the `liveValue` to be replaced:
 
 - **P0/S:**
   - failover and discovery in `GatewaysClient` and `NetworkSwitchingClient` (`NetworkSwitchingClient+Live.swift:30`).
@@ -242,7 +244,7 @@ They do not use the Gateway, but they are P1 infrastructure that also depends on
 ## 7.14 `wallet-agent-ai`
 
 - **P0/S.** Hard-coded URLs in `src/network-config.ts:14-22`; the network is inferred from the URL (`:33-36`, `weft.ts:211-225`).
-- **P0/S, existing bug.** It checks for `"Rejected"` / `"PermanentlyRejected"` (`src/core/RadixClient.ts:122`).
+- **P0/S, existing bug.** It compares the status with `"Rejected"` / `"PermanentlyRejected"` (`src/core/RadixClient.ts:122`), but the Core API returns `PermanentRejection`, so rejection is not detected.
 - **P1/M.** Create a `LedgerReader` interface for its ~25 `fetch` calls.
 - **P1/S.** `waitForOwnerApproval` (`AgentWallet.ts:697-722`) should watch component state instead of filtering the stream.
 - **P2.** The Astrolescent API should accept a self-hosted instance.
@@ -288,7 +290,7 @@ They do not use the Gateway, but they are P1 infrastructure that also depends on
 - **`olympia-wallet`:** its current use (exporting accounts) is offline. **P2/S:** once the Olympia archive exists ([2.2](01-02-current-situation.md#s2-2)), point to it instead of `olympia-gateway.radixdlt.com` (`src/helpers/network.ts:14-39`).
 - **`radixdlt/explorer`** (the Olympia explorer): **P1/S:** serve history from the static Olympia archive instead of the Olympia Gateway, or fold it into the reference explorer ([7.16](#s7-16)).
 - **`wallet-compatible-derivation`:** offline key derivation, no network access.
-- **`governance-framework`:** only the points in 7.13.
+- **`governance-framework`:** only the points in section [7.13](#s7-13).
 - **`reference/hyperscale-rs`:**
   - A different network, not compatible with Babylon.
   - Its RPC (`crates/production/src/rpc/routes.rs:13-35`) has no state reads.
