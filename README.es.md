@@ -320,7 +320,7 @@ flowchart TB
 ### Etapas hasta la solución ideal
 
 ```mermaid
-%%{init: {"flowchart": {"rankSpacing": 80, "nodeSpacing": 30, "subGraphTitleMargin": {"top": 12, "bottom": 12}}}}%%
+%%{init: {"flowchart": {"rankSpacing": 70, "nodeSpacing": 40, "subGraphTitleMargin": {"top": 12, "bottom": 12}}}}%%
 flowchart TB
     subgraph ROW1[" "]
         direction LR
@@ -331,17 +331,11 @@ flowchart TB
         end
         S0 --> S1["<b>ETAPA 1 · meses</b><br/>indexador ligero (E3)<br/>sin Gateway · R1-R4"] --> S2["<b>ETAPA 2 · 2027</b><br/>índices en el nodo (E2)<br/>nodos de 4-8 GB · R9"]
     end
-    subgraph ROW2[" "]
-        direction LR
-        S3["<b>ETAPA 3 · 2027-2029</b><br/>lecturas verificables<br/>y cliente ligero<br/>(en paralelo)"] ~~~ D{"<b>Gobernanza · sep-2027</b><br/>¿qué evolución final?<br/>(tras la etapa C0)"}
-    end
-    subgraph ROW3[" "]
-        direction TB
-        FA["<b>FINAL A</b><br/>seguir mejorando Babylon<br/>nodo en Rust (R11)"]
-        FB["<b>FINAL B</b><br/>migrar a Hyperscale<br/>reescribir las dApps<br/>(capítulo 11)"]
-        FC["<b>FINAL C</b><br/>Xi'an con Scrypto<br/>misma cadena, fragmentada<br/>(capítulo 13)"]
-    end
-    ROW1 --> ROW2 --> ROW3
+    ROW1 --> D{{"<b>Gobernanza · sep-2027</b><br/>¿qué etapa final?<br/>tras la etapa C0"}}
+    ROW1 -.->|"en paralelo"| S3["<b>ETAPA 3 · 2027-2029</b><br/>lecturas verificables<br/>y cliente ligero"]
+    D --> FA["<b>FINAL A</b><br/>seguir mejorando Babylon<br/>nodo en Rust (R11)<br/>capítulo 9"]
+    D --> FB["<b>FINAL B</b><br/>migrar a Hyperscale<br/>reescribir las dApps<br/>capítulo 11"]
+    D --> FC["<b>FINAL C</b><br/>Xi'an con Scrypto<br/>Babylon fragmentada<br/>capítulo 13"]
     classDef today fill:#ffd6d6,stroke:#c00,color:#000
     classDef step fill:#dbe9ff,stroke:#2b5fb4,color:#000
     classDef decision fill:#fff3c4,stroke:#b58900,color:#000
@@ -352,7 +346,7 @@ flowchart TB
     class S1,S2,S3 step
     class D decision
     class FA,FB,FC final
-    class ROW1,ROW2,ROW3 row
+    class ROW1 row
 ```
 
 ### Evolución de Radix
