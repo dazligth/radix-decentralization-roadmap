@@ -297,6 +297,7 @@ flowchart TB
 ### Etapas hasta la solución ideal
 
 ```mermaid
+%%{init: {"flowchart": {"rankSpacing": 80, "nodeSpacing": 30}}}%%
 flowchart TB
     subgraph ROW1[" "]
         direction LR
@@ -308,8 +309,8 @@ flowchart TB
     end
     subgraph ROW3[" "]
         direction TB
-        FA["<b>FINAL A</b> · si no, o más adelante<br/>seguir mejorando Babylon<br/>nodo en Rust (R11)"]
-        FB["<b>FINAL B</b> · si se adopta<br/>Radix en Hyperscale<br/>(capítulo 11)"]
+        FA["<b>FINAL A</b><br/>si no, o más adelante<br/>seguir mejorando Babylon<br/>nodo en Rust (R11)"]
+        FB["<b>FINAL B</b><br/>si se adopta<br/>Radix en Hyperscale<br/>(capítulo 11)"]
     end
     ROW1 --> ROW2 --> ROW3
     classDef today fill:#ffd6d6,stroke:#c00,color:#000

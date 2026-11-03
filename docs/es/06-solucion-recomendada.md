@@ -258,6 +258,7 @@ sequenceDiagram
 **Por qué es la mejor con tiempo ilimitado:** es la única opción en la que la red no depende de nadie, ni de un Gateway ni de la honestidad de un nodo. Es el mismo nivel de garantía que da la propia cadena, extendido hasta el wallet de cada usuario.
 
 ```mermaid
+%%{init: {"flowchart": {"rankSpacing": 80, "nodeSpacing": 30}}}%%
 flowchart TB
     subgraph ROW1[" "]
         direction LR
@@ -269,8 +270,8 @@ flowchart TB
     end
     subgraph ROW3[" "]
         direction TB
-        FA["<b>FINAL A</b> · si no, o más adelante<br/>seguir mejorando Babylon<br/>nodo en Rust (R11)"]
-        FB["<b>FINAL B</b> · si se adopta<br/>Radix en Hyperscale<br/>(capítulo 11)"]
+        FA["<b>FINAL A</b><br/>si no, o más adelante<br/>seguir mejorando Babylon<br/>nodo en Rust (R11)"]
+        FB["<b>FINAL B</b><br/>si se adopta<br/>Radix en Hyperscale<br/>(capítulo 11)"]
     end
     ROW1 --> ROW2 --> ROW3
     classDef today fill:#ffd6d6,stroke:#c00,color:#000
