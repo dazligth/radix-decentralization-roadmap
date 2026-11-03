@@ -320,7 +320,7 @@ flowchart TB
 ### Etapas hasta la solución ideal
 
 ```mermaid
-%%{init: {"flowchart": {"rankSpacing": 70, "nodeSpacing": 40, "subGraphTitleMargin": {"top": 12, "bottom": 12}}}}%%
+%%{init: {"flowchart": {"rankSpacing": 25, "nodeSpacing": 20, "padding": 12, "subGraphTitleMargin": {"top": 6, "bottom": 6}}}}%%
 flowchart TB
     subgraph ROW1[" "]
         direction LR
@@ -331,22 +331,29 @@ flowchart TB
         end
         S0 --> S1["<b>ETAPA 1 · meses</b><br/>indexador ligero (E3)<br/>sin Gateway · R1-R4"] --> S2["<b>ETAPA 2 · 2027</b><br/>índices en el nodo (E2)<br/>nodos de 4-8 GB · R9"]
     end
-    ROW1 --> D{{"<b>Gobernanza · sep-2027</b><br/>¿qué etapa final?<br/>tras la etapa C0"}}
-    ROW1 -.->|"en paralelo"| S3["<b>ETAPA 3 · 2027-2029</b><br/>lecturas verificables<br/>y cliente ligero"]
-    D --> FA["<b>FINAL A</b><br/>seguir mejorando Babylon<br/>nodo en Rust (R11)<br/>capítulo 9"]
-    D --> FB["<b>FINAL B</b><br/>migrar a Hyperscale<br/>reescribir las dApps<br/>capítulo 11"]
-    D --> FC["<b>FINAL C</b><br/>Xi'an con Scrypto<br/>Babylon fragmentada<br/>capítulo 13"]
+    subgraph ROW2[" "]
+        direction LR
+        D{{"<b>Gobernanza · sep-2027</b><br/>¿qué etapa final?<br/>tras la etapa C0"}} ~~~ S3["<b>ETAPA 3 · 2027-2029</b><br/>en paralelo: lecturas<br/>verificables y cliente ligero"]
+    end
+    subgraph ROW3[" "]
+        direction LR
+        FA["<b>FINAL A</b><br/>seguir mejorando Babylon<br/>nodo en Rust (R11)<br/>capítulo 9"] ~~~ FB["<b>FINAL B</b><br/>migrar a Hyperscale<br/>reescribir las dApps<br/>capítulo 11"] ~~~ FC["<b>FINAL C</b><br/>Xi'an con Scrypto<br/>Babylon fragmentada<br/>capítulo 13"]
+    end
+    ROW1 --> ROW2
+    ROW2 -->|"se elige una"| ROW3
     classDef today fill:#ffd6d6,stroke:#c00,color:#000
     classDef step fill:#dbe9ff,stroke:#2b5fb4,color:#000
+    classDef par fill:#eef4ff,stroke:#2b5fb4,stroke-dasharray: 5 3,color:#000
     classDef decision fill:#fff3c4,stroke:#b58900,color:#000
     classDef final fill:#d9f7d9,stroke:#080,color:#000
     classDef row fill:none,stroke:none
     class S0A,S0B today
     style S0 fill:#fff5f5,stroke:#c00,color:#000
-    class S1,S2,S3 step
+    class S1,S2 step
+    class S3 par
     class D decision
     class FA,FB,FC final
-    class ROW1 row
+    class ROW1,ROW2,ROW3 row
 ```
 
 ### Evolución de Radix
