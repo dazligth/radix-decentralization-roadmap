@@ -1,4 +1,4 @@
-[← Índice](../../README.es.md) · [Anterior: Sección 10: guía de implementación paso a paso](08-guia-de-implementacion.md) · [Siguiente: Fuentes y metodología](10-fuentes.md)
+[← Índice](../../README.es.md) · [Anterior: Sección 10: guía de implementación paso a paso](08-guia-de-implementacion.md) · [Siguiente: Sección 12: referencias de otras redes descentralizadas](10-referencias-otras-redes.md)
 
 # 11. Evolución final: de Babylon a Hyperscale
 
@@ -103,6 +103,9 @@ flowchart TB
 > [!IMPORTANT]
 > - **¿Es posible?** Sí.
 > - **Dificultad:** Alta.
+
+> [!NOTE]
+> **Referencia en otras redes:** Cosmos Hub migró su estado a una nueva génesis (`cosmoshub-3` → `cosmoshub-4`, 2021), y el contrato `MerkleDistributor` de Uniswap implementa reclamaciones con prueba de Merkle. Ver capítulo 12.
 
 1. **Congelar Babylon** en una época acordada. `v1.4.0.0` ya incluye un mecanismo de «moratoria» de transacciones de usuario que puede servir de base.
 2. **Publicar la raíz final del estado** de Babylon (`state_tree_hash` firmado por los validadores en la última época) y archivar el ledger en nodos de archivo y almacenamiento distribuido (capítulo 9, R9; sección 10.5).
@@ -267,8 +270,9 @@ Son estimaciones de orden de magnitud, para planificar, no presupuestos:
 
    Estas mismas piezas son las que necesitan Hyperscale y la reclamación de M1.
 3. **Decisión sobre R11 (migración del nodo de Babylon a Rust).** Conviene **aplicar R1-R9**, de coste moderado (R1-R4 en semanas; R5-R9 en meses), y **aplazar R11 hasta que la gobernanza decida sobre Hyperscale**, porque su esfuerzo (30-50 persona-mes) competiría con el de la migración. Si Hyperscale no se adopta o se retrasa, R11 vuelve a ser la vía para nodos de 4 GB con margen.
-4. **Recomendación:** que la gobernanza decida primero si adopta Hyperscale y con qué estrategia (M1, con M2 como apoyo temporal). Mientras tanto, mantener el plan a corto plazo de este informe, cuyo valor no depende de esa decisión.
+4. **Alternativa que conviene comparar:** Cardano aumenta la capacidad de su capa 1 con Leios mediante una bifurcación de protocolo en la misma cadena, sin migrar a una red nueva (sección 12.2). Antes de decidir, la gobernanza debería comparar la migración a Hyperscale con la opción de seguir mejorando Babylon en su propia cadena.
+5. **Recomendación:** que la gobernanza decida primero si adopta Hyperscale y con qué estrategia (M1, con M2 como apoyo temporal). Mientras tanto, mantener el plan a corto plazo de este informe, cuyo valor no depende de esa decisión.
 
 ---
 
-[← Índice](../../README.es.md) · [Anterior: Sección 10: guía de implementación paso a paso](08-guia-de-implementacion.md) · [Siguiente: Fuentes y metodología](10-fuentes.md)
+[← Índice](../../README.es.md) · [Anterior: Sección 10: guía de implementación paso a paso](08-guia-de-implementacion.md) · [Siguiente: Sección 12: referencias de otras redes descentralizadas](10-referencias-otras-redes.md)

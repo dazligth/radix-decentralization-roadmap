@@ -3,7 +3,7 @@
 # 9. Lighter nodes: target of 4 GB RAM and 500 GB disk
 
 > [!IMPORTANT]
-> - **Is it possible?** Yes. A validator or full node can run with 4 GB of RAM and under 500 GB of disk.
+> - **Is it possible?** Yes. A node of at most 8 GB of RAM looks achievable, and 4 GB is plausible, with under 500 GB of disk (estimates to be confirmed by measuring a real node).
 > - **Difficulty:** Medium while on Java (R1-R9); very high for comfortable headroom (R11, migration to Rust).
 > - **Effort and timeline:** 8-14 person-months (R1-R9); 30-50 person-months (R11) (estimates).
 
@@ -77,8 +77,8 @@ flowchart LR
 | Java heap | 12 GB reserved up front (`-Xms12g`) | Installer default. Actual use has not been published; 1.5-7 GB was measured on betanet (2023). | **1-1.5 GB** with limits on Java structures (vertex store, message queues); **0 GB** after moving to Rust |
 | Direct memory (Netty) | up to 2 GB | Network buffers | 256 MB; **0** after moving to Rust |
 | RocksDB: index and filter blocks of every SST file | **Unbounded**; grows with the ledger | `max_open_files=-1` and `cache_index_and_filter_blocks=false` (defaults) keep the indexes of **all** open files in memory, ~0.5-1.5 % of database size (*estimate*) | Counted inside a shared **512 MB** cache |
-| RocksDB: memtables | 64 MB × 2 per column family with no global cap; ~0.6-1.3 GB in practice (*estimate*) | Defaults | **256 MB** in total with `WriteBufferManager` |
-| RocksDB: block cache | a separate one per column family (26), at RocksDB's default size | Defaults | A single shared cache (the one above) |
+| RocksDB: memtables | 64 MB × 2 per column family with no global cap; ~0.6-1.3 GB in practice (*estimate*) | Defaults (RocksDB documentation, chapter 12) | **256 MB** in total with `WriteBufferManager` |
+| RocksDB: block cache | a separate one per column family: 26 × 32 MB ≈ 0.8 GB with RocksDB 10.4 (`v1.4.0.0`); 26 × 8 MB with RocksDB 8.1 (`develop`) | Defaults | A single shared cache (the one above) |
 | Mempool | ~1.18 GB | 512 MiB default | **64-128 MB** on small validators |
 | Vertex store (consensus, Java) | up to 150 MB, fully re-serialized on every change | `VertexStoreJavaImpl.java:223-238` | Same, without re-serialization, once it moves to Rust |
 | Result and execution caches (Rust) | 3 LRUs of 10,000 entries and the staging cache | `state_manager.rs:257-264` | Configurable size |
@@ -123,6 +123,9 @@ Changes R1-R7 **do not touch consensus** and can ship in any node release. R8 an
 
 ### R1. Configure RocksDB with memory limits (P0, effort S-M)
 
+> [!NOTE]
+> **Reference from other networks:** the official RocksDB documentation describes these same settings (shared cache, index and filter blocks inside the cache, Write Buffer Manager). See chapter 12.
+
 - **Where:**
   - `core-rust/state-manager/src/store/rocks_db.rs:164-170` (and the read-only and secondary opens, `:201-207`, `:237-243`);
   - `core-rust/p2p/src/rocks_db.rs:117-123`;
@@ -160,7 +163,7 @@ let cf_opts = |cf: &str| {
 };
 ```
 
-- **Note on the code:** the node uses the `rocksdb` crate 0.21 (`core-rust/node-common/Cargo.toml:32`). `WriteBufferManager` arrives in later versions of the crate, so it must be **upgraded**. The snippet is indicative: check the exact API names in the chosen version.
+- **Note on the code:** the `develop` branch uses the `rocksdb` crate 0.21 (RocksDB 8.1.1), but release `v1.4.0.0` already uses crate 0.24 (RocksDB 10.4.2), which includes every function in the snippet (`WriteBufferManager`, `set_block_cache`, `set_cache_index_and_filter_blocks`, `set_bloom_filter`, etc.). The snippet is indicative.
 - **New properties:**
   - `db.rocksdb.block_cache_mb` (512);
   - `db.rocksdb.memtable_budget_mb` (256);
@@ -229,6 +232,9 @@ let cf_opts = |cf: &str| {
 
 ### R8. "Pruned node" mode (P1, M-L)
 
+> [!NOTE]
+> **Reference from other networks:** Cosmos SDK offers pruning as a configurable option (pruned and archive nodes), and in July 2025 every Ethereum execution client added expiry of pre-Merge history (EIP-4444), saving 300-500 GB per node. See chapter 12.
+
 - **What:** an option `ledger.retain_epochs=N`. It range-deletes transactions, identifiers, receipts and executions older than N epochs. It keeps:
   - epoch and protocol-update proofs;
   - epoch-change receipts;
@@ -241,6 +247,9 @@ let cf_opts = |cf: &str| {
 - **Risk:** the network needs **enough archive nodes** for new nodes to bootstrap from. Without R9, new nodes depend on them.
 
 ### R9. Bootstrap from a verified state snapshot: "fast sync" (P0 for the goal, L)
+
+> [!NOTE]
+> **Reference from other networks:** CometBFT/Cosmos (state sync) and Ethereum (checkpoint sync) use this same scheme: a snapshot or checkpoint verified against the chain from a trust point. See chapter 12.
 
 A new node starts **in hours (estimate), without replaying 567 million transactions and without trusting whoever provides the snapshot**.
 
@@ -295,6 +304,9 @@ sequenceDiagram
 - **Risk:** it is a protocol update; it needs testing and validator readiness signalling.
 
 ### R11. Migrate the node core from Java to Rust (P1 for 4 GB with headroom, XL)
+
+> [!NOTE]
+> **Reference from other networks:** on Solana, Frankendancer combines components of the new Firedancer client with those of the existing client, a real example of piece-by-piece replacement. See chapter 12.
 
 **What remains in Java** (`develop`):
 
@@ -371,6 +383,9 @@ flowchart LR
 **Relationship with Xi'an/hyperscale-rs:** it is a new network, with another virtual machine, BLS signatures and sharding. It does not replace Babylon in the short term and has no launch date (section 11). Migrating the Babylon node to Rust still makes sense. Patterns from hyperscale-rs (networking, memory-bounded RocksDB storage, deterministic testing) can be reused, but not its protocol.
 
 ## 9.5 Memory budget with 4 GB
+
+> [!NOTE]
+> **Reference from other networks:** none of the networks analysed runs a full node in 4 GB today; the closest is Cardano, with ~5-5.8 GB after moving its ledger to disk. Radix starts with an advantage because its state is already on disk, it has about 100 validators and its load is low. See section 12.9.
 
 These figures are *estimates* to be validated with R2's long-running test.
 

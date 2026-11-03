@@ -27,7 +27,7 @@ Informe del 3 de noviembre de 2026.
 | Operador de nodo o validador | [Capítulo 9: nodos más ligeros](docs/es/07-nodos-ligeros.md) |
 | Desarrollador de wallets, dApps o herramientas | [Capítulo 7: cambios por repositorio](docs/es/05-cambios-por-repositorio.md) y [capítulo 10: guía de implementación](docs/es/08-guia-de-implementacion.md) |
 | Gobernanza (RAC, DAO) | La conclusión, la [hoja de ruta](docs/es/06-hoja-de-ruta.md) y el [capítulo 11: evolución hacia Hyperscale](docs/es/09-evolucion-hyperscale.md) |
-| Quien no conozca algún término | El [glosario](docs/es/11-glosario.md) |
+| Quien no conozca algún término | El [glosario](docs/es/12-glosario.md) |
 | Quien quiera aportar correcciones, datos o ideas | La [guía de contribución](CONTRIBUTING.es.md) y la carpeta [`community/`](community/README.md) |
 
 ## Resumen ejecutivo
@@ -51,6 +51,8 @@ Informe del 3 de noviembre de 2026.
    - Correspondería a la comunidad. La estrategia recomendada es una génesis con **reclamación verificable** de saldos mediante pruebas criptográficas.
    - Su dificultad es **muy alta**, con un plazo estimado de 2 a 4 años. Mientras tanto, Babylon debe seguir funcionando, lo que mantiene la utilidad del resto del plan.
 
+6. **Referencias de otras redes (capítulo 12).** Cardano, Sui, Aptos, Solana, NEAR, Polkadot, Kaspa, Ethereum y Cosmos ya aplican técnicas equivalentes a las propuestas (snapshots verificados, poda, lectura en el nodo, clientes ligeros, reescritura en Rust), lo que confirma que son viables. También se analiza cómo implementa Midnight la privacidad, como referencia para la capa 1 de Radix.
+
 La sección «Conclusión», a continuación, resume la viabilidad y la dificultad de cada objetivo. La sección 9.4 detalla cada cambio en los nodos, la sección 10 explica paso a paso cómo construir las piezas principales, y el glosario, al final, explica los términos técnicos.
 
 ## Conclusión
@@ -64,6 +66,7 @@ La sección «Conclusión», a continuación, resume la viabilidad y la dificult
 
 - Ningún caso de uso necesita información que solo el Gateway pueda generar: todo procede del ledger y del estado que ya guardan los nodos.
 - Lo que falta son índices concretos y un modo de acceso público en los nodos. No hacen falta cambios en el protocolo ni en el consenso.
+- Todo se resuelve en la capa 1, sin soluciones de capa 2 (ver «Principio de diseño» en el Alcance).
 
 **Olympia no supone un obstáculo.** Su estado se migró a la génesis de Babylon, de modo que los nodos ya lo tienen. Añade dos tareas (la sección 2.2 detalla las cuatro consideraciones, dos de las cuales no requieren trabajo):
 
@@ -86,6 +89,24 @@ La sección «Conclusión», a continuación, resume la viabilidad y la dificult
 | Migración a Hyperscale como evolución final (sección 11) | **Sí, con condiciones**: la red y los fondos sí; las dApps deben reescribirse; aún no en producción | **Muy alta** | ~110-210 persona-mes, 2-4 años, sin contar las dApps |
 | Mantener los contratos Scrypto en Hyperscale (sección 11.4) | **No** con el diseño actual de Hyperscale | **Muy alta** si se intentara (bifurcación) | No recomendado |
 
+### Qué hacer para cada objetivo: mejor estrategia y tecnología
+
+| Objetivo | Qué hay que hacer | Mejor estrategia o tecnología | Por qué | Detalle |
+|---|---|---|---|---|
+| **Eliminar el Gateway antes de que acabe su financiación** | Construir y desplegar el indexador ligero junto a los nodos, con el formato de API que ya usan las apps; pruebas de conformidad mientras el Gateway siga activo | **Indexador ligero en Rust junto al nodo (E3)**, alimentado por el stream de transacciones del nodo, al estilo de Geyser (Solana) o del servicio de flujo de Aptos | Funciona con los wallets actuales sin publicar versiones nuevas; ocupa ~10-50 GB (estimación) frente a ~2,5 TB | 6, 7.1, 10.1 |
+| **Que el acceso no dependa de nadie** | Muchos operadores de nodos de lectura; que los clientes los encuentren y cambien de uno a otro | **Registro de puntos de acceso en la propia capa 1** (metadatos de los validadores), más una lista de arranque y conmutación por error en los clientes, como el *Resolver* de Kaspa | Las redes federadas existentes (Koios, Kaspa) se coordinan fuera de la cadena; hacerlo en la capa 1 elimina también esa dependencia | 10.2 |
+| **Exploradores sin Gateway** | Índices de titulares, estadísticas y búsqueda; explorador de código abierto | **Índices h, i y j del indexador ligero + explorador estático** publicable en cualquier alojamiento o en IPFS | No depende de ningún servidor propio; el Dashboard oficial no es de código abierto | 2.1, 7.16 |
+| **Conservar el historial de Olympia** | Exportarlo una vez y publicarlo | **Archivo verificable** (raíz de Merkle firmada por varias personas) en IPFS, BitTorrent o Arweave | Está congelado: no necesita indexador, solo conservación | 2.2, 10.5 |
+| **Integrar la lectura en el propio nodo** | Índices opcionales y modo de lectura pública en `babylon-node` | **API de lectura nativa en el nodo (E2)**, como Kaspa (wRPC) o Sui (gRPC en el nodo completo) | Cada nodo pasa a ser un punto de acceso, sin proceso aparte | 7.2, 10.3 |
+| **Reducir la RAM a 8 GB o menos** | Limitar la memoria de RocksDB, reducir el heap de Java y la mempool | **R1 + R2:** caché de bloques compartida, índices y filtros dentro de la caché y *Write Buffer Manager*, según la documentación oficial de RocksDB; perfil de 4 GB en el instalador | El estado de Radix ya está en disco; el consumo actual es de configuración | 9.2, 9.4 |
+| **Mantener el disco por debajo de 500 GB** | Dejar de guardar lo que solo usan las APIs; podar el historial en los nodos que no lo necesiten | **R3-R7 y nodo podado (R8)**, con nodos de archivo aparte, como la poda por defecto de Polkadot, Kaspa o Cosmos y la expiración del historial de Ethereum | Más del 97 % del ledger son cambios de ronda cuyos datos solo usan las APIs | 9.3, 9.4 |
+| **Arrancar nodos nuevos en horas y sin confiar en terceros** | Exportar e importar el estado verificándolo contra la raíz firmada | **Snapshot verificado al final de época (R9)**, como los snapshots formales de Sui o el *warp sync* de Polkadot | Babylon ya firma `state_tree_hash` en sus pruebas; es la técnica estándar en las redes modernas | 9.4 (R9), 12.9 |
+| **Margen holgado en 4 GB y un nodo más sencillo** | Sustituir la parte Java del nodo por Rust | **Migración por fases con convivencia en la red (R11)**, como hizo Kaspa al pasar de Go a Rust | Elimina la JVM y el puente JNI; el riesgo se controla con adopción gradual | 9.4 (R11) |
+| **No tener que confiar en ningún nodo** | Endpoint de pruebas de Merkle en el nodo y cliente ligero en wallets y navegador | **Lecturas verificables con cliente ligero en Rust compilado a WebAssembly**, como smoldot (Polkadot) o Helios (Ethereum) | Es la garantía máxima: el wallet comprueba cada respuesta | 6.2, 10.6 |
+| **Evolución final con Hyperscale** | Preparar Hyperscale para mainnet, API de lectura, wallets, migración de saldos y reescritura de dApps | **Génesis con reclamación verificable (M1)**: prueba de Merkle contra la raíz final de Babylon más firma, con plazo largo y soporte para cuentas securificadas, combinando el contrato `MerkleDistributor` y el Glacier Drop de Midnight | No exige confiar en un puente ni deja a nadie fuera; antes conviene comparar con mejorar Babylon en su cadena, como hace Cardano con Leios | 11, 12.9 |
+| **Contratos Scrypto en Hyperscale** | Reescribirlos con el SDK de Hyperscale | **Reescritura asistida por herramientas de traducción**, aprovechando que ambos usan Rust y conceptos similares | Mantener Scrypto no es posible con el diseño actual de Hyperscale | 11.4 |
+| **Privacidad en la capa 1** (opcional) | Verificación de pruebas ZK en el motor y recursos protegidos | **Primitiva nativa de verificación de pruebas ZK** en el Radix Engine (por ejemplo, Halo2, como Midnight) y recursos protegidos | Mantiene el principio de capa 1, sin una red aparte | 12.8 |
+
 **Dificultad global para eliminar el Gateway: media-alta.** La principal dificultad no es técnica, sino de organización:
 
 - **Coordinación:** la Foundation está en modo de mantenimiento. Los cambios en el nodo, Sargon y los wallets dependen de desarrolladores de la comunidad y de la gobernanza (DAO / RAC).
@@ -101,7 +122,7 @@ La sección «Conclusión», a continuación, resume la viabilidad y la dificult
 
 **¿Es posible?** Sí. **Dificultad:** media.
 
-**Nodos de 4 GB y 500 GB** (sección 9). **¿Es posible?** Sí. **Dificultad:** media con Java (R1-R9); muy alta para tener margen holgado (R11).
+**Nodos de 4 GB y 500 GB** (sección 9). **¿Es posible?** Sí: con R1-R4, un nodo de 8 GB como máximo parece alcanzable, y 4 GB es plausible (estimaciones que hay que medir). Radix lo tiene más fácil que otras redes porque su estado ya está en disco, su conjunto de validadores es pequeño y su carga es baja (sección 12.9). **Dificultad:** media con Java (R1-R9); muy alta para tener margen holgado (R11).
 
 - **R1-R2:** eliminan la causa principal de los 16 GB actuales (RocksDB sin límites y 12 GB reservados para Java); **R3-R4** reducen el disco. Los cuatro tienen un coste bajo (semanas). **Dificultad: baja.**
 - **R5-R9:** la poda y el arranque desde un snapshot verificado mantienen el disco por debajo de 500 GB aunque la red siga creciendo. **Dificultad: media** (R9, media-alta).
@@ -296,8 +317,33 @@ flowchart LR
 7. [Sección 9: nodos más ligeros, 4 GB de RAM y 500 GB de disco, migración de Java a Rust](docs/es/07-nodos-ligeros.md)
 8. [Sección 10: guía de implementación paso a paso](docs/es/08-guia-de-implementacion.md)
 9. [Sección 11: evolución final hacia Hyperscale y migración](docs/es/09-evolucion-hyperscale.md)
-10. [Fuentes y metodología](docs/es/10-fuentes.md)
-11. [Glosario](docs/es/11-glosario.md)
+10. [Sección 12: referencias de otras redes descentralizadas](docs/es/10-referencias-otras-redes.md)
+11. [Fuentes y metodología](docs/es/11-fuentes.md)
+12. [Glosario](docs/es/12-glosario.md)
+
+## Reflexión final
+
+**La pregunta ya no es si es posible.** El análisis muestra que todos los objetivos son técnicamente viables, y que lo más urgente (eliminar el Gateway y aligerar los nodos) no requiere cambiar el consenso. La pregunta real es otra: **¿cuenta Radix con desarrolladores con la capacidad necesaria y con una comunidad lo bastante comprometida para llevarlo a cabo?**
+
+Los datos del informe permiten concretar qué exige cada parte:
+
+- **Capacidad técnica.**
+  - Lo más urgente (indexador ligero y ajustes del nodo) requiere perfiles de Rust y de bases de datos, con un esfuerzo acotado: 6-10 persona-mes para la solución mínima viable.
+  - Lo más ambicioso (migrar el consenso a Rust, lecturas verificables, Hyperscale) requiere especialistas en consenso y criptografía, hoy escasos en el ecosistema:
+    - `hyperscale-rs` depende casi por completo de un solo desarrollador;
+    - según la propia Foundation, su equipo interno trabaja con alrededor del 10 % de los recursos que tenía antes de su reestructuración.
+- **Compromiso de la comunidad.** Hace falta:
+  - operadores que ejecuten nodos de lectura y de archivo;
+  - financiación decidida por la gobernanza;
+  - decisiones a tiempo, antes del 31-dic-2026;
+  - y contribuciones como las que permite este repositorio.
+
+  Hay señales en los dos sentidos:
+  - **a favor:** la comunidad gestiona Stokenet desde junio de 2026, y las consultas a los poseedores de XRD han reunido a más de mil millones de XRD;
+  - **en contra:** de los seis hitos propuestos para `hyperscale-rs` solo se financió el primero, porque la tesorería de la DAO aún no estaba disponible.
+- **Precedentes.** Otras comunidades lo han conseguido: Kaspa reescribió su nodo en Rust, y Cardano mantiene Koios con operadores independientes (capítulo 12).
+
+**La tecnología no es el obstáculo.** El resultado dependerá de que la comunidad de Radix decida priorizar este trabajo, reúna el talento necesario y lo financie a tiempo. Este informe pretende facilitar esa decisión y es, en sí mismo, una invitación a contribuir.
 
 ## Cómo contribuir
 
@@ -312,3 +358,7 @@ Este repositorio es de código abierto y la comunidad puede mejorarlo mediante *
 La [guía de contribución](CONTRIBUTING.es.md) explica cómo hacerlo y las reglas de calidad: citar siempre las fuentes, marcar las estimaciones y mantener los dos idiomas sincronizados.
 
 > Las cifras marcadas como *estimación* deben validarse con un prototipo o una medición real.
+
+## Licencia
+
+Este trabajo se publica bajo la licencia [Creative Commons Atribución 4.0 Internacional (CC BY 4.0)](LICENSE): se puede copiar, adaptar y redistribuir, también con fines comerciales, citando la fuente.

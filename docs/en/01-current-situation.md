@@ -12,6 +12,16 @@
 - agents;
 - developer tools.
 
+**Design principle: everything on Layer 1.** Radix's goal is to scale and deliver all its features on Layer 1, without Layer-2 solutions (rollups, sidechains or partner chains). Every proposal in this report respects that principle:
+
+- The light indexer, read nodes and access-point discovery are infrastructure for **reading** Layer-1 state. They do not execute transactions or keep any state of their own that the network has to trust.
+- Pruning, verified snapshots, the migration to Rust and verifiable reads are changes to Layer-1 node software.
+- Incentives for serving reads would be paid on Layer 1 itself (for example, through an on-ledger component), as governance decides.
+- Hyperscale scales **on Layer 1 itself**, through sharding with atomic composability, which is consistent with that goal.
+- The bridge in strategy M2 would only connect two Layer-1 networks during the transition, and it is optional.
+
+References to Layer-2 or partner-chain mechanisms in other networks (chapter 12) are included only as a contrast, not as a model.
+
 **Repositories analysed.**
 
 - **Local:**
@@ -138,6 +148,7 @@ In red, services that depend on a single operator.
 | **Consultation** (governance) | `state/entity/details`, `state/key-value-store/{keys, data}`, `stream/transactions`, `transaction/committed-details`, `status/gateway-status`, balances and NFTs **with historical `at_ledger_state`** | Proposals, votes, snapshot tally |
 | **radixdlt-rust-sdk** | `status/gateway-status`, `state/entity/page/fungibles`, `transaction/{status, committed-details, submit, construction, preview}`, `state/entity/details` | Generic signing and submission SDK |
 | **wallet-agent-ai** | ~25 calls: entity details, preview, submit, status, stream, validators, uptime | Agent with its own wallet |
+| **Exchanges and integrators** | According to the Core API specification, they are recommended to use the node's own `/lts/` endpoints (`core-api-schema.yaml:83-89`, v1.4.0.0) | Deposits, withdrawals and transaction tracking. Those who follow that recommendation **do not depend on the Gateway**. Those using the Gateway or the Mesh API (removed in v1.4.0.0) must move to the LTS. |
 | **Radix-Desktop-Tool** | The whole API, via `@atlantis-l/radix-tool` | Desktop tooling, history |
 
 ## 2.1 Transaction explorers: an explicit requirement

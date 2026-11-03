@@ -3,7 +3,7 @@
 # 9. Nodos más ligeros: objetivo de 4 GB de RAM y 500 GB de disco
 
 > [!IMPORTANT]
-> - **¿Es posible?** Sí. Un validador o nodo completo puede funcionar con 4 GB de RAM y menos de 500 GB de disco.
+> - **¿Es posible?** Sí. Un nodo de 8 GB de RAM como máximo parece alcanzable, y 4 GB es plausible, con menos de 500 GB de disco (estimaciones que hay que confirmar midiendo un nodo real).
 > - **Dificultad:** Media con Java (R1-R9); muy alta para tener margen holgado (R11, migración a Rust).
 > - **Esfuerzo y plazo:** 8-14 persona-mes (R1-R9); 30-50 persona-mes (R11) (estimaciones).
 
@@ -77,8 +77,8 @@ flowchart LR
 | Heap de Java | 12 GB reservados de inicio (`-Xms12g`) | Valor por defecto del instalador. El consumo real no se ha publicado; en betanet (2023) se midieron 1,5-7 GB. | **1-1,5 GB** con límites en las estructuras Java (vertex store, colas de mensajes); **0 GB** tras migrar a Rust |
 | Memoria directa (Netty) | hasta 2 GB | Buffers de red | 256 MB; **0** tras migrar |
 | RocksDB: índices y filtros de cada fichero SST | **Sin límite**; crece con el ledger | `max_open_files=-1` y `cache_index_and_filter_blocks=false` (opciones por defecto) mantienen en memoria los índices de **todos** los ficheros abiertos, ~0,5-1,5 % del tamaño de la base de datos (*estimación*) | Contabilizados dentro de una caché compartida de **512 MB** |
-| RocksDB: memtables | 64 MB × 2 por column family, sin tope global; ~0,6-1,3 GB en la práctica (*estimación*) | Opciones por defecto | **256 MB** en total con `WriteBufferManager` |
-| RocksDB: caché de bloques | una independiente por column family (26), con el tamaño por defecto de RocksDB | Opciones por defecto | Una sola, compartida (la de arriba) |
+| RocksDB: memtables | 64 MB × 2 por column family, sin tope global; ~0,6-1,3 GB en la práctica (*estimación*) | Opciones por defecto (documentación de RocksDB, capítulo 12) | **256 MB** en total con `WriteBufferManager` |
+| RocksDB: caché de bloques | una independiente por column family: 26 × 32 MB ≈ 0,8 GB con RocksDB 10.4 (`v1.4.0.0`); 26 × 8 MB con RocksDB 8.1 (`develop`) | Opciones por defecto | Una sola, compartida (la de arriba) |
 | Mempool | ~1,18 GB | 512 MiB por defecto | **64-128 MB** en validadores pequeños |
 | Vertex store (consenso, Java) | hasta 150 MB, reserializado entero en cada cambio | `VertexStoreJavaImpl.java:223-238` | Igual, sin reserializar, cuando pase a Rust |
 | Cachés de resultados y de ejecución (Rust) | 3 LRU de 10 000 entradas y la caché de staging | `state_manager.rs:257-264` | Tamaño configurable |
@@ -123,6 +123,9 @@ Los cambios R1-R7 **no tocan el consenso** y se pueden publicar en cualquier ver
 
 ### R1. Configurar RocksDB con límites de memoria (P0, esfuerzo S-M)
 
+> [!NOTE]
+> **Referencia en otras redes:** la documentación oficial de RocksDB describe estos mismos ajustes (caché compartida, índices y filtros dentro de la caché, Write Buffer Manager). Ver capítulo 12.
+
 - **Dónde:**
   - `core-rust/state-manager/src/store/rocks_db.rs:164-170` (y las aperturas de solo lectura y secundaria, `:201-207`, `:237-243`);
   - `core-rust/p2p/src/rocks_db.rs:117-123`;
@@ -160,7 +163,7 @@ let cf_opts = |cf: &str| {
 };
 ```
 
-- **Nota sobre el código:** el nodo usa el crate `rocksdb` 0.21 (`core-rust/node-common/Cargo.toml:32`). `WriteBufferManager` llega en versiones posteriores del crate, así que hay que **actualizarlo**. El fragmento es orientativo: hay que comprobar los nombres exactos de la API en la versión elegida.
+- **Nota sobre el código:** la rama `develop` usa el crate `rocksdb` 0.21 (RocksDB 8.1.1), pero la versión `v1.4.0.0` ya usa el crate 0.24 (RocksDB 10.4.2), que incluye todas las funciones del fragmento (`WriteBufferManager`, `set_block_cache`, `set_cache_index_and_filter_blocks`, `set_bloom_filter`, etc.). El fragmento es orientativo.
 - **Propiedades nuevas:**
   - `db.rocksdb.block_cache_mb` (512);
   - `db.rocksdb.memtable_budget_mb` (256);
@@ -229,6 +232,9 @@ let cf_opts = |cf: &str| {
 
 ### R8. Modo «nodo podado» (P1, M-L)
 
+> [!NOTE]
+> **Referencia en otras redes:** Cosmos SDK ofrece la poda como opción configurable (nodos podados y de archivo), y en julio de 2025 todos los clientes de ejecución de Ethereum incorporaron la expiración del historial anterior al Merge (EIP-4444), ahorrando 300-500 GB por nodo. Ver capítulo 12.
+
 - **Qué:** opción `ledger.retain_epochs=N`. Borra por rangos las transacciones, identificadores, recibos y ejecuciones de más de N épocas. Conserva:
   - las pruebas de época y de actualización de protocolo;
   - los recibos de cambio de época;
@@ -241,6 +247,9 @@ let cf_opts = |cf: &str| {
 - **Riesgo:** la red necesita **suficientes nodos de archivo** para que los nodos nuevos puedan arrancar. Sin R9, los nodos nuevos dependen de ellos.
 
 ### R9. Arranque desde un snapshot de estado verificado: «fast sync» (P0 para el objetivo, L)
+
+> [!NOTE]
+> **Referencia en otras redes:** CometBFT/Cosmos (*state sync*) y Ethereum (*checkpoint sync*) usan este mismo esquema: snapshot o punto de control verificado contra la cadena a partir de un punto de confianza. Ver capítulo 12.
 
 Un nodo nuevo arranca **en horas (estimación), sin reproducir 567 millones de transacciones y sin confiar en quien le da el snapshot**.
 
@@ -295,6 +304,9 @@ sequenceDiagram
 - **Riesgo:** es una actualización de protocolo; necesita pruebas y la señal de preparación de los validadores.
 
 ### R11. Migrar el núcleo de Java a Rust (P1 para 4 GB con margen, XL)
+
+> [!NOTE]
+> **Referencia en otras redes:** En Solana, Frankendancer combina componentes del nuevo cliente Firedancer con los del cliente existente, un ejemplo real de sustitución por partes. Ver capítulo 12.
 
 **Qué queda en Java** (versión `develop`):
 
@@ -371,6 +383,9 @@ flowchart LR
 **Relación con Xi'an/hyperscale-rs:** es una red nueva, con otra máquina virtual, firmas BLS y fragmentación (sharding). No sustituye a Babylon a corto plazo y no tiene fecha de lanzamiento (sección 11). Migrar el nodo de Babylon a Rust sigue teniendo sentido. Se pueden reutilizar patrones de hyperscale-rs (red, almacenamiento RocksDB con memoria acotada, pruebas deterministas), pero no su protocolo.
 
 ## 9.5 Presupuesto de memoria con 4 GB
+
+> [!NOTE]
+> **Referencia en otras redes:** ninguna de las redes analizadas funciona hoy con 4 GB en un nodo completo; la más cercana es Cardano, con ~5-5,8 GB tras llevar su ledger a disco. Radix parte con ventaja porque su estado ya está en disco, tiene unos 100 validadores y su carga es baja. Ver la sección 12.9.
 
 Las cifras son *estimaciones* que hay que validar con la prueba prolongada de R2.
 

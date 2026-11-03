@@ -279,6 +279,19 @@ flowchart LR
 
 **How it fits with the short term:** these are stages, not alternatives. E3 solves the 2026 problem. E2 removes the separate process. Items 2-8 add verification on top of what E2 already serves. The clients' `LedgerBackend` interface is what lets them move from one stage to the next without rewriting applications.
 
+## 6.3 Risks of removing the Gateway and how to mitigate them
+
+| Risk | Consequence | Mitigation |
+|---|---|---|
+| **A node returns incorrect data**, by mistake or maliciously | The user sees false balances or state | Query several access points and compare `state_version` and the accumulator hash (10.2); in the long term, verifiable reads (6.2) |
+| **Few read-node operators** | A central dependency reappears | Near-zero cost per operator (E3); on-ledger discovery; incentives decided by governance (6.2, item 6; chapter 12) |
+| **Denial-of-service attacks** on read nodes | Slow or unavailable service | Public mode with per-IP limits and a route allow-list (N6); several operators; validators kept separate from read nodes (6.1) |
+| **The indexer does not exactly reproduce the responses** wallets expect | Application errors | Conformance tests against the public Gateway **before it is switched off** (10.1) |
+| **Few archive nodes** | New nodes cannot obtain history or snapshots | Several archive nodes in different hands; verifiable snapshots on distributed storage (R9) |
+| **A transaction is lost** if the access point restarts | The user believes something was sent that never committed | Resubmission in the indexer and in clients (10.1, 10.4) |
+| **Lack of funding or developers** | The plan slips beyond 31 Dec 2026 | Prioritise the minimum viable solution (6-10 person-months); an early governance decision |
+| **Bugs in new software** (indexer, node changes) | Service failures or, in the node, consensus failures | Deploy on Stokenet first; options off by default; gradual adoption (10.7) |
+
 ---
 
 [← Index](../../README.md) · [Previous: Sections 4-5: the six strategies evaluated and their data-driven comparison](03-strategies.md) · [Next: Section 7: concrete changes in each repository](05-per-repository-changes.md)

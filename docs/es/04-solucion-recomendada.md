@@ -279,6 +279,19 @@ flowchart LR
 
 **Cómo encaja con el corto plazo:** no son alternativas, son etapas. E3 resuelve el problema de 2026. E2 elimina el proceso aparte. Los puntos 2-8 añaden la verificación sobre lo que E2 ya sirve. La interfaz `LedgerBackend` de los clientes es la que permite pasar de una etapa a otra sin rehacer las aplicaciones.
 
+## 6.3 Riesgos de eliminar el Gateway y cómo mitigarlos
+
+| Riesgo | Consecuencia | Mitigación |
+|---|---|---|
+| **Un nodo devuelve datos incorrectos**, por error o de forma malintencionada | El usuario ve saldos o estados falsos | Consultar varios puntos de acceso y comparar `state_version` y el hash del acumulador (10.2); a largo plazo, lecturas verificables (6.2) |
+| **Pocos operadores** de nodos de lectura | Vuelve a haber una dependencia central | Coste casi nulo por operador (E3); descubrimiento en la cadena; incentivos decididos por la gobernanza (6.2, punto 6; capítulo 12) |
+| **Ataques de denegación de servicio** contra los nodos de lectura | Servicio lento o caído | Modo público con límites por IP y lista blanca de rutas (N6); varios operadores; validadores separados de los nodos de lectura (6.1) |
+| **El indexador no reproduce exactamente las respuestas** que esperan los wallets | Errores en las aplicaciones | Pruebas de conformidad contra el Gateway público **antes de que se apague** (10.1) |
+| **Pocos nodos de archivo** | Los nodos nuevos no pueden obtener el historial ni snapshots | Varios nodos de archivo en distintas manos; snapshots verificables en almacenamiento distribuido (R9) |
+| **Se pierde una transacción** si el punto de acceso se reinicia | El usuario cree que envió algo que nunca se confirmó | Reenvío en el indexador y en los clientes (10.1, 10.4) |
+| **Falta de financiación o de desarrolladores** | El plan se retrasa más allá del 31-dic-2026 | Priorizar el mínimo viable (6-10 persona-mes); decisión temprana de la gobernanza |
+| **Errores en el software nuevo** (indexador, cambios en el nodo) | Fallos de servicio o, en el nodo, de consenso | Desplegar primero en Stokenet; opciones desactivadas por defecto; adopción gradual (10.7) |
+
 ---
 
 [← Índice](../../README.es.md) · [Anterior: Secciones 4-5: las seis estrategias evaluadas y su comparativa con datos](03-estrategias.md) · [Siguiente: Sección 7: cambios concretos en cada repositorio](05-cambios-por-repositorio.md)

@@ -12,6 +12,16 @@
 - agentes;
 - herramientas de desarrollo.
 
+**Principio de diseño: todo en la capa 1.** El objetivo de Radix es escalar y ofrecer todas sus funciones en la capa 1, sin recurrir a soluciones de capa 2 (rollups, cadenas laterales o cadenas asociadas). Todas las propuestas de este informe respetan ese principio:
+
+- El indexador ligero, los nodos de lectura y el descubrimiento de puntos de acceso son infraestructura para **leer** el estado de la capa 1. No ejecutan transacciones ni mantienen un estado propio en el que la red tenga que confiar.
+- La poda, los snapshots verificados, la migración a Rust y las lecturas verificables son cambios en el software de los nodos de la capa 1.
+- Los incentivos para servir lecturas se pagarían en la propia capa 1 (por ejemplo, mediante un componente en el ledger), según decida la gobernanza.
+- Hyperscale escala **en la propia capa 1**, mediante fragmentación con composición atómica, lo que es coherente con ese objetivo.
+- El puente de la estrategia M2 solo conectaría dos redes de capa 1 durante la transición, y es opcional.
+
+Las referencias a mecanismos de capa 2 o de cadenas asociadas en otras redes (capítulo 12) se incluyen solo como contraste, no como modelo.
+
 **Repositorios analizados.**
 
 - **En local:**
@@ -138,6 +148,7 @@ En rojo, los servicios que dependen de un solo operador.
 | **Consultation** (gobernanza) | `state/entity/details`, `state/key-value-store/{keys, data}`, `stream/transactions`, `transaction/committed-details`, `status/gateway-status`, saldos y NFT **con `at_ledger_state` histórico** | Propuestas, votos, recuento con snapshot |
 | **radixdlt-rust-sdk** | `status/gateway-status`, `state/entity/page/fungibles`, `transaction/{status, committed-details, submit, construction, preview}`, `state/entity/details` | SDK genérico para firmar y enviar |
 | **wallet-agent-ai** | ~25 llamadas: detalles de entidad, preview, envío, estado, stream, validadores, uptime | Agente con wallet propia |
+| **Exchanges e integradores** | Según la especificación de la Core API, se recomienda que usen los endpoints `/lts/` del propio nodo (`core-api-schema.yaml:83-89`, v1.4.0.0) | Depósitos, retiradas y seguimiento de transacciones. Quien siga esa recomendación **no depende del Gateway**. Quien use el Gateway o la Mesh API (eliminada en v1.4.0.0) debe pasar a la LTS. |
 | **Radix-Desktop-Tool** | Toda la API, mediante `@atlantis-l/radix-tool` | Herramientas de escritorio, historial |
 
 ## 2.1 Exploradores de transacciones: requisito explícito

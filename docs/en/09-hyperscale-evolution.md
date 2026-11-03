@@ -1,4 +1,4 @@
-[← Index](../../README.md) · [Previous: Section 10: step-by-step implementation guide](08-implementation-guide.md) · [Next: Sources and methodology](10-sources.md)
+[← Index](../../README.md) · [Previous: Section 10: step-by-step implementation guide](08-implementation-guide.md) · [Next: Section 12: references from other decentralized networks](10-references-other-networks.md)
 
 # 11. Final evolution: from Babylon to Hyperscale
 
@@ -103,6 +103,9 @@ flowchart TB
 > [!IMPORTANT]
 > - **Is it possible?** Yes.
 > - **Difficulty:** High.
+
+> [!NOTE]
+> **Reference from other networks:** Cosmos Hub migrated its state into a new genesis (`cosmoshub-3` → `cosmoshub-4`, 2021), and Uniswap's `MerkleDistributor` contract implements claims with a Merkle proof. See chapter 12.
 
 1. **Freeze Babylon** at an agreed epoch. `v1.4.0.0` already includes a user-transaction "moratorium" mechanism that can serve as a basis.
 2. **Publish Babylon's final state root** (the validator-signed `state_tree_hash` at the last epoch) and archive the ledger on archive nodes and distributed storage (chapter 9, R9; section 10.5).
@@ -267,8 +270,9 @@ These are order-of-magnitude estimates for planning, not budgets:
 
    These same pieces are what Hyperscale and M1's claims need.
 3. **Decision on R11 (migrating the Babylon node to Rust).** It makes sense to **apply R1-R9**, of moderate cost (R1-R4 in weeks; R5-R9 in months), and **postpone R11 until governance decides on Hyperscale**, because its effort (30-50 person-months) would compete with the migration. If Hyperscale is not adopted or is delayed, R11 is again the route to 4 GB nodes with headroom.
-4. **Recommendation:** governance should first decide whether to adopt Hyperscale and with which strategy (M1, with M2 as temporary support). Meanwhile, keep this report's short-term plan, whose value does not depend on that decision.
+4. **An alternative worth comparing:** Cardano increases its Layer-1 capacity with Leios through a protocol hard fork on the same chain, without migrating to a new network (section 12.2). Before deciding, governance should compare migrating to Hyperscale with continuing to improve Babylon on its own chain.
+5. **Recommendation:** governance should first decide whether to adopt Hyperscale and with which strategy (M1, with M2 as temporary support). Meanwhile, keep this report's short-term plan, whose value does not depend on that decision.
 
 ---
 
-[← Index](../../README.md) · [Previous: Section 10: step-by-step implementation guide](08-implementation-guide.md) · [Next: Sources and methodology](10-sources.md)
+[← Index](../../README.md) · [Previous: Section 10: step-by-step implementation guide](08-implementation-guide.md) · [Next: Section 12: references from other decentralized networks](10-references-other-networks.md)
