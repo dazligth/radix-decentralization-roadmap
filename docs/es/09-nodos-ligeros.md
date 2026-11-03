@@ -35,7 +35,7 @@ Las rutas `fichero:línea` son de `develop` salvo que se indique lo contrario. L
 | Poda del historial de transacciones | **No existe** | código: solo hay GC del árbol de estado y de pruebas del ledger |
 | Arranque desde un snapshot verificado | **No existe**. Un nodo nuevo reproduce ~567 millones de transacciones desde la génesis, o descarga un snapshot de terceros sin verificación criptográfica. | código; `babylon-nodecli/.../ledger_snapshot/__init__.py:26-80` |
 | Ajuste de RocksDB | **Ninguno**: `Options::default()` para la base de datos y para las 26 column families, también en `v1.4.0.0` | `core-rust/state-manager/src/store/rocks_db.rs:164-170` |
-| Mempool | 512 MiB de transacciones × factor 2,3 ≈ **~1,2 GB** por defecto | `core-rust/node-common/src/config/mod.rs:74-75`, `RadixNodeModule.java:281-304` |
+| Mempool | 512 MiB de transacciones × factor 2,3 ≈ **~1,2 GB** por defecto | `core-rust/node-common/src/config/mod.rs:74-75`, `RadixNodeModule.java` (cálculo de la mempool) y `priority_mempool.rs:81` (factor del 230 %) |
 | Código Java que queda | ~55 500 líneas escritas a mano en `core` + ~35 000 en `common` + ~14 000 de clases del puente Java-Rust (más ~4 000 de capa JNI en Rust) | recuento con `wc -l` |
 | Nodo «todo en Rust» oficial | Xi'an / hyperscale-rs es **otra red** (no Babylon) y no tiene fecha de lanzamiento. Según radix.wiki, el 3-sep-2026 su desarrollador principal dejó las propuestas, subvenciones y colaboraciones con Radix, aunque sigue desarrollando el código (sección [11.1](11-evolucion-hyperscale.md#s11-1)). | radixdlt.com (hoja de ruta 30-nov-2024), radix.wiki |
 
@@ -198,7 +198,7 @@ let cf_opts = |cf: &str| {
   - `RADIXDLT_MEMPOOL_MAX_MEMORY=134217728` (128 MB);
   - límites de canales P2P más bajos (`network.p2p.max_inbound_channels` y `max_outbound_channels` de 1 024 a ~64);
   - opciones de R1 y R3.
-- **Mismo repositorio, fallo de seguridad:** la descarga del snapshot usa `verify=False` (TLS sin verificar) en `ledger_snapshot`. Hay que verificar TLS y una **firma o hash publicado** del snapshot.
+- **Mismo repositorio, fallo de seguridad:** el comando de snapshot descarga sin verificar TLS un *script* remoto que se ejecuta con bash, y no comprueba hash ni firma del snapshot (ver la sección [7.3](07-cambios-por-repositorio.md#s7-3)). Hay que verificar TLS y una **firma o hash publicado** del snapshot.
 - **Pruebas:** validador de Stokenet con 4 GB durante varias semanas, midiendo rondas perdidas y RSS.
 - **Riesgo:** bajo. Si el heap queda corto, el nodo se reinicia; lo evita la prueba prolongada.
 
@@ -459,7 +459,7 @@ flowchart LR
 | Tipo de nodo | RAM (estimación) | Disco (estimación) | Qué guarda |
 |---|---|---|---|
 | **Validador ligero** | 4 GB | ≤ 500 GB (estimado: 50-250 GB según la poda) | Estado actual, N épocas, pruebas de época; sin índices de API (R1-R9) |
-| **Nodo de lectura** | 4 GB tras R11; ~4,5 GB antes (suma de la columna Java de 9.5 más el indexador) | ≤ 500 GB con R4 y R5 + índices ligeros | Historial de transacciones + índices del indexador ligero |
+| **Nodo de lectura** | 4 GB tras R11; ~4,5 GB antes (suma de la columna Java de 9.5 más el indexador) | Previsiblemente ≤ 500 GB con R4-R6, la compresión e índices ligeros; hay que medirlo (`raw_db_size`) | Historial de transacciones + índices del indexador ligero |
 | **Nodo de archivo** (unos pocos, en varias manos) | 8-16 GB | 1-4 TB, según la compresión (ver [9.3](#s9-3)) | Todo el historial; sirve sincronización completa y genera los snapshots verificables de R9 |
 
 <a id="s9-7"></a>

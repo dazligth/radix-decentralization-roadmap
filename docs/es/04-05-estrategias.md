@@ -52,7 +52,7 @@ Es un proceso aparte, en Rust y con RocksDB o SQLite. Funciona así:
   - (g) emisiones de validadores;
   - (h), (i) y (j) para exploradores: titulares, estadísticas y búsqueda.
 - **No contiene nada del software del Gateway:** ni DataAggregator, ni PostgreSQL, ni historia de substates. Solo conserva el **formato de la API, peticiones y respuestas** (el contrato OpenAPI), para que los wallets ya publicados funcionen sin actualizarse. Cuando los clientes adopten la API nativa del nodo (E2), esa capa de compatibilidad se puede quitar.
-- Responde a las peticiones **con las mismas rutas y el mismo JSON que usan hoy los wallets y dApps** (los de la capítulo [2](01-02-situacion-actual.md#s2), unas 25 rutas). Así las apps ya publicadas funcionan cambiando solo la URL. Es una cuestión de formato: detrás no hay ningún Gateway. Las lecturas de estado actual las delega en vivo al nodo (Core y Engine State API); solo usa sus índices para lo que el nodo no sabe.
+- Responde a las peticiones **con las mismas rutas y el mismo JSON que usan hoy los wallets y dApps** (los del capítulo [2](01-02-situacion-actual.md#s2), unas 25 rutas). Así las apps ya publicadas funcionan cambiando solo la URL. Es una cuestión de formato: detrás no hay ningún Gateway. Las lecturas de estado actual las delega en vivo al nodo (Core y Engine State API); solo usa sus índices para lo que el nodo no sabe.
 
 Evaluación:
 
@@ -118,7 +118,7 @@ Escala de puntuación: 1 = malo, 5 = muy bueno.
 | Coste mensual por operador | ~0 sobre el nodo | ~0 | **~0-20 € sobre el nodo (est.)** | — | — | — |
 | Cambios necesarios en clientes | Muchos | Muchos (ninguno si el nodo sirve también el formato actual) | **Ninguno para funcionar** | Muchos | Muchos | Por dApp |
 | ¿Disponible antes de diciembre de 2026? | Parcial | No | **Prototipo con el subconjunto crítico: posible** | No | No | No |
-| Trabajo de desarrollo (est.) | 15-25 personas-mes | 6-10 personas-mes (nodo) + ~4-6 (clientes) | **4-7 personas-mes** (+1-2 para índices de exploradores) | — | Años | Por dApp |
+| Trabajo de desarrollo (est.) | 15-25 personas-mes | 6-10 personas-mes (nodo) + ~4-6 (clientes) | **4-7 personas-mes** (+1-2 para índices de exploradores) | — | ~40-80 personas-mes; años | Por dApp |
 | Riesgo técnico | Medio | Medio-alto (núcleo del nodo) | **Medio** | Alto | Muy alto | Bajo |
 | Válido con Xi'an / Hyperscale | No | No | Parcial (interfaz reutilizable) | — | Parcial (habría que adaptarlo) | No (habría que reescribirlos) |
 

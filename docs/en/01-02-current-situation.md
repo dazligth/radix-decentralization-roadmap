@@ -121,7 +121,7 @@ In red, services that depend on a single operator.
 | DataAggregator | **Single instance**: transactions are processed sequentially | Foundation, radixtalk 2202 posts 15 and 22 |
 | Current operator | Former Foundation DevOps team, as a standalone operation | Blog, 28 Apr 2026 |
 | Funding | **Until end of December 2026** | Blog, 28 Apr 2026 |
-| Cost for a third party | ~€300-400/month for the Gateway alone; ~€500/month including relay and signalling (2 × €190/month servers for Postgres with failover) | Community proposal, radixtalk 2202 post 26 |
+| Cost for a third party | ~€300-400/month for the Gateway alone; ~€500/month including relay and signalling | Community proposal, radixtalk 2202 post 26 |
 | Estimated load | ~250,000 requests/hour (~69 req/s) | Community estimate, radixtalk 2202 post 29 |
 | Xi'an / Hyperscale | "would require building a completely new gateway"; the current one is not reusable | Foundation, radixtalk 2202 post 15 |
 | WebRTC signalling | ~6,000 concurrent peak connections | RFP |
@@ -191,7 +191,7 @@ That is why the Gateway **can be removed completely**.
 > - **Difficulty:** Medium.
 > - **Effort and timeline:** ~1-2 person-months of indexes + ~2-3 for the reference explorer (estimate).
 
-An explorer is the **most demanding** client: it needs global indexes that neither the node nor the wallets need. Each explorer feature has a different source on the node:
+An explorer is the **most demanding** client: it needs global indexes that neither the node nor the wallets need. Each explorer feature has a different source: the node itself or a new index.
 
 | Explorer feature | How it is served without the Gateway |
 |---|---|

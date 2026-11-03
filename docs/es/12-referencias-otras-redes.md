@@ -47,7 +47,7 @@ Como el objetivo de Radix es resolverlo todo en la **capa 1**, cada referencia i
 | Mecanismo | Tipo | Qué hace |
 |---|---|---|
 | **Poda configurable** | Capa 1 | Épocas a conservar de objetos y de checkpoints; sin poda, un nodo puede superar 7 TB |
-| **Snapshots formales** | Capa 1 | Estado vivo al final de cada época, verificado contra un compromiso firmado por los validadores; Mysten conserva los de las últimas 90 épocas |
+| **Snapshots formales** | Capa 1 | Estado vivo al final de cada época, verificado contra un compromiso firmado por los validadores; según la documentación de Sui, en mainnet se conservan los de unas 60 épocas |
 | **Cliente ligero** | Capa 1 | Sigue los checkpoints de fin de época, con firmas BLS agregadas de los validadores, desde la génesis |
 | **Indexador y GraphQL** | Servicio de lectura | Indexador en PostgreSQL y API GraphQL, que pueden alojar los propios usuarios o proveedores; JSON-RPC marcado como obsoleto |
 | **Hardware de un nodo completo** | — | 128 GB de RAM y 4 TB NVMe |
@@ -102,7 +102,7 @@ Kaspa es el precedente más directo de dos propuestas de este informe: **R11** (
 
 | Elemento | Cómo funciona |
 |---|---|
-| **Pruebas de conocimiento cero** | zk-SNARK con el sistema Halo2 (sustituyó a Plonk en 2024), adaptado para recursión eficiente. Según su documentación, las pruebas ocupan 128 bytes sea cual sea el cálculo y se verifican en milisegundos. |
+| **Pruebas de conocimiento cero** | zk-SNARK con el sistema Halo2 (sustituyó a Plonk en 2024), adaptado para recursión eficiente (notas de versión de 2024; la documentación posterior describe una pila basada en PLONK/KZG sobre BLS12-381). |
 | **Estado público y privado** | El estado público está en la cadena; el privado lo guarda cada usuario localmente y nunca se expone. |
 | **Tokens** | NIGHT (público, modelo UTXO, firmas Schnorr); tokens protegidos (*shielded*, con pruebas ZK); DUST, un recurso protegido e intransferible que se genera al poseer NIGHT y que se consume para pagar las transacciones. |
 | **Lenguaje Compact** | Lenguaje parecido a TypeScript que compila a circuitos ZK. Los datos privados entran como *witnesses* desde el cliente; cualquier dato privado que vaya a hacerse público debe marcarse con `disclose()`, o el compilador rechaza el programa. |

@@ -8,8 +8,8 @@ Report dated 3 November 2026.
 
 ## Goals
 
-1. **Remove the Gateway completely**, so that wallets, dApps, ROLA sign-in, explorers and tools work directly with the network's nodes.
-2. **Access to the network that depends on no one:** many independent operators, discovered on ledger.
+1. **Remove the Gateway completely**, so that wallets, dApps, ROLA sign-in, explorers and tools work with the network's nodes (and their light indexer), without any central service.
+2. **Access to the network that depends on no one:** many independent operators, discovered on ledger and, in the long term, without trusting any node (verifiable reads).
 3. **Lighter nodes:** 4-8 GB of RAM and 500 GB of disk or less, so that more people can run them.
 4. **Everything on Layer 1**, without Layer-2 solutions.
 5. **Preserve Olympia's history** in a verifiable way.
@@ -61,7 +61,7 @@ Report dated 3 November 2026.
 1. **The Gateway is currently a single point of failure for the ecosystem.**
    - No official client talks to nodes directly: not the wallets (Sargon), the RDT, ROLA, the Connector Extension or the Dashboard.
    - According to the Foundation, its operation is **funded only until 31 December 2026**, and there is no public plan for afterwards.
-2. **Nodes already handle the most common operations directly** (submitting transactions, checking their status, balances, NFTs, metadata, validators), according to the `babylon-node` code: of the 19 capabilities in the table in section [3.2](docs/en/03-what-the-node-offers.md#s3-2), 9 are fully covered and 2 partly. Six main capabilities are missing (N1-N6, chapter [3](docs/en/03-what-the-node-offers.md#s3)), plus some minor ones (N7-N9, section [7.2](docs/en/07-per-repository-changes.md#s7-2)).
+2. **Nodes already handle the most common operations directly** (submitting transactions, checking their status, balances, NFTs, metadata, validators), according to the `babylon-node` code: of the 19 capabilities in the table in section [3.2](docs/en/03-what-the-node-offers.md#s3-2), 9 are fully covered and 2 partly. Six main capabilities are missing, fully or partly (N1-N6, chapter [3](docs/en/03-what-the-node-offers.md#s3)), plus some minor ones (N5b and N7-N9, section [7.2](docs/en/07-per-repository-changes.md#s7-2)).
 3. **Six strategies were compared.** Based on the measured data, the most suitable combines two (E3 and E2), with E6 as a complement:
    - **Short term (E3): a light indexer next to each node**, which replaces the Gateway. The Gateway ceases to exist.
      - So that already-released wallets and dApps keep working without an update, the indexer accepts the same requests those applications send today. Only the **API format (requests and responses)** is kept, not the Gateway software.
@@ -103,10 +103,10 @@ The "Conclusion" section below summarises feasibility and difficulty for each go
 
 | Goal | Is it possible? | Difficulty | Estimated effort |
 |---|---|---|---|
-| dApps, ROLA sign-in, transaction submission and tracking, balances | **Yes** | **Low-medium** | ~1-2 person-months (RDT and ROLA changes, sections [7.8](docs/en/07-per-repository-changes.md#s7-8) and [7.9](docs/en/07-per-repository-changes.md#s7-9)) |
+| dApps, ROLA sign-in, transaction submission and tracking, balances | **Yes** | **Low-medium** | ~1-2 person-months (in the RDT and ROLA: `NodeGatewayApiService`, `ownerKeysReader` and `relayUrl`, sections [7.8](docs/en/07-per-repository-changes.md#s7-8) and [7.9](docs/en/07-per-repository-changes.md#s7-9)) |
 | Current wallets working without the Gateway (E3, no new releases) | **Yes** | **Medium** | ~4-7 person-months for the light indexer |
 | Full transaction explorers without the Gateway (dedicated indexes and an open-source reference explorer) | **Yes** | **Medium** | ~1-2 person-months of indexes + ~2-3 for the explorer |
-| Effective decentralisation: many operators, on-ledger discovery, failover and resubmission in clients | **Yes** | **Medium** | ~3-5 person-months in clients |
+| Effective decentralisation: many operators, on-ledger discovery, failover and resubmission in clients | **Yes** | **Medium** | ~3-5 person-months in clients (Sargon, wallets, extension and SDK; excluding the RDT and ROLA) |
 | All features inside the node itself (E2), full history and governance snapshots | **Yes** | **High** | ~6-10 person-months in the node + ~4-6 in clients |
 | Verifiable archive of Olympia's history | **Yes** (urgent) | **Low** | Weeks |
 | Nodes with 4-8 GB RAM and ≤ 500 GB disk, still on Java (R1-R9, chapter [9](docs/en/09-lighter-nodes.md#s9)) | **Yes** (estimate: 8 GB achievable, 4 GB plausible) | **Medium** | ~8-14 person-months |

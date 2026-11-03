@@ -70,7 +70,7 @@ Terms used in the report, briefly explained.
 | **Royalties** | A fee a developer can charge when their package or component is used. |
 | **Intent hash** | The identifier of a transaction on Radix. |
 | **Moratorium** | A mechanism added in `v1.4.0.0` (commit `8ea6cf97`) to temporarily halt user transactions. |
-| **Report codes** | E1-E6: strategies (chapter [4](04-05-strategies.md#s4)). N1-N9: capabilities missing from the node (chapter [3](03-what-the-node-offers.md#s3) and section [7.2](07-per-repository-changes.md#s7-2)). R1-R11: changes to lighten nodes (chapter [9](09-lighter-nodes.md#s9)). M1-M3: migration strategies to Hyperscale (chapter [11](11-hyperscale-evolution.md#s11)). (a)-(j): light-indexer indexes (section [7.1](07-per-repository-changes.md#s7-1)). |
+| **Report codes** | E1-E6: strategies (chapter [4](04-05-strategies.md#s4)). N1-N9 and N5b: capabilities missing from the node (chapter [3](03-what-the-node-offers.md#s3) and section [7.2](07-per-repository-changes.md#s7-2)). (D): on-ledger discovery; (L): the `LedgerBackend` interface (chapter [6](06-recommended-solution.md#s6)). R1-R11: changes to lighten nodes (chapter [9](09-lighter-nodes.md#s9)). M1-M3: migration strategies to Hyperscale (chapter [11](11-hyperscale-evolution.md#s11)). (a)-(j): light-indexer indexes (section [7.1](07-per-repository-changes.md#s7-1)). |
 | **Priority P0-P2 / effort S-XL** | P0 essential, P1 needed, P2 improvement. S days, M 1-3 weeks, L more than a month, XL several months or more. |
 | **Access point (endpoint)** | A network address to which an application sends its requests. |
 | **OpenAPI** | A standard format for describing a web API (routes, requests and responses). |

@@ -8,8 +8,8 @@ Informe del 3 de noviembre de 2026.
 
 ## Objetivos
 
-1. **Eliminar el Gateway por completo**, de modo que wallets, dApps, inicio de sesión con ROLA, exploradores y herramientas funcionen directamente con los nodos de la red.
-2. **Que el acceso a la red no dependa de nadie:** muchos operadores independientes, descubiertos en la propia cadena.
+1. **Eliminar el Gateway por completo**, de modo que wallets, dApps, inicio de sesión con ROLA, exploradores y herramientas funcionen con los nodos de la red (y su indexador ligero), sin ningún servicio central.
+2. **Que el acceso a la red no dependa de nadie:** muchos operadores independientes, descubiertos en la propia cadena y, a largo plazo, sin tener que confiar en ningún nodo (lecturas verificables).
 3. **Nodos más ligeros:** 4-8 GB de RAM y 500 GB de disco o menos, para que más personas puedan ejecutarlos.
 4. **Todo en la capa 1**, sin soluciones de capa 2.
 5. **Conservar el historial de Olympia** de forma verificable.
@@ -61,7 +61,7 @@ Informe del 3 de noviembre de 2026.
 1. **El Gateway es hoy un punto único de fallo para el ecosistema.**
    - Ningún cliente oficial se comunica directamente con los nodos: ni los wallets (Sargon), ni la RDT, ni ROLA, ni la Connector Extension, ni el Dashboard.
    - Según la Foundation, su operación está **financiada solo hasta el 31 de diciembre de 2026**, y no hay un plan público para después.
-2. **Los nodos ya resuelven directamente las operaciones más habituales** (enviar transacciones, consultar su estado, saldos, NFT, metadatos, validadores), según el código de `babylon-node`: de las 19 capacidades de la tabla de la sección [3.2](docs/es/03-que-ofrece-el-nodo.md#s3-2), 9 están cubiertas por completo y 2 en parte. Faltan seis capacidades principales (N1-N6, capítulo [3](docs/es/03-que-ofrece-el-nodo.md#s3)) y algunas menores (N7-N9, sección [7.2](docs/es/07-cambios-por-repositorio.md#s7-2)).
+2. **Los nodos ya resuelven directamente las operaciones más habituales** (enviar transacciones, consultar su estado, saldos, NFT, metadatos, validadores), según el código de `babylon-node`: de las 19 capacidades de la tabla de la sección [3.2](docs/es/03-que-ofrece-el-nodo.md#s3-2), 9 están cubiertas por completo y 2 en parte. Faltan, total o parcialmente, seis capacidades principales (N1-N6, capítulo [3](docs/es/03-que-ofrece-el-nodo.md#s3)) y algunas menores (N5b y N7-N9, sección [7.2](docs/es/07-cambios-por-repositorio.md#s7-2)).
 3. **Se han comparado seis estrategias.** Con los datos medidos, la más adecuada combina dos (E3 y E2), con E6 como complemento:
    - **A corto plazo (E3): un indexador ligero junto a cada nodo**, que sustituye al Gateway. El Gateway deja de existir.
      - Para que los wallets y dApps ya publicados sigan funcionando sin actualizarse, el indexador acepta las mismas peticiones que esas aplicaciones envían hoy. Solo se conserva el **formato de la API (peticiones y respuestas)**, no el software del Gateway.
@@ -103,10 +103,10 @@ La sección «Conclusión», a continuación, resume la viabilidad y la dificult
 
 | Objetivo | ¿Es posible? | Dificultad | Esfuerzo estimado |
 |---|---|---|---|
-| dApps, inicio de sesión con ROLA, envío y seguimiento de transacciones, saldos | **Sí** | **Baja-media** | ~1-2 personas-mes (cambios en la RDT y ROLA, secciones [7.8](docs/es/07-cambios-por-repositorio.md#s7-8) y [7.9](docs/es/07-cambios-por-repositorio.md#s7-9)) |
+| dApps, inicio de sesión con ROLA, envío y seguimiento de transacciones, saldos | **Sí** | **Baja-media** | ~1-2 personas-mes (en la RDT y ROLA: `NodeGatewayApiService`, `ownerKeysReader` y `relayUrl`, secciones [7.8](docs/es/07-cambios-por-repositorio.md#s7-8) y [7.9](docs/es/07-cambios-por-repositorio.md#s7-9)) |
 | Wallets actuales funcionando sin el Gateway (E3, sin publicar versiones nuevas) | **Sí** | **Media** | ~4-7 personas-mes para el indexador ligero |
 | Exploradores de transacciones completos sin el Gateway (índices propios y explorador de referencia de código abierto) | **Sí** | **Media** | ~1-2 personas-mes de índices + ~2-3 de explorador |
-| Descentralización efectiva: muchos operadores, descubrimiento en la cadena, conmutación por error y reenvío en los clientes | **Sí** | **Media** | ~3-5 personas-mes en clientes |
+| Descentralización efectiva: muchos operadores, descubrimiento en la cadena, conmutación por error y reenvío en los clientes | **Sí** | **Media** | ~3-5 personas-mes en clientes (Sargon, wallets, extensión y SDK; sin la RDT ni ROLA) |
 | Todas las funciones dentro del propio nodo (E2), historial completo y snapshots de gobernanza | **Sí** | **Alta** | ~6-10 personas-mes en el nodo + ~4-6 en clientes |
 | Archivo verificable del historial de Olympia | **Sí** (urgente) | **Baja** | Semanas |
 | Nodos de 4-8 GB de RAM y ≤ 500 GB de disco, aún con Java (R1-R9, capítulo [9](docs/es/09-nodos-ligeros.md#s9)) | **Sí** (estimación: 8 GB alcanzable, 4 GB plausible) | **Media** | ~8-14 personas-mes |

@@ -121,7 +121,7 @@ En rojo, los servicios que dependen de un solo operador.
 | DataAggregator | **Una sola instancia**: las transacciones se procesan en orden | Foundation, radixtalk 2202, posts 15 y 22 |
 | Operador actual | El antiguo equipo DevOps de la Foundation, como operación independiente | Blog, 28-abr-2026 |
 | Financiación | **Hasta finales de diciembre de 2026** | Blog, 28-abr-2026 |
-| Coste para un tercero | ~300-400 €/mes solo el Gateway; ~500 €/mes con relé y señalización (2 servidores de 190 €/mes para Postgres con conmutación por error) | Propuesta comunitaria, radixtalk 2202, post 26 |
+| Coste para un tercero | ~300-400 €/mes solo el Gateway; ~500 €/mes con relé y señalización | Propuesta comunitaria, radixtalk 2202, post 26 |
 | Carga estimada | ~250 000 peticiones/hora (~69 por segundo) | Estimación comunitaria, radixtalk 2202, post 29 |
 | Xi'an / Hyperscale | «requeriría construir un Gateway completamente nuevo»; el actual no es reutilizable | Foundation, radixtalk 2202, post 15 |
 | Señalización WebRTC | ~6 000 conexiones simultáneas en pico | RFP |
@@ -191,7 +191,7 @@ Por eso el Gateway **se puede eliminar por completo**.
 > - **Dificultad:** Media.
 > - **Esfuerzo y plazo:** ~1-2 personas-mes de índices + ~2-3 de explorador de referencia (estimación).
 
-Un explorador es el cliente **más exigente**: necesita índices globales que ni el nodo ni los wallets necesitan. Cada función de un explorador tiene una fuente distinta en el nodo:
+Un explorador es el cliente **más exigente**: necesita índices globales que ni el nodo ni los wallets necesitan. Cada función de un explorador tiene una fuente distinta: el propio nodo o un índice nuevo.
 
 | Función del explorador | Cómo se sirve sin el Gateway |
 |---|---|

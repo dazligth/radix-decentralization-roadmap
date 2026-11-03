@@ -4,10 +4,10 @@
 
 # 7. Cambios por repositorio
 
-Cada cambio indica su prioridad y su esfuerzo. La valoración global de cada bloque está en los capítulos [4](04-05-estrategias.md#s4), 6 y 9.
+Cada cambio indica su prioridad y su esfuerzo. La valoración global de cada bloque está en el capítulo [4](04-05-estrategias.md#s4), el capítulo [6](06-solucion-recomendada.md#s6) y el capítulo [9](09-nodos-ligeros.md#s9).
 
 Prioridad: **P0** imprescindible · **P1** necesario para todos los casos de uso · **P2** mejora.
-Esfuerzo: **S** días · **M** 1-3 semanas · **L** más de un mes · **XL** varios meses o más. Como referencia aproximada: S < 0,5 personas-mes; M ≈ 0,25-0,75; L ≈ 1 o más; XL > 3.
+Esfuerzo: **S** días · **M** 1-3 semanas · **L** más de un mes · **XL** varios meses o más. Como referencia aproximada: S < 0,25 personas-mes; M ≈ 0,25-0,75; L ≈ 1 o más; XL > 3.
 
 <a id="s7-1"></a>
 
@@ -80,7 +80,7 @@ Esfuerzo: **S** días · **M** 1-3 semanas · **L** más de un mes · **XL** var
 | N8-N9 | Toques de lockers y emisiones de validadores | P2 / S |
 | D | Convención de metadatos del validador `api_endpoints` (lista de URLs con capacidades) y documentación para operadores | P0 / S |
 
-Los cambios para **reducir la RAM y el disco del nodo** (R1-R11: ajustes de RocksDB, poda, arranque desde un snapshot verificado, actualización de protocolo de la estadística de propuestas y migración de Java a Rust) están en la **capítulo [9](09-nodos-ligeros.md#s9)**, con el detalle de cada uno en la sección [9.4](09-nodos-ligeros.md#s9-4).
+Los cambios para **reducir la RAM y el disco del nodo** (R1-R11: ajustes de RocksDB, poda, arranque desde un snapshot verificado, actualización de protocolo de la estadística de propuestas y migración de Java a Rust) están en el **capítulo [9](09-nodos-ligeros.md#s9)**, con el detalle de cada uno en la sección [9.4](09-nodos-ligeros.md#s9-4).
 
 Todos los índices deben ser **flags opcionales**, como los que ya existen, para no penalizar a los validadores que no quieran servir lecturas.
 
@@ -95,7 +95,7 @@ Todos los índices deben ser **flags opcionales**, como los que ya existen, para
   - proxy TLS.
 - **P1/S:** asistente para publicar `api_endpoints` en los metadatos del validador.
 - **P0/S:** perfil **«nodo pequeño» de 4 GB** (R2, sección [9.4](09-nodos-ligeros.md#s9-4)): memoria Java, mempool y canales P2P reducidos, opciones de RocksDB y validador sin índices de API.
-- **P0/S, seguridad:** la descarga del snapshot comunitario usa `verify=False` (TLS sin verificar, `node-runner-cli/ledger_snapshot/__init__.py`). Hay que verificar TLS y un hash o firma publicados; a medio plazo, sustituirla por el arranque verificado (R9).
+- **P0/S, seguridad:** el comando de snapshot comunitario descarga sin verificar TLS (`verify=False`) un *script* remoto que después se ejecuta con bash, y no comprueba ningún hash ni firma del snapshot (`node-runner-cli/ledger_snapshot/__init__.py:30-42`). Hay que verificar TLS y un hash o firma publicados; a medio plazo, sustituirla por el arranque verificado (R9).
 
 <a id="s7-4"></a>
 
@@ -184,11 +184,11 @@ Los cambios son simétricos a los de Android. Los clientes de DI (`DependencyKey
 
 ## 7.9 `radixdlt/rola` (inicio de sesión en todas las dApps)
 
-- **P0/S.** `GatewayService` (`typescript/src/gateway.ts:14-38`) usa por defecto `RadixNetworkConfigById[networkId].gatewayUrl`. Hay que:
-  - aceptar una lista o descubrimiento;
+- **P0/S.** ROLA ya permite inyectar un cliente propio (`gatewayApiClient`, `rola.ts:26,35`; `gateway.ts:20-24`); solo el valor por defecto es la URL pública (`RadixNetworkConfigById[networkId].gatewayUrl`). Hay que:
+  - documentar esa opción y aceptar una lista de puntos de acceso o el descubrimiento;
   - añadir la opción `ownerKeysReader` para leer `owner_keys` con la Engine State API (`/object/attached-modules/metadata/entry`).
 - **P1/S.** El paquete `python/` ya recibe el proveedor de metadatos como parámetro (`rola/core.py:14`); basta con añadir un proveedor que lea `owner_keys` del nodo o del indexador.
-- **P1/S.** Si no se puede consultar el ledger y la cuenta es virtual (sin `owner_keys`), la derivación de la dirección ya basta (`rola.ts:85`). Hay que documentar que ese caso no necesita red.
+- **Nota de seguridad.** Hoy, si no se puede consultar el ledger, ROLA devuelve un error (`couldNotVerifyPublicKeyOnLedger`, `rola.ts:55-78`). Aceptar solo la derivación de la dirección sin consultar `owner_keys` sería inseguro, porque daría por buenas claves que el usuario ya ha rotado. Por eso ROLA necesita siempre al menos un punto de acceso de lectura.
 
 <a id="s7-10"></a>
 
@@ -244,7 +244,7 @@ No usan el Gateway, pero son infraestructura P1 que también depende de un únic
 ## 7.14 `wallet-agent-ai`
 
 - **P0/S.** URLs fijas en `src/network-config.ts:14-22`; la red se deduce de la URL (`:33-36`, `weft.ts:211-225`).
-- **P0/S, fallo actual.** Compara el estado con `"Rejected"` / `"PermanentlyRejected"` (`src/core/RadixClient.ts:122`), pero la Core API devuelve `PermanentRejection`, así que el rechazo no se detecta.
+- **P1/S, al migrar.** Hoy consulta el Gateway (`src/core/RadixClient.ts:123`) y compara el estado con `"Rejected"` / `"PermanentlyRejected"` (`:143`), valores que el Gateway sí devuelve. Al pasar a la LTS del nodo hay que traducir `PermanentRejection` y `FateUncertainButLikelyRejection`; además, hoy no trata `LikelyButNotCertainRejection` del Gateway.
 - **P1/M.** Crear la interfaz `LedgerReader` para las ~25 llamadas `fetch`.
 - **P1/S.** `waitForOwnerApproval` (`AgentWallet.ts:697-722`) debe vigilar el estado del componente en vez de filtrar el stream.
 - **P2.** La API de Astrolescent debe admitir una instancia propia.

@@ -4,7 +4,7 @@
 
 # 10. Guía de implementación paso a paso
 
-Las secciones de este capítulo heredan la valoración (¿es posible?, dificultad y esfuerzo) de lo que implementan: E3 (sección [10.1](#s10-1)), el descubrimiento ([10.2](#s10-2), con su propio recuadro), E2 ([10.3](#s10-3)), los cambios en clientes (capítulo [7](07-cambios-por-repositorio.md#s7)), el archivo de Olympia ([10.5](#s10-5)) y la solución ideal ([6.2](06-solucion-recomendada.md#s6-2)).
+Las secciones de este capítulo heredan la valoración (¿es posible?, dificultad y esfuerzo) de lo que implementan: E3 (sección [10.1](#s10-1)), el descubrimiento ([10.2](#s10-2), con su propio recuadro), E2 ([10.3](#s10-3)), los cambios en clientes (recuadro de la sección [10.2](#s10-2) y tabla de la conclusión), el archivo de Olympia ([10.5](#s10-5)) y la solución ideal ([6.2](06-solucion-recomendada.md#s6-2)).
 
 Este capítulo explica **cómo** construir las piezas principales. Los fragmentos de código son **orientativos**: muestran la forma de la solución, no código listo para producción, y hay que ajustarlos a la versión exacta de cada dependencia.
 
@@ -40,7 +40,7 @@ Todas las claves van en orden de bytes, para recorrerlas por rangos.
 | `entity_tx` | `entity_address ‖ state_version (BE)` | bits: clase de manifiesto, ¿cambió saldo?, ¿emitió evento?, ¿depósito/retiro? | cada transacción de usuario y la génesis | historial filtrado |
 | `entity_tx_by_resource` | `entity ‖ resource ‖ state_version` | delta (fungible) o ids añadidos/quitados (NFT) | idem | historial por recurso, `balance_changes` |
 | `nf_location` | `resource ‖ local_id` | `vault ‖ global_owner ‖ state_version` | cambios de vaults NFT | `state/non-fungible/location`, exploradores |
-| `holders` | `resource ‖ owner ‖ (saldo invertido para ordenar)` | saldo | cambios de vaults | `extensions/resource-holders`, exploradores |
+| `holders` | `resource ‖ saldo invertido ‖ owner` (para recorrerlos ordenados por saldo), con un índice auxiliar `resource ‖ owner → saldo` para actualizar | saldo | cambios de vaults | `extensions/resource-holders`, exploradores |
 | `subintents` | `subintent_hash` | `state_version ‖ intent_hash` | anulaciones de subintents | `transaction/subintent-status` (hasta que exista N1) |
 | `role_badges` | `badge (resource[:id]) ‖ entity` | — | cambios de `RoleAssignment` | `entities-by-role-requirement` |
 | `metadata_updated` | `entity ‖ key` | `state_version` | cambios del módulo de metadatos | `last_updated_at_state_version` |

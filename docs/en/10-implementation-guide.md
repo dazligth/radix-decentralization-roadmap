@@ -4,7 +4,7 @@
 
 # 10. Step-by-step implementation guide
 
-The sections of this chapter inherit the assessment (is it possible?, difficulty and effort) of what they implement: E3 (section [10.1](#s10-1)), discovery ([10.2](#s10-2), with its own box), E2 ([10.3](#s10-3)), client changes (chapter [7](07-per-repository-changes.md#s7)), the Olympia archive ([10.5](#s10-5)) and the ideal solution ([6.2](06-recommended-solution.md#s6-2)).
+The sections of this chapter inherit the assessment (is it possible?, difficulty and effort) of what they implement: E3 (section [10.1](#s10-1)), discovery ([10.2](#s10-2), with its own box), E2 ([10.3](#s10-3)), client changes (the box in section [10.2](#s10-2) and the conclusion table), the Olympia archive ([10.5](#s10-5)) and the ideal solution ([6.2](06-recommended-solution.md#s6-2)).
 
 This chapter explains **how** to build the main pieces. Code snippets are **indicative**: they show the shape of the solution, not production-ready code, and must be adjusted to the exact version of each dependency.
 
@@ -40,7 +40,7 @@ All keys are byte-ordered so they can be scanned by range.
 | `entity_tx` | `entity_address ‖ state_version (BE)` | bits: manifest class, balance changed?, event emitted?, deposit/withdrawal? | every user transaction and genesis | filtered history |
 | `entity_tx_by_resource` | `entity ‖ resource ‖ state_version` | delta (fungible) or ids added/removed (NFT) | same | per-resource history, `balance_changes` |
 | `nf_location` | `resource ‖ local_id` | `vault ‖ global_owner ‖ state_version` | NFT vault changes | `state/non-fungible/location`, explorers |
-| `holders` | `resource ‖ owner ‖ (inverted balance for ordering)` | balance | vault changes | `extensions/resource-holders`, explorers |
+| `holders` | `resource ‖ inverted balance ‖ owner` (to scan them ordered by balance), with an auxiliary `resource ‖ owner → balance` index for updates | balance | vault changes | `extensions/resource-holders`, explorers |
 | `subintents` | `subintent_hash` | `state_version ‖ intent_hash` | subintent nullifications | `transaction/subintent-status` (until N1 exists) |
 | `role_badges` | `badge (resource[:id]) ‖ entity` | — | `RoleAssignment` changes | `entities-by-role-requirement` |
 | `metadata_updated` | `entity ‖ key` | `state_version` | metadata-module changes | `last_updated_at_state_version` |

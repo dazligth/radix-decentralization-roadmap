@@ -21,7 +21,7 @@ Este repositorio es de código abierto y está pensado para que la comunidad de 
 2. Editar los ficheros:
    - **Contenido del informe:** `docs/es/` y `docs/en/`. Los resúmenes y la conclusión están en `README.es.md` y `README.md`.
    - **Notas de la comunidad:** `community/`.
-3. Mantener **los dos idiomas** sincronizados. Quien solo pueda escribir en uno, debe indicarlo en el PR con la etiqueta «necesita traducción» y otra persona lo completará.
+3. Mantener **los dos idiomas** sincronizados. Quien solo pueda escribir en uno debe indicarlo en el PR con la etiqueta «necesita traducción» y otra persona lo completará.
 4. Abrir el PR con la plantilla y explicar qué cambia y por qué.
 5. Los cambios de contenido se revisan antes de incorporarse. Se pueden pedir fuentes o ajustes.
 

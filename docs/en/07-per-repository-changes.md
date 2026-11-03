@@ -4,10 +4,10 @@
 
 # 7. Per-repository changes
 
-Each change states its priority and effort. The overall assessment of each block is in chapters [4](04-05-strategies.md#s4), 6 and 9.
+Each change states its priority and effort. The overall assessment of each block is in chapter [4](04-05-strategies.md#s4), chapter [6](06-recommended-solution.md#s6) and chapter [9](09-lighter-nodes.md#s9).
 
 Priority: **P0** essential · **P1** needed for every use case · **P2** improvement.
-Effort: **S** days · **M** 1-3 weeks · **L** more than a month · **XL** several months or more. As a rough reference: S < 0.5 person-months; M ≈ 0.25-0.75; L ≈ 1 or more; XL > 3.
+Effort: **S** days · **M** 1-3 weeks · **L** more than a month · **XL** several months or more. As a rough reference: S < 0.25 person-months; M ≈ 0.25-0.75; L ≈ 1 or more; XL > 3.
 
 <a id="s7-1"></a>
 
@@ -95,7 +95,7 @@ Every index should be an **optional flag**, like the existing ones, so validator
   - a TLS proxy.
 - **P1/S:** a wizard step to publish `api_endpoints` in the validator's metadata.
 - **P0/S:** a **4 GB "small node" profile** (R2, section [9.4](09-lighter-nodes.md#s9-4)): reduced Java memory, mempool and P2P channels, RocksDB options, and validators without API indexes.
-- **P0/S, security:** the community snapshot download uses `verify=False` (no TLS verification, `node-runner-cli/ledger_snapshot/__init__.py`). Verify TLS and a published hash or signature; in the medium term, replace it with verified bootstrap (R9).
+- **P0/S, security:** the community snapshot command downloads, without TLS verification (`verify=False`), a remote script that is then run with bash, and checks no hash or signature of the snapshot (`node-runner-cli/ledger_snapshot/__init__.py:30-42`). Verify TLS and a published hash or signature; in the medium term, replace it with verified bootstrap (R9).
 
 <a id="s7-4"></a>
 
@@ -184,11 +184,11 @@ The changes mirror Android's. The DI clients (`DependencyKey`) allow the `liveVa
 
 ## 7.9 `radixdlt/rola` (login for every dApp)
 
-- **P0/S.** `GatewayService` (`typescript/src/gateway.ts:14-38`) defaults to `RadixNetworkConfigById[networkId].gatewayUrl`. It should:
-  - accept a list or discovery;
+- **P0/S.** ROLA already accepts an injected client (`gatewayApiClient`, `rola.ts:26,35`; `gateway.ts:20-24`); only the default is the public URL (`RadixNetworkConfigById[networkId].gatewayUrl`). It should:
+  - document that option and accept a list of access points or discovery;
   - add an `ownerKeysReader` option that reads `owner_keys` via the Engine State API (`/object/attached-modules/metadata/entry`).
 - **P1/S.** The `python/` package already takes the metadata provider as a parameter (`rola/core.py:14`); it only needs a provider that reads `owner_keys` from the node or the indexer.
-- **P1/S.** If the ledger cannot be queried and the account is virtual (no `owner_keys`), address derivation alone is enough (`rola.ts:85`). Document that this case needs no network.
+- **Security note.** Today, if the ledger cannot be queried, ROLA returns an error (`couldNotVerifyPublicKeyOnLedger`, `rola.ts:55-78`). Accepting address derivation alone without checking `owner_keys` would be unsafe, because it would accept keys the user has already rotated. That is why ROLA always needs at least one read access point.
 
 <a id="s7-10"></a>
 
@@ -244,7 +244,7 @@ They do not use the Gateway, but they are P1 infrastructure that also depends on
 ## 7.14 `wallet-agent-ai`
 
 - **P0/S.** Hard-coded URLs in `src/network-config.ts:14-22`; the network is inferred from the URL (`:33-36`, `weft.ts:211-225`).
-- **P0/S, existing bug.** It compares the status with `"Rejected"` / `"PermanentlyRejected"` (`src/core/RadixClient.ts:122`), but the Core API returns `PermanentRejection`, so rejection is not detected.
+- **P1/S, when migrating.** Today it queries the Gateway (`src/core/RadixClient.ts:123`) and compares the status with `"Rejected"` / `"PermanentlyRejected"` (`:143`), values the Gateway does return. When moving to the node's LTS, `PermanentRejection` and `FateUncertainButLikelyRejection` must be mapped; it also does not handle the Gateway's `LikelyButNotCertainRejection` today.
 - **P1/M.** Create a `LedgerReader` interface for its ~25 `fetch` calls.
 - **P1/S.** `waitForOwnerApproval` (`AgentWallet.ts:697-722`) should watch component state instead of filtering the stream.
 - **P2.** The Astrolescent API should accept a self-hosted instance.

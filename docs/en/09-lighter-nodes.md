@@ -35,7 +35,7 @@
 | Transaction-history pruning | **Does not exist** | code: only state-tree GC and ledger-proof GC exist |
 | Bootstrapping from a verified snapshot | **Does not exist.** A new node replays ~567 million transactions from genesis, or downloads a third-party snapshot with no cryptographic verification. | code; `babylon-nodecli/.../ledger_snapshot/__init__.py:26-80` |
 | RocksDB tuning | **None**: `Options::default()` for the database and all 26 column families, also in `v1.4.0.0` | `core-rust/state-manager/src/store/rocks_db.rs:164-170` |
-| Mempool | 512 MiB of transactions × factor 2.3 ≈ **~1.2 GB** by default | `core-rust/node-common/src/config/mod.rs:74-75`, `RadixNodeModule.java:281-304` |
+| Mempool | 512 MiB of transactions × factor 2.3 ≈ **~1.2 GB** by default | `core-rust/node-common/src/config/mod.rs:74-75`, `RadixNodeModule.java` (mempool computation) and `priority_mempool.rs:81` (230 % factor) |
 | Java code remaining | ~55,500 hand-written lines in `core` + ~35,000 in `common` + ~14,000 of Java-Rust bridge classes (plus ~4,000 of JNI layer in Rust) | `wc -l` count |
 | Official "all-Rust" node | Xi'an / hyperscale-rs is a **different network** (not Babylon) with no launch date. According to radix.wiki, on 3 Sep 2026 its lead developer stopped proposals, grants and engagements with Radix, while continuing to develop the code (section [11.1](11-hyperscale-evolution.md#s11-1)). | radixdlt.com (roadmap 30 Nov 2024), radix.wiki |
 
@@ -198,7 +198,7 @@ let cf_opts = |cf: &str| {
   - `RADIXDLT_MEMPOOL_MAX_MEMORY=134217728` (128 MB);
   - lower P2P channel limits (`network.p2p.max_inbound_channels` and `max_outbound_channels` from 1,024 to ~64);
   - the R1 and R3 options.
-- **Same repository, security bug:** the snapshot download uses `verify=False` (no TLS verification) in `ledger_snapshot`. TLS must be verified, along with a **published signature or hash** of the snapshot.
+- **Same repository, security bug:** the snapshot command downloads, without TLS verification, a remote script that is run with bash, and checks no hash or signature of the snapshot (see section [7.3](07-per-repository-changes.md#s7-3)). TLS must be verified, along with a **published signature or hash** of the snapshot.
 - **Tests:** a Stokenet validator with 4 GB for several weeks, measuring missed rounds and RSS.
 - **Risk:** low. If the heap is too small the node restarts; the long test prevents that.
 
@@ -459,7 +459,7 @@ flowchart LR
 | Node type | RAM (estimate) | Disk (estimate) | What it stores |
 |---|---|---|---|
 | **Light validator** | 4 GB | ≤ 500 GB (estimated 50-250 GB depending on pruning) | Current state, N epochs, epoch proofs; no API indexes (R1-R9) |
-| **Read node** | 4 GB after R11; ~4.5 GB before (the Java column of 9.5 plus the indexer) | ≤ 500 GB with R4 and R5 + light indexes | Transaction history + light-indexer indexes |
+| **Read node** | 4 GB after R11; ~4.5 GB before (the Java column of 9.5 plus the indexer) | Probably ≤ 500 GB with R4-R6, compression and light indexes; it must be measured (`raw_db_size`) | Transaction history + light-indexer indexes |
 | **Archive node** (a few, in several hands) | 8-16 GB | 1-4 TB, depending on compression (see [9.3](#s9-3)) | Full history; serves full sync and produces R9's verifiable snapshots |
 
 <a id="s9-7"></a>

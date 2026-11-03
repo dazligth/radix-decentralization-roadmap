@@ -12,7 +12,7 @@
   - `/lts/transaction/{construction, submit, status}`
   - `/lts/state/{account-all-fungible-resource-balances, account-fungible-resource-balance, account-deposit-behaviour}`
   - `/lts/stream/{transaction-outcomes, account-transaction-outcomes}`
-  - `/status/{network-configuration, network-status}`
+  - `/status/{network-configuration, network-status, scenarios}`
   - `/mempool/*`
   - `/transaction/{parse, submit, status, receipt, call-preview, preview, preview-v2}`
   - `/stream/{transactions, proofs}`
@@ -24,7 +24,8 @@
   - `/object/attached-modules/{metadata/iterator, metadata/entry, role-assignment, royalty}`
   - `/extra/entity-search` (filters `Blueprint`, `SystemType`, `EntityType`)
 - **Mesh API (Rosetta):** it was off by default, and **release `v1.4.0.0` (Sep 2026) removes it**. It served exchanges, not dApps.
-- **Exposure:** all of them bind to `127.0.0.1` with no CORS (`RadixNodeModule.java:127-131`).
+- **Exposure:** all of them bind to `127.0.0.1` by default with no CORS (`RadixNodeModule.java:127-131`); inside the container, `babylon-nodecli` exposes the Engine State API on `0.0.0.0` (`CoreDockerConfig.py:29`).
+- **Line references:** unless stated otherwise, they refer to the `develop` branch.
 - **Flags:**
 
   | Flag | Default | Purpose |
