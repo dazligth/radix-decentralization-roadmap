@@ -362,15 +362,52 @@ flowchart TB
     O["<b>Olympia</b><br/>2021-2023"] -->|"genesis migration<br/>Sep 2023"| B["<b>Babylon</b> · 2023-today<br/>with a central Gateway"]
     B -->|"chapters 6, 9 and 10 · 2027"| BS["<b>Babylon without Gateway</b><br/>4-8 GB nodes"]
     BS -->|"section 6.2"| BV["<b>Babylon with verifiable reads</b>"]
-    BV -.->|"FINAL B · chapter 11"| H["<b>Hyperscale</b><br/>sharded network · 2-4 years"]
+    BV -.->|"FINAL A · chapter 9"| A["<b>A · Keep improving Babylon</b><br/>node in Rust (R11)<br/>1-3 years"]
+    BV -.->|"FINAL B · chapter 11"| H["<b>B · Hyperscale</b><br/>new sharded network<br/>2-4 years"]
+    BV -.->|"FINAL C · chapter 13"| X["<b>C · Xi'an with Scrypto</b><br/>sharded Babylon<br/>3-5 years"]
     classDef old fill:#eeeeee,stroke:#888,color:#000
     classDef bad fill:#ffd6d6,stroke:#c00,color:#000
     classDef good fill:#d9f7d9,stroke:#080,color:#000
     class O old
     class B bad
-    BV -.->|"FINAL C · chapter 13"| X["<b>Xi'an with Scrypto</b><br/>sharded Babylon · 3-5 years"]
-    BV -.->|"FINAL A · chapter 9"| A["<b>Keep improving Babylon</b><br/>node in Rust (R11) · 1-3 years"]
-    class BS,BV,H,X,A good
+    class BS,BV,A,H,X good
+```
+
+### Final stage A: what would happen if Babylon keeps improving
+
+**Is it possible?** Yes. **Difficulty:** medium while on Java (R1-R9); very high for the Rust node (R11). Everything is kept, but the network still has a single shard: capacity improves through optimisation, not horizontal scaling. Green: kept; yellow: no fundamental change.
+
+```mermaid
+flowchart LR
+    subgraph BAB["Babylon today"]
+        B1["Network: consensus and validators"]
+        B2["XRD balances"]
+        B3["User accounts and keys"]
+        B4["Other tokens and NFTs"]
+        B5["Scrypto contracts and dApps"]
+        B6["Ledger history"]
+        B7["Capacity"]
+    end
+    subgraph FA["Improved Babylon (same network)"]
+        A1["Same network and validators<br/>node in Rust (R11), 4-8 GB"]
+        A2["Kept"]
+        A3["Same keys<br/>and same addresses"]
+        A4["Kept"]
+        A5["Keep working<br/>unchanged"]
+        A6[("On ledger and in verifiable<br/>segments (6.5)")]
+        A7["A single shard:<br/>no horizontal scaling"]
+    end
+    B1 -->|Yes| A1
+    B2 -->|Yes| A2
+    B3 -->|Yes| A3
+    B4 -->|Yes| A4
+    B5 -->|Yes| A5
+    B6 -->|Yes| A6
+    B7 -.->|No fundamental change| A7
+    classDef yes fill:#d9f7d9,stroke:#080,color:#000
+    classDef partial fill:#fff3c4,stroke:#b58900,color:#000
+    class B1,B2,B3,B4,B5,B6,A1,A2,A3,A4,A5,A6 yes
+    class B7,A7 partial
 ```
 
 ### Final stage B: what would move from Babylon to Hyperscale
@@ -407,6 +444,43 @@ flowchart LR
     class B1,B2,H1,H2 yes
     class B3,B4,H3,H4 partial
     class B5,B6,H5,H6 no
+```
+
+### Final stage C: what would happen with Xi'an with Scrypto
+
+**Is it possible?** Yes, with conditions: each transaction declares the global entities it uses, state is reorganised and a new sharded consensus must be built. **Difficulty:** very high. **Scrypto is kept**, but the final capacity is not proven and must be measured (stage C0). Green: kept as is; yellow: kept with changes or still to be proven.
+
+```mermaid
+flowchart LR
+    subgraph BAB["Babylon today"]
+        B1["Network: consensus and validators"]
+        B2["XRD balances"]
+        B3["User accounts and keys"]
+        B4["Other tokens and NFTs"]
+        B5["Scrypto contracts and dApps"]
+        B6["Ledger history"]
+        B7["Capacity"]
+    end
+    subgraph FC["Xi'an with Scrypto (same ledger)"]
+        C1["Same ledger, several shards<br/>new consensus in Rust (C4-C6)"]
+        C2["Kept"]
+        C3["Same keys<br/>and same addresses"]
+        C4["Kept"]
+        C5["Keep working; transactions<br/>carry an access list (C1)"]
+        C6[("Kept; per-shard<br/>segments (6.5)")]
+        C7["Grows with the shards<br/>(to be measured in C0)"]
+    end
+    B1 -->|Yes, with changes| C1
+    B2 -->|Yes| C2
+    B3 -->|Yes| C3
+    B4 -->|Yes| C4
+    B5 -->|Yes; some dApps need adjustments| C5
+    B6 -->|Yes| C6
+    B7 -.->|Target, not proven| C7
+    classDef yes fill:#d9f7d9,stroke:#080,color:#000
+    classDef partial fill:#fff3c4,stroke:#b58900,color:#000
+    class B2,B3,B4,B6,C2,C3,C4,C6 yes
+    class B1,B5,B7,C1,C5,C7 partial
 ```
 
 ## Final reflection

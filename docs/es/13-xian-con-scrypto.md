@@ -20,6 +20,43 @@ Los apartados 13.2 a 13.8 y 13.10 desarrollan la valoración de este recuadro; e
 - El plan público más reciente para Xi'an ya no conserva el Radix Engine. El RFC «Xi'an: Delivering Hyperscale for Radix» (abril de 2026) todavía usaba una integración del Radix Engine, que su autor describía en el hilo como aún no lista para producción, con el objetivo de la «paridad de funciones con Babylon a nivel de motor». Según radix.wiki, en agosto de 2026 esa integración se sustituyó por una máquina virtual nueva (`hyperscale-vm`). En el canal oficial de Hyperscale en Telegram, en agosto de 2026, se escribió (radix.wiki atribuye esos mensajes a su desarrollador principal) que los ajustes para fragmentar «son tantos que habría que tocarlo todo» y que es «más fácil empezar con esa intención que adaptarlo después».
 - Este capítulo **no contradice** esa valoración: confirma que hay que tocar el motor, el estado y el consenso. Lo que muestra es que existe un camino técnico conocido, con precedentes en la literatura, para hacerlo **sin perder Scrypto**. La gobernanza puede compararlo con FINAL A (seguir mejorando Babylon) y FINAL B (migrar a Hyperscale).
 
+### Etapa final C: qué pasaría con Xi'an con Scrypto
+
+**¿Es posible?** Sí, con condiciones: cada transacción declara las entidades globales que usa, el estado se reorganiza y hay que construir un consenso fragmentado nuevo. **Dificultad:** muy alta. **Scrypto se conserva**, pero la capacidad final no está demostrada y hay que medirla (etapa C0). En verde, lo que se mantiene igual; en amarillo, lo que se mantiene con cambios o falta por demostrar.
+
+```mermaid
+flowchart LR
+    subgraph BAB["Babylon hoy"]
+        B1["Red: consenso y validadores"]
+        B2["Saldos de XRD"]
+        B3["Cuentas y claves de los usuarios"]
+        B4["Otros tokens y NFT"]
+        B5["Contratos Scrypto y dApps"]
+        B6["Historial del ledger"]
+        B7["Capacidad"]
+    end
+    subgraph FC["Xi'an con Scrypto (misma cadena)"]
+        C1["Misma cadena, varios fragmentos<br/>consenso nuevo en Rust (C4-C6)"]
+        C2["Se mantienen"]
+        C3["Mismas claves<br/>y mismas direcciones"]
+        C4["Se mantienen"]
+        C5["Siguen funcionando; transacciones<br/>con lista de accesos (C1)"]
+        C6[("Se conserva; segmentos<br/>por fragmento (6.5)")]
+        C7["Crece con los fragmentos<br/>(por medir en C0)"]
+    end
+    B1 -->|Sí, con cambios| C1
+    B2 -->|Sí| C2
+    B3 -->|Sí| C3
+    B4 -->|Sí| C4
+    B5 -->|Sí; algunas dApps con ajustes| C5
+    B6 -->|Sí| C6
+    B7 -.->|Objetivo, no demostrado| C7
+    classDef yes fill:#d9f7d9,stroke:#080,color:#000
+    classDef partial fill:#fff3c4,stroke:#b58900,color:#000
+    class B2,B3,B4,B6,C2,C3,C4,C6 yes
+    class B1,B5,B7,C1,C5,C7 partial
+```
+
 <a id="s13-1"></a>
 
 ## 13.1 Veredicto por objetivo

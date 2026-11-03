@@ -39,15 +39,15 @@ flowchart TB
     O["<b>Olympia</b><br/>2021-2023"] -->|"migración por génesis<br/>sep-2023"| B["<b>Babylon</b> · 2023-hoy<br/>con Gateway central"]
     B -->|"capítulos 6, 9 y 10 · 2027"| BS["<b>Babylon sin Gateway</b><br/>nodos de 4-8 GB"]
     BS -->|"sección 6.2"| BV["<b>Babylon con lecturas verificables</b>"]
-    BV -.->|"FINAL B · capítulo 11"| H["<b>Hyperscale</b><br/>red fragmentada · 2-4 años"]
+    BV -.->|"FINAL A · capítulo 9"| A["<b>A · Seguir mejorando Babylon</b><br/>nodo en Rust (R11)<br/>1-3 años"]
+    BV -.->|"FINAL B · capítulo 11"| H["<b>B · Hyperscale</b><br/>red fragmentada nueva<br/>2-4 años"]
+    BV -.->|"FINAL C · capítulo 13"| X["<b>C · Xi'an con Scrypto</b><br/>Babylon fragmentada<br/>3-5 años"]
     classDef old fill:#eeeeee,stroke:#888,color:#000
     classDef bad fill:#ffd6d6,stroke:#c00,color:#000
     classDef good fill:#d9f7d9,stroke:#080,color:#000
     class O old
     class B bad
-    BV -.->|"FINAL C · capítulo 13"| X["<b>Xi'an con Scrypto</b><br/>Babylon fragmentada · 3-5 años"]
-    BV -.->|"FINAL A · capítulo 9"| A["<b>Seguir mejorando Babylon</b><br/>nodo en Rust (R11) · 1-3 años"]
-    class BS,BV,H,X,A good
+    class BS,BV,A,H,X good
 ```
 
 ### Etapa final B: qué pasaría de Babylon a Hyperscale

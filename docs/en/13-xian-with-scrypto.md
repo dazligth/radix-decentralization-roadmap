@@ -20,6 +20,43 @@ Sections [13.2](#s13-2) to [13.8](#s13-8) and [13.10](#s13-10) develop the asses
 - The most recent public plan for Xi'an no longer keeps the Radix Engine. The RFC "Xi'an: Delivering Hyperscale for Radix" (April 2026) still used a Radix Engine integration, which its author described in the thread as not yet production-ready, aiming for "engine-level feature parity to Babylon". According to radix.wiki, in August 2026 that integration was replaced by a new virtual machine (`hyperscale-vm`). In the official Hyperscale Telegram channel, in August 2026, it was written (radix.wiki attributes these messages to its lead developer) that the sharding adjustments "are so many that it'd require touching everything" and that it is "easier to start with intention than to retrofit".
 - This chapter **does not contradict** that assessment: it confirms that the engine, the state and the consensus must all be touched. What it shows is that there is a known technical path, with precedents in the literature, to do it **without losing Scrypto**. Governance can compare it with FINAL A (keep improving Babylon) and FINAL B (migrate to Hyperscale).
 
+### Final stage C: what would happen with Xi'an with Scrypto
+
+**Is it possible?** Yes, with conditions: each transaction declares the global entities it uses, state is reorganised and a new sharded consensus must be built. **Difficulty:** very high. **Scrypto is kept**, but the final capacity is not proven and must be measured (stage C0). Green: kept as is; yellow: kept with changes or still to be proven.
+
+```mermaid
+flowchart LR
+    subgraph BAB["Babylon today"]
+        B1["Network: consensus and validators"]
+        B2["XRD balances"]
+        B3["User accounts and keys"]
+        B4["Other tokens and NFTs"]
+        B5["Scrypto contracts and dApps"]
+        B6["Ledger history"]
+        B7["Capacity"]
+    end
+    subgraph FC["Xi'an with Scrypto (same ledger)"]
+        C1["Same ledger, several shards<br/>new consensus in Rust (C4-C6)"]
+        C2["Kept"]
+        C3["Same keys<br/>and same addresses"]
+        C4["Kept"]
+        C5["Keep working; transactions<br/>carry an access list (C1)"]
+        C6[("Kept; per-shard<br/>segments (6.5)")]
+        C7["Grows with the shards<br/>(to be measured in C0)"]
+    end
+    B1 -->|Yes, with changes| C1
+    B2 -->|Yes| C2
+    B3 -->|Yes| C3
+    B4 -->|Yes| C4
+    B5 -->|Yes; some dApps need adjustments| C5
+    B6 -->|Yes| C6
+    B7 -.->|Target, not proven| C7
+    classDef yes fill:#d9f7d9,stroke:#080,color:#000
+    classDef partial fill:#fff3c4,stroke:#b58900,color:#000
+    class B2,B3,B4,B6,C2,C3,C4,C6 yes
+    class B1,B5,B7,C1,C5,C7 partial
+```
+
 <a id="s13-1"></a>
 
 ## 13.1 Verdict per goal

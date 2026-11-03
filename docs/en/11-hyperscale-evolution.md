@@ -39,15 +39,15 @@ flowchart TB
     O["<b>Olympia</b><br/>2021-2023"] -->|"genesis migration<br/>Sep 2023"| B["<b>Babylon</b> · 2023-today<br/>with a central Gateway"]
     B -->|"chapters 6, 9 and 10 · 2027"| BS["<b>Babylon without Gateway</b><br/>4-8 GB nodes"]
     BS -->|"section 6.2"| BV["<b>Babylon with verifiable reads</b>"]
-    BV -.->|"FINAL B · chapter 11"| H["<b>Hyperscale</b><br/>sharded network · 2-4 years"]
+    BV -.->|"FINAL A · chapter 9"| A["<b>A · Keep improving Babylon</b><br/>node in Rust (R11)<br/>1-3 years"]
+    BV -.->|"FINAL B · chapter 11"| H["<b>B · Hyperscale</b><br/>new sharded network<br/>2-4 years"]
+    BV -.->|"FINAL C · chapter 13"| X["<b>C · Xi'an with Scrypto</b><br/>sharded Babylon<br/>3-5 years"]
     classDef old fill:#eeeeee,stroke:#888,color:#000
     classDef bad fill:#ffd6d6,stroke:#c00,color:#000
     classDef good fill:#d9f7d9,stroke:#080,color:#000
     class O old
     class B bad
-    BV -.->|"FINAL C · chapter 13"| X["<b>Xi'an with Scrypto</b><br/>sharded Babylon · 3-5 years"]
-    BV -.->|"FINAL A · chapter 9"| A["<b>Keep improving Babylon</b><br/>node in Rust (R11) · 1-3 years"]
-    class BS,BV,H,X,A good
+    class BS,BV,A,H,X good
 ```
 
 ### Final stage B: what would move from Babylon to Hyperscale

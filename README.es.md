@@ -362,15 +362,52 @@ flowchart TB
     O["<b>Olympia</b><br/>2021-2023"] -->|"migración por génesis<br/>sep-2023"| B["<b>Babylon</b> · 2023-hoy<br/>con Gateway central"]
     B -->|"capítulos 6, 9 y 10 · 2027"| BS["<b>Babylon sin Gateway</b><br/>nodos de 4-8 GB"]
     BS -->|"sección 6.2"| BV["<b>Babylon con lecturas verificables</b>"]
-    BV -.->|"FINAL B · capítulo 11"| H["<b>Hyperscale</b><br/>red fragmentada · 2-4 años"]
+    BV -.->|"FINAL A · capítulo 9"| A["<b>A · Seguir mejorando Babylon</b><br/>nodo en Rust (R11)<br/>1-3 años"]
+    BV -.->|"FINAL B · capítulo 11"| H["<b>B · Hyperscale</b><br/>red fragmentada nueva<br/>2-4 años"]
+    BV -.->|"FINAL C · capítulo 13"| X["<b>C · Xi'an con Scrypto</b><br/>Babylon fragmentada<br/>3-5 años"]
     classDef old fill:#eeeeee,stroke:#888,color:#000
     classDef bad fill:#ffd6d6,stroke:#c00,color:#000
     classDef good fill:#d9f7d9,stroke:#080,color:#000
     class O old
     class B bad
-    BV -.->|"FINAL C · capítulo 13"| X["<b>Xi'an con Scrypto</b><br/>Babylon fragmentada · 3-5 años"]
-    BV -.->|"FINAL A · capítulo 9"| A["<b>Seguir mejorando Babylon</b><br/>nodo en Rust (R11) · 1-3 años"]
-    class BS,BV,H,X,A good
+    class BS,BV,A,H,X good
+```
+
+### Etapa final A: qué pasaría si se sigue mejorando Babylon
+
+**¿Es posible?** Sí. **Dificultad:** media con Java (R1-R9); muy alta para el nodo en Rust (R11). Todo se conserva, pero la red sigue teniendo un solo fragmento: la capacidad mejora con la optimización, no con el escalado horizontal. En verde, lo que se mantiene; en amarillo, lo que no cambia de fondo.
+
+```mermaid
+flowchart LR
+    subgraph BAB["Babylon hoy"]
+        B1["Red: consenso y validadores"]
+        B2["Saldos de XRD"]
+        B3["Cuentas y claves de los usuarios"]
+        B4["Otros tokens y NFT"]
+        B5["Contratos Scrypto y dApps"]
+        B6["Historial del ledger"]
+        B7["Capacidad"]
+    end
+    subgraph FA["Babylon mejorada (misma red)"]
+        A1["Misma red y validadores<br/>nodo en Rust (R11), 4-8 GB"]
+        A2["Se mantienen"]
+        A3["Mismas claves<br/>y mismas direcciones"]
+        A4["Se mantienen"]
+        A5["Siguen funcionando<br/>sin cambios"]
+        A6[("En la red y en segmentos<br/>verificables (6.5)")]
+        A7["Un solo fragmento:<br/>sin escalado horizontal"]
+    end
+    B1 -->|Sí| A1
+    B2 -->|Sí| A2
+    B3 -->|Sí| A3
+    B4 -->|Sí| A4
+    B5 -->|Sí| A5
+    B6 -->|Sí| A6
+    B7 -.->|Sin cambio de fondo| A7
+    classDef yes fill:#d9f7d9,stroke:#080,color:#000
+    classDef partial fill:#fff3c4,stroke:#b58900,color:#000
+    class B1,B2,B3,B4,B5,B6,A1,A2,A3,A4,A5,A6 yes
+    class B7,A7 partial
 ```
 
 ### Etapa final B: qué pasaría de Babylon a Hyperscale
@@ -407,6 +444,43 @@ flowchart LR
     class B1,B2,H1,H2 yes
     class B3,B4,H3,H4 partial
     class B5,B6,H5,H6 no
+```
+
+### Etapa final C: qué pasaría con Xi'an con Scrypto
+
+**¿Es posible?** Sí, con condiciones: cada transacción declara las entidades globales que usa, el estado se reorganiza y hay que construir un consenso fragmentado nuevo. **Dificultad:** muy alta. **Scrypto se conserva**, pero la capacidad final no está demostrada y hay que medirla (etapa C0). En verde, lo que se mantiene igual; en amarillo, lo que se mantiene con cambios o falta por demostrar.
+
+```mermaid
+flowchart LR
+    subgraph BAB["Babylon hoy"]
+        B1["Red: consenso y validadores"]
+        B2["Saldos de XRD"]
+        B3["Cuentas y claves de los usuarios"]
+        B4["Otros tokens y NFT"]
+        B5["Contratos Scrypto y dApps"]
+        B6["Historial del ledger"]
+        B7["Capacidad"]
+    end
+    subgraph FC["Xi'an con Scrypto (misma cadena)"]
+        C1["Misma cadena, varios fragmentos<br/>consenso nuevo en Rust (C4-C6)"]
+        C2["Se mantienen"]
+        C3["Mismas claves<br/>y mismas direcciones"]
+        C4["Se mantienen"]
+        C5["Siguen funcionando; transacciones<br/>con lista de accesos (C1)"]
+        C6[("Se conserva; segmentos<br/>por fragmento (6.5)")]
+        C7["Crece con los fragmentos<br/>(por medir en C0)"]
+    end
+    B1 -->|Sí, con cambios| C1
+    B2 -->|Sí| C2
+    B3 -->|Sí| C3
+    B4 -->|Sí| C4
+    B5 -->|Sí; algunas dApps con ajustes| C5
+    B6 -->|Sí| C6
+    B7 -.->|Objetivo, no demostrado| C7
+    classDef yes fill:#d9f7d9,stroke:#080,color:#000
+    classDef partial fill:#fff3c4,stroke:#b58900,color:#000
+    class B2,B3,B4,B6,C2,C3,C4,C6 yes
+    class B1,B5,B7,C1,C5,C7 partial
 ```
 
 ## Reflexión final
