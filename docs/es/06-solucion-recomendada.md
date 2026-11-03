@@ -138,7 +138,7 @@ sequenceDiagram
    | Concepto | Tamaño |
    |---|---|
    | Disco recomendado para un nodo (documentación oficial, «inicial») | 500 GB |
-   | Disco que ocupa hoy un nodo de mainnet (medición aportada por un miembro de la comunidad, nov-2026) | ~493 GB; ~600 GB con el índice de cambios de cuenta; +~65 GB/año |
+   | Disco que ocupa hoy un nodo de mainnet (medición aportada por Daffy, miembro de la comunidad, nov-2026) | ~493 GB; ~600 GB con el índice de cambios de cuenta; +~65 GB/año |
    | Indexador ligero (E3), estimado | ~10-50 GB |
    | Aumento relativo | **~2-10 %** del disco recomendado |
    | Crecimiento del indexador | ~0,1-0,3 GB/mes al ritmo actual (~4 400 transacciones de usuario/día × 0,5-1 KB, más índices auxiliares); ~1 GB/mes en el pico de marzo de 2025 (~35 000/día) |
@@ -159,7 +159,7 @@ sequenceDiagram
 
    **La parte grande es el nodo completo, y es la misma en los dos modelos.** Reducirla es el objetivo del capítulo [9](09-nodos-ligeros.md#s9). La sección [9.6](09-nodos-ligeros.md#s9-6) detalla qué cambios admite un nodo de lectura sin perder lo que necesita el indexador.
 3. **Margen de error.**
-   - El snapshot comunitario comprimido ocupa 274 GiB (sep-2026). Un miembro de la comunidad ha aportado una medición del tamaño en disco de un nodo de mainnet (~493 GB; recibos, 217 GB; ~600 GB con el índice de cambios de cuenta; +~65 GB/año), sin publicar todavía el método ni la versión del nodo. Conviene confirmarla con las métricas `raw_db_size` por column family.
+   - El snapshot comunitario comprimido ocupa 274 GiB (sep-2026). Daffy, miembro de la comunidad, ha aportado una medición del tamaño en disco de un nodo de mainnet (~493 GB; recibos, 217 GB; ~600 GB con el índice de cambios de cuenta; +~65 GB/año), sin publicar todavía el método ni la versión del nodo. Conviene confirmarla con las métricas `raw_db_size` por column family.
    - Los 10-50 GB del indexador son una **estimación** a partir de las mediciones de transacciones de usuario. El índice de titulares de recursos (h) y el de ubicación de NFT (b) dependen del número de pares recurso-titular y de NFT existentes, que no se ha medido.
    - El primer prototipo debe medir ambos antes de comprometer cifras.
 4. **Lo que sí aumentaría mucho:** el «nodo de archivo» con historia completa de substates (N5), que es en esencia lo que hace que el Gateway ocupe 2,5 TB. Por eso el informe **no** lo propone para validadores. Sería una opción solo para quien necesite estado histórico arbitrario. Para gobernanza se sustituye por la captura del snapshot al abrir la votación (E6).
@@ -368,7 +368,7 @@ flowchart TB
 > - **Dificultad:** Media.
 > - **Esfuerzo y plazo:** ~5-9 personas-mes; el primer experimento, semanas (estimación).
 
-**Origen.** Este diseño parte de una exploración que compartió un miembro de la comunidad («Node-side History Export», nov-2026). Quien la compartió la describe como exploración, no como decisión, y aún sin probar. Este informe la adopta y la adapta al objetivo de no depender de ningún operador.
+**Origen.** Este diseño parte de una exploración que compartió Daffy, miembro de la comunidad («Node-side History Export», nov-2026). Daffy la describe como exploración, no como decisión, y aún sin probar. Este informe la adopta y la adapta al objetivo de no depender de ningún operador.
 
 **El problema que resuelve:**
 
@@ -425,7 +425,7 @@ flowchart TB
 
 **Consecuencias para el resto del plan:**
 
-- **Nodos de lectura más pequeños.** Si el historial antiguo se sirve desde los segmentos, un nodo de lectura también puede podar (R8) y guardar solo una ventana con sus índices (sección [9.6](09-nodos-ligeros.md#s9-6)). Como referencia, el miembro de la comunidad indica que su Gateway mínimo, con un día de estado, funciona con 100-150 GB de disco, 2 CPU y 4-6 GB de RAM, aunque hoy sigue necesitando un nodo completo con índices de 550-600 GB (cifra de esa misma persona).
+- **Nodos de lectura más pequeños.** Si el historial antiguo se sirve desde los segmentos, un nodo de lectura también puede podar (R8) y guardar solo una ventana con sus índices (sección [9.6](09-nodos-ligeros.md#s9-6)). Como referencia, Daffy indica que su Gateway mínimo, con un día de estado, funciona con 100-150 GB de disco, 2 CPU y 4-6 GB de RAM, aunque hoy sigue necesitando un nodo completo con índices de 550-600 GB (cifra de esa misma persona).
 - **Ventanas por operador.** Cada nodo de lectura decide cuánto historial indexa localmente (por ejemplo, 7, 30 o 90 días) y pide el resto a los servicios de historial.
 - **Exploradores y Olympia.** El archivo de Olympia ([10.5](10-guia-de-implementacion.md#s10-5)) es el primer «segmento» histórico, y los exploradores leen el historial completo desde los servicios.
 - **Hyperscale y Xi'an.** El mismo diseño sirve por fragmento: cada fragmento exporta sus segmentos y los servicios de historial unen las transacciones entre fragmentos (capítulos [11](11-evolucion-hyperscale.md#s11) y [13](13-xian-con-scrypto.md#s13)).

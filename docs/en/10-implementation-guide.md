@@ -368,7 +368,7 @@ The state tree window already keeps recent versions (`state_hash_tree.*`). For t
 > - **Difficulty:** Low-medium.
 > - **Effort and timeline:** ~1-2 person-months; weeks (estimate).
 
-**What it sets out to show:** the property the whole design in section [6.5](06-recommended-solution.md#s6-5) depends on. **Two independent exporters, next to two different nodes, produce byte-identical segments.** This test was proposed by the community member who contributed the design. Babylon has a single shard, so the test isolates the export itself.
+**What it sets out to show:** the property the whole design in section [6.5](06-recommended-solution.md#s6-5) depends on. **Two independent exporters, next to two different nodes, produce byte-identical segments.** This test was proposed by Daffy, who contributed the design. Babylon has a single shard, so the test isolates the export itself.
 
 **Steps:**
 

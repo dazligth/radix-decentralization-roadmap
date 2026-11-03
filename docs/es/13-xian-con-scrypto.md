@@ -235,7 +235,7 @@ sequenceDiagram
 - el stream de transacciones y los cursores de paginación avanzan por ella;
 - los índices se ordenan y se podan por ella.
 
-Con varios fragmentos, cada uno tiene su propia altura y esa secuencia única deja de existir. Lo planteó un miembro de la comunidad en relación con Hyperscale. El desarrollador de Hyperscale preguntó de dónde salía el requisito, y la respuesta es que **viene de la API, no del protocolo**. Afecta igual a FINAL B y a FINAL C.
+Con varios fragmentos, cada uno tiene su propia altura y esa secuencia única deja de existir. Lo planteó Daffy, miembro de la comunidad, en relación con Hyperscale. El desarrollador de Hyperscale preguntó de dónde salía el requisito, y la respuesta es que **viene de la API, no del protocolo**. Afecta igual a FINAL B y a FINAL C.
 
 **Propuesta en dos niveles:**
 

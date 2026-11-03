@@ -31,7 +31,7 @@
 | Ledger size: **compressed** (zstd) community snapshot | 6.3 GiB (Oct 2023) → 69 GiB (Sep 2024) → 180 GiB (Sep 2025) → 259 GiB (Jul 2026) → **274 GiB (29 Sep 2026)** | snapshots.radix.live |
 | Recent growth | **~5-8 GiB/month** compressed | calculated from the row above |
 | Another published snapshot | 343.9 GB (PublicNode, v1.4.0.0, height 566,915,789; a point-in-time reading, the page refreshes every 12 hours; not stated whether compressed) | publicnode.com/snapshots |
-| On-disk size of a mainnet node | **~493 GB**, of which **217 GB are receipts**; **~600 GB** with the account change index; grows **~65 GB/year** | Measurement contributed by a community member (Nov 2026); method and node version not published |
+| On-disk size of a mainnet node | **~493 GB**, of which **217 GB are receipts**; **~600 GB** with the account change index; grows **~65 GB/year** | Measurement contributed by Daffy, a community member (Nov 2026); method and node version not published |
 | Share of the optional indexes | ~4-5 % (274 vs 262 GiB without indexes) | snapshots.radix.live |
 | Transaction-history pruning | **Does not exist** | code: only state-tree GC and ledger-proof GC exist |
 | Bootstrapping from a verified snapshot | **Does not exist.** A new node replays ~567 million transactions from genesis, or downloads a third-party snapshot with no cryptographic verification. | code; `babylon-nodecli/.../ledger_snapshot/__init__.py:26-80` |
@@ -438,7 +438,7 @@ These figures are *estimates* to be validated with R2's long-running test.
 
 - **Today:**
   - 274 GiB compressed (Sep 2026), +5-8 GiB/month.
-  - On disk, a mainnet node takes **~493 GB**, of which 217 GB are receipts, and **~600 GB** with the account change index; it grows ~65 GB/year (measurement contributed by a community member, Nov 2026). It should be confirmed with the per-column-family `raw_db_size` metrics.
+  - On disk, a mainnet node takes **~493 GB**, of which 217 GB are receipts, and **~600 GB** with the account change index; it grows ~65 GB/year (measurement contributed by Daffy, a community member, Nov 2026). It should be confirmed with the per-column-family `raw_db_size` metrics.
   - With defaults, which include the account change index, a full node **already exceeds 500 GB**; without that index, it is at the limit and will exceed it within a few months.
 - **With R3 + R4 + R5 + R6 + R7, without pruning history:**
   - Most per-round bytes go away: round receipts, executions, accumulators and the hash index.
@@ -501,7 +501,7 @@ Checked in the `babylon-node` code (`develop` branch):
 - **Result:** with R4 + R5 + R6, a read node with its indexes probably stays **under 500 GB**, but it keeps growing with every round. For the long term, R7 (optional on read nodes) removes most of the remaining receipt growth.
 - **How to confirm it:** measure each column family before and after applying each change.
 
-**With exported history (section [6.5](06-recommended-solution.md#s6-5))**, a read node **can also prune** (R8): it keeps the state and a recent window with its indexes (for example 7 to 90 days), and fetches old history from history services. Its disk would then be of the order of a pruned validator's plus its indexes (estimate). For reference, a community member's minimal Gateway, with one day of state, runs on 100-150 GB of disk, 2 CPUs and 4-6 GB of RAM, although today it still needs a full node with indexes of 550-600 GB.
+**With exported history (section [6.5](06-recommended-solution.md#s6-5))**, a read node **can also prune** (R8): it keeps the state and a recent window with its indexes (for example 7 to 90 days), and fetches old history from history services. Its disk would then be of the order of a pruned validator's plus its indexes (estimate). For reference, Daffy's minimal Gateway, with one day of state, runs on 100-150 GB of disk, 2 CPUs and 4-6 GB of RAM, although today it still needs a full node with indexes of 550-600 GB.
 
 <a id="s9-7"></a>
 

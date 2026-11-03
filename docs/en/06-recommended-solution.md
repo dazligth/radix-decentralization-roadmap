@@ -138,7 +138,7 @@ sequenceDiagram
    | Item | Size |
    |---|---|
    | Recommended node disk (official docs, "initially") | 500 GB |
-   | Disk a mainnet node takes today (measurement contributed by a community member, Nov 2026) | ~493 GB; ~600 GB with the account change index; +~65 GB/year |
+   | Disk a mainnet node takes today (measurement contributed by Daffy, a community member, Nov 2026) | ~493 GB; ~600 GB with the account change index; +~65 GB/year |
    | Light indexer (E3), estimated | ~10-50 GB |
    | Relative increase | **~2-10 %** of the recommended disk |
    | Indexer growth | ~0.1-0.3 GB/month at today's rate (~4,400 user transactions/day × 0.5-1 KB, plus auxiliary indexes); ~1 GB/month at the March 2025 peak (~35,000/day) |
@@ -159,7 +159,7 @@ sequenceDiagram
 
    **The large part is the full node, and it is the same in both models.** Shrinking it is the aim of chapter [9](09-lighter-nodes.md#s9). Section [9.6](09-lighter-nodes.md#s9-6) sets out which changes a read node can apply without losing what the indexer needs.
 3. **Margin of error.**
-   - The compressed community snapshot is 274 GiB (Sep 2026). A community member has contributed a measurement of a mainnet node's on-disk size (~493 GB; receipts, 217 GB; ~600 GB with the account change index; +~65 GB/year), without yet publishing the method or node version. It should be confirmed with the per-column-family `raw_db_size` metrics.
+   - The compressed community snapshot is 274 GiB (Sep 2026). Daffy, a community member, has contributed a measurement of a mainnet node's on-disk size (~493 GB; receipts, 217 GB; ~600 GB with the account change index; +~65 GB/year), without yet publishing the method or node version. It should be confirmed with the per-column-family `raw_db_size` metrics.
    - The 10-50 GB for the indexer is an **estimate** based on the user-transaction measurements. The resource-holder index (h) and the NFT-location index (b) depend on the number of resource-holder pairs and existing NFTs, which were not measured.
    - The first prototype must measure both before committing to figures.
 4. **What would grow a lot:** an "archive node" with full substate history (N5), which is essentially what makes the Gateway 2.5 TB. That is why this report does **not** propose it for validators. It would be an option only for those who need arbitrary historical state. For governance it is replaced by capturing the snapshot when the vote opens (E6).
@@ -368,7 +368,7 @@ flowchart TB
 > - **Difficulty:** Medium.
 > - **Effort and timeline:** ~5-9 person-months; the first experiment, weeks (estimate).
 
-**Origin.** This design builds on an exploration shared by a community member ("Node-side History Export", Nov 2026). The contributor describes it as an exploration, not a decision, and it is not yet tested. This report adopts it and adapts it to the goal of not depending on any operator.
+**Origin.** This design builds on an exploration shared by Daffy, a community member ("Node-side History Export", Nov 2026). Daffy describes it as an exploration, not a decision, and it is not yet tested. This report adopts it and adapts it to the goal of not depending on any operator.
 
 **The problem it solves:**
 
@@ -425,7 +425,7 @@ flowchart TB
 
 **Consequences for the rest of the plan:**
 
-- **Smaller read nodes.** If old history is served from segments, a read node can also prune (R8) and keep only a window with its indexes (section [9.6](09-lighter-nodes.md#s9-6)). For reference, the community member reports that their minimal Gateway, with one day of state, runs on 100-150 GB of disk, 2 CPUs and 4-6 GB of RAM, although today it still needs a full node with indexes of 550-600 GB (the contributor's own figure).
+- **Smaller read nodes.** If old history is served from segments, a read node can also prune (R8) and keep only a window with its indexes (section [9.6](09-lighter-nodes.md#s9-6)). For reference, Daffy reports that their minimal Gateway, with one day of state, runs on 100-150 GB of disk, 2 CPUs and 4-6 GB of RAM, although today it still needs a full node with indexes of 550-600 GB (the contributor's own figure).
 - **Windows per operator.** Each read node decides how much history it indexes locally (for example 7, 30 or 90 days) and fetches the rest from history services.
 - **Explorers and Olympia.** The Olympia archive ([10.5](10-implementation-guide.md#s10-5)) is the first historical "segment", and explorers read the full history from the services.
 - **Hyperscale and Xi'an.** The same design works per shard: each shard exports its segments and the history services join cross-shard transactions (chapters [11](11-hyperscale-evolution.md#s11) and [13](13-xian-with-scrypto.md#s13)).

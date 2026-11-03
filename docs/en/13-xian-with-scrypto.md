@@ -235,7 +235,7 @@ sequenceDiagram
 - the transaction stream and pagination cursors move along it;
 - indexes are ordered and pruned by it.
 
-With several shards, each has its own height and that single sequence no longer exists. A community member raised this in relation to Hyperscale. The Hyperscale developer asked where the requirement came from, and the answer is that **it comes from the API, not from the protocol**. It affects FINAL B and FINAL C alike.
+With several shards, each has its own height and that single sequence no longer exists. Daffy, a community member, raised this in relation to Hyperscale. The Hyperscale developer asked where the requirement came from, and the answer is that **it comes from the API, not from the protocol**. It affects FINAL B and FINAL C alike.
 
 **A two-level proposal:**
 

@@ -31,7 +31,7 @@ Las rutas `fichero:línea` son de `develop` salvo que se indique lo contrario. L
 | Tamaño del ledger: snapshot comunitario **comprimido** (zstd) | 6,3 GiB (oct-2023) → 69 GiB (sep-2024) → 180 GiB (sep-2025) → 259 GiB (jul-2026) → **274 GiB (29-sep-2026)** | snapshots.radix.live |
 | Crecimiento reciente | **~5-8 GiB/mes** comprimidos | cálculo sobre la fila anterior |
 | Otro snapshot publicado | 343,9 GB (PublicNode, v1.4.0.0, altura 566 915 789; lectura puntual, la página se actualiza cada 12 horas; no se indica si está comprimido) | publicnode.com/snapshots |
-| Tamaño en disco de un nodo de mainnet | **~493 GB**, de ellos **217 GB de recibos**; **~600 GB** con el índice de cambios de cuenta; crece **~65 GB/año** | Medición aportada por un miembro de la comunidad (nov-2026); método y versión del nodo no publicados |
+| Tamaño en disco de un nodo de mainnet | **~493 GB**, de ellos **217 GB de recibos**; **~600 GB** con el índice de cambios de cuenta; crece **~65 GB/año** | Medición aportada por Daffy, miembro de la comunidad (nov-2026); método y versión del nodo no publicados |
 | Peso de los índices opcionales | ~4-5 % (274 frente a 262 GiB sin índices) | snapshots.radix.live |
 | Poda del historial de transacciones | **No existe** | código: solo hay GC del árbol de estado y de pruebas del ledger |
 | Arranque desde un snapshot verificado | **No existe**. Un nodo nuevo reproduce ~567 millones de transacciones desde la génesis, o descarga un snapshot de terceros sin verificación criptográfica. | código; `babylon-nodecli/.../ledger_snapshot/__init__.py:26-80` |
@@ -438,7 +438,7 @@ Las cifras son *estimaciones* que hay que validar con la prueba prolongada de R2
 
 - **Hoy:**
   - 274 GiB comprimidos (sep-2026), +5-8 GiB/mes.
-  - En disco, un nodo de mainnet ocupa **~493 GB**, de ellos 217 GB de recibos, y **~600 GB** con el índice de cambios de cuenta; crece ~65 GB/año (medición aportada por un miembro de la comunidad, nov-2026). Hay que confirmarlo con las métricas `raw_db_size` por column family.
+  - En disco, un nodo de mainnet ocupa **~493 GB**, de ellos 217 GB de recibos, y **~600 GB** con el índice de cambios de cuenta; crece ~65 GB/año (medición aportada por Daffy, miembro de la comunidad, nov-2026). Hay que confirmarlo con las métricas `raw_db_size` por column family.
   - Con los valores por defecto, que incluyen el índice de cambios de cuenta, un nodo completo **ya supera los 500 GB**; sin ese índice, está en el límite y lo superará en pocos meses.
 - **Con R3 + R4 + R5 + R6 + R7, sin podar el historial:**
   - Se eliminan la mayoría de los bytes por ronda: recibos de ronda, ejecuciones, acumuladores e índice de hashes.
@@ -501,7 +501,7 @@ Comprobado en el código de `babylon-node` (rama `develop`):
 - **Resultado:** con R4 + R5 + R6, un nodo de lectura con sus índices queda previsiblemente **por debajo de 500 GB**, pero sigue creciendo con cada ronda. Para el largo plazo, R7 (opcional en nodos de lectura) elimina la mayor parte del crecimiento restante de los recibos.
 - **Cómo confirmarlo:** medir cada column family antes y después de aplicar cada cambio.
 
-**Con el historial exportado (sección [6.5](06-solucion-recomendada.md#s6-5))**, un nodo de lectura **también puede podar** (R8): guarda el estado, una ventana reciente con sus índices (por ejemplo, de 7 a 90 días) y pide el historial antiguo a los servicios de historial. Su disco pasaría a ser del orden del de un validador podado más sus índices (estimación). Como referencia, el Gateway mínimo de un miembro de la comunidad, con un día de estado, funciona con 100-150 GB de disco, 2 CPU y 4-6 GB de RAM, aunque hoy sigue necesitando un nodo completo con índices de 550-600 GB.
+**Con el historial exportado (sección [6.5](06-solucion-recomendada.md#s6-5))**, un nodo de lectura **también puede podar** (R8): guarda el estado, una ventana reciente con sus índices (por ejemplo, de 7 a 90 días) y pide el historial antiguo a los servicios de historial. Su disco pasaría a ser del orden del de un validador podado más sus índices (estimación). Como referencia, el Gateway mínimo de Daffy, miembro de la comunidad, con un día de estado, funciona con 100-150 GB de disco, 2 CPU y 4-6 GB de RAM, aunque hoy sigue necesitando un nodo completo con índices de 550-600 GB.
 
 <a id="s9-7"></a>
 

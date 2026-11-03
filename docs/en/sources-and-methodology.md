@@ -18,7 +18,7 @@
 
 These could not be measured or verified and should be resolved with data ("Data or measurement" issue template):
 
-1. The real on-disk size of a mainnet node, per column family. There is a first measurement contributed by the community (~493 GB, section [9.1](09-lighter-nodes.md#s9-1)); the breakdown and method are missing.
+1. The real on-disk size of a mainnet node, per column family. There is a first measurement contributed by Daffy, a community member (~493 GB, section [9.1](09-lighter-nodes.md#s9-1)); the breakdown and method are missing.
 2. The real RAM use (RSS) of a mainnet node with the default configuration and with R1-R2.
 3. The real size of the light indexer's indexes and its indexing speed from genesis.
 4. Exact compatibility of the indexer's responses with what wallets expect.
@@ -32,8 +32,8 @@ These could not be measured or verified and should be resolved with data ("Data 
 
 - Code: `radixdlt-scrypto` (`develop` branch, commit `a405d7ae48`, Jan 2026), `hyperscale-rs` (commit `6204357`, 30 Oct 2026), `babylon-node` (`develop` and release `v1.4.0.0`), `babylon-gateway` (`main`), `sargon` (`main`), `babylon-wallet-ios` (`main`), `rola`, `babylon-nodecli` (cloned 3 Nov 2026), and the local repositories. `file:line` references refer to those versions.
 - Measurements: public API `mainnet.radixdlt.com` (`/status/gateway-status`, `/stream/transactions`), 3 Nov 2026. Daily rates come from 100-transaction samples per date and are orders of magnitude.
-- Measurement contributed by a community member (Nov 2026): on-disk size of a mainnet node (~493 GB; receipts, 217 GB; ~600 GB with the account change index; ~65 GB/year). The method and node version have not been published; it is included as contributed data, pending confirmation.
-- Design contributed by a community member: "Node-side History Export" (exploration, Nov 2026; not published as a public document). Source of the canonical-segment, proofs-inside and export-then-prune rules (section [6.5](06-recommended-solution.md#s6-5)) and of the experiment in section [10.8](10-implementation-guide.md#s10-8). The figures for the contributor's minimal Gateway (100-150 GB of disk, 2 CPUs, 4-6 GB of RAM, plus a 550-600 GB full node) are included as contributed data.
+- Measurement contributed by Daffy, a community member (Nov 2026): on-disk size of a mainnet node (~493 GB; receipts, 217 GB; ~600 GB with the account change index; ~65 GB/year). The method and node version have not been published; it is included as contributed data, pending confirmation.
+- Design contributed by Daffy, a community member: "Node-side History Export" (exploration, Nov 2026; not published as a public document). Source of the canonical-segment, proofs-inside and export-then-prune rules (section [6.5](06-recommended-solution.md#s6-5)) and of the experiment in section [10.8](10-implementation-guide.md#s10-8). The figures for Daffy's minimal Gateway (100-150 GB of disk, 2 CPUs, 4-6 GB of RAM, plus a 550-600 GB full node) are included as contributed data.
 - [RFPs for Gateway and Relay Services (3 Feb 2026)](https://www.radixdlt.com/blog/the-next-phase-of-decentralization-rfps-for-gateway-and-relay-services)
 - [The Foundation Operational Stack: Mapping the 2026 Transition](https://www.radixdlt.com/blog/the-foundation-operational-stack-mapping-the-2026-transition)
 - [Foundation Update: Moving to Maintenance Mode (28 Apr 2026)](https://www.radixdlt.com/blog/foundation-update-moving-to-maintenance-mode)

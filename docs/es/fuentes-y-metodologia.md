@@ -18,7 +18,7 @@
 
 Estas cuestiones no se han podido medir o verificar y conviene resolverlas con datos (plantilla de *issue* «Dato o medición»):
 
-1. Tamaño real en disco de un nodo de mainnet, por column family. Hay una primera medición aportada por la comunidad (~493 GB, sección [9.1](09-nodos-ligeros.md#s9-1)); falta el desglose y el método.
+1. Tamaño real en disco de un nodo de mainnet, por column family. Hay una primera medición aportada por Daffy, miembro de la comunidad (~493 GB, sección [9.1](09-nodos-ligeros.md#s9-1)); falta el desglose y el método.
 2. Consumo real de RAM (RSS) de un nodo de mainnet con la configuración por defecto y con R1-R2.
 3. Tamaño real de los índices del indexador ligero y velocidad de indexación desde la génesis.
 4. Compatibilidad exacta de las respuestas del indexador con lo que esperan los wallets.
@@ -32,8 +32,8 @@ Estas cuestiones no se han podido medir o verificar y conviene resolverlas con d
 
 - Código: `radixdlt-scrypto` (rama `develop`, commit `a405d7ae48`, ene-2026), `hyperscale-rs` (commit `6204357`, 30-oct-2026), `babylon-node` (rama `develop` y versión `v1.4.0.0`), `babylon-gateway` (`main`), `sargon` (`main`), `babylon-wallet-ios` (`main`), `rola`, `babylon-nodecli` (clones del 3-nov-2026) y los repositorios locales. Las rutas `fichero:línea` se refieren a esas versiones.
 - Mediciones: API pública `mainnet.radixdlt.com` (`/status/gateway-status`, `/stream/transactions`), 3-nov-2026. Las tasas diarias son muestras de 100 transacciones por fecha y sirven como orden de magnitud.
-- Medición aportada por un miembro de la comunidad (nov-2026): tamaño en disco de un nodo de mainnet (~493 GB; recibos, 217 GB; ~600 GB con el índice de cambios de cuenta; ~65 GB/año). No se han publicado el método ni la versión del nodo; se recoge como dato aportado, pendiente de confirmar.
-- Diseño aportado por un miembro de la comunidad: «Node-side History Export» (exploración, nov-2026; no publicada como documento público). Origen de las reglas de segmentos canónicos, pruebas dentro y exportar antes de podar (sección [6.5](06-solucion-recomendada.md#s6-5)), y del experimento de la sección [10.8](10-guia-de-implementacion.md#s10-8). Las cifras de su Gateway mínimo (100-150 GB de disco, 2 CPU, 4-6 GB de RAM, más un nodo completo de 550-600 GB) se recogen como dato aportado.
+- Medición aportada por Daffy, miembro de la comunidad (nov-2026): tamaño en disco de un nodo de mainnet (~493 GB; recibos, 217 GB; ~600 GB con el índice de cambios de cuenta; ~65 GB/año). No se han publicado el método ni la versión del nodo; se recoge como dato aportado, pendiente de confirmar.
+- Diseño aportado por Daffy, miembro de la comunidad: «Node-side History Export» (exploración, nov-2026; no publicada como documento público). Origen de las reglas de segmentos canónicos, pruebas dentro y exportar antes de podar (sección [6.5](06-solucion-recomendada.md#s6-5)), y del experimento de la sección [10.8](10-guia-de-implementacion.md#s10-8). Las cifras de su Gateway mínimo (100-150 GB de disco, 2 CPU, 4-6 GB de RAM, más un nodo completo de 550-600 GB) se recogen como dato aportado.
 - [RFPs for Gateway and Relay Services (3-feb-2026)](https://www.radixdlt.com/blog/the-next-phase-of-decentralization-rfps-for-gateway-and-relay-services)
 - [The Foundation Operational Stack: Mapping the 2026 Transition](https://www.radixdlt.com/blog/the-foundation-operational-stack-mapping-the-2026-transition)
 - [Foundation Update: Moving to Maintenance Mode (28-abr-2026)](https://www.radixdlt.com/blog/foundation-update-moving-to-maintenance-mode)

@@ -368,7 +368,7 @@ La ventana del árbol de estado ya conserva las versiones recientes (`state_hash
 > - **Dificultad:** Baja-media.
 > - **Esfuerzo y plazo:** ~1-2 personas-mes; semanas (estimación).
 
-**Qué se quiere demostrar:** la propiedad de la que depende todo el diseño de la sección [6.5](06-solucion-recomendada.md#s6-5). **Dos exportadores independientes, junto a dos nodos distintos, producen segmentos idénticos byte a byte.** Esta prueba la propuso el miembro de la comunidad que aportó el diseño. En Babylon hay un solo fragmento, así que la prueba aísla la exportación.
+**Qué se quiere demostrar:** la propiedad de la que depende todo el diseño de la sección [6.5](06-solucion-recomendada.md#s6-5). **Dos exportadores independientes, junto a dos nodos distintos, producen segmentos idénticos byte a byte.** Esta prueba la propuso Daffy, que aportó el diseño. En Babylon hay un solo fragmento, así que la prueba aísla la exportación.
 
 **Pasos:**
 
