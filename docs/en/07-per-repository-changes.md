@@ -7,7 +7,7 @@
 Each change states its priority and effort. The overall assessment of each block is in chapter [4](04-05-strategies.md#s4), chapter [6](06-recommended-solution.md#s6) and chapter [9](09-lighter-nodes.md#s9).
 
 Priority: **P0** essential · **P1** needed for every use case · **P2** improvement.
-Effort: **S** days · **M** 1-3 weeks · **L** more than a month · **XL** several months or more. As a rough reference: S < 0.25 person-months; M ≈ 0.25-0.75; L ≈ 1 or more; XL > 3.
+Effort: **S** days · **M** 1-3 weeks · **L** more than a month · **XL** several months or more. As a rough reference: S < 0.25 person-months; M ≈ 0.25-0.75; L ≈ 1-3; XL > 3.
 
 <a id="s7-1"></a>
 
@@ -78,7 +78,7 @@ Effort: **S** days · **M** 1-3 weeks · **L** more than a month · **XL** sever
 | N5 | Archive node: `state_version_history_length` with no practical limit, `LedgerStateSelector::ByTimestamp` (already anticipated in `engine-state-api-schema.yaml:592`), `at_ledger_state` on the LTS | P1 / M |
 | N7 | Batch endpoints (metadata and state for several entities at once) | P2 / S |
 | N8-N9 | Locker touches; validator emissions | P2 / S |
-| D | Validator metadata convention `api_endpoints` (list of URLs with capabilities), and operator documentation | P0 / S |
+| (D) | Validator metadata convention `api_endpoints` (list of URLs with capabilities), and operator documentation | P0 / S |
 
 The changes that **reduce node RAM and disk** (R1-R11: RocksDB tuning, pruning, verified snapshot bootstrap, the proposal-statistics protocol update and the Java-to-Rust migration) are in **chapter [9](09-lighter-nodes.md#s9)**, with each one detailed in section [9.4](09-lighter-nodes.md#s9-4).
 
@@ -194,6 +194,8 @@ The changes mirror Android's. The DI clients (`DependencyKey`) allow the `liveVa
 
 ## 7.10 `connector-extension` and `connector-extension-iroh`
 
+Line references refer to `connector-extension-iroh`; in `connector-extension` the equivalent files may be numbered differently.
+
 - **P1/S.** `src/chrome/background/create-gateway-module.ts:1-13` uses the hard-coded URL from `RadixNetworkConfigById`. Add an access-point URL or list to the options page (`src/options/index.ts:20-23`).
 - **P1/S.** With a custom signalling server, the extension still uses RDX's TURN servers with hard-coded credentials (`src/config.ts:44-53, 97-101`). Make TURN configurable.
 - **P2/S.** Configurable explorer (`src/utils/explorer.ts:6`).
@@ -285,7 +287,7 @@ They do not use the Gateway, but they are P1 infrastructure that also depends on
 
 <a id="s7-17"></a>
 
-## 7.17 Repositories that need no changes
+## 7.17 Repositories with minor or no changes
 
 - **`olympia-wallet`:** its current use (exporting accounts) is offline. **P2/S:** once the Olympia archive exists ([2.2](01-02-current-situation.md#s2-2)), point to it instead of `olympia-gateway.radixdlt.com` (`src/helpers/network.ts:14-39`).
 - **`radixdlt/explorer`** (the Olympia explorer): **P1/S:** serve history from the static Olympia archive instead of the Olympia Gateway, or fold it into the reference explorer ([7.16](#s7-16)).

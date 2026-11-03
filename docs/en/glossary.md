@@ -44,9 +44,16 @@ Terms used in the report, briefly explained.
 | **Shard** | In Hyperscale, each partition of the state with its own consensus. |
 | **Beacon chain** | In Hyperscale, the slow chain that manages validators and the shard topology. |
 | **BLS12-381** | The signature scheme Hyperscale uses for validators; many signatures can be aggregated into one. |
-| **WASM** | A portable executable code format. Scrypto compiles to WASM, and the Hyperscale VM also runs WASM. |
+| **WASM (WebAssembly)** | A portable executable code format. Scrypto compiles to WASM, and the Hyperscale VM also runs WASM. |
 | **RAC (Radix Accountability Council)** | An elected council that bridges governance while the DAO is being constituted. |
 | **DAO** | The community organisation that governs the network after the Foundation, with decisions and funding on ledger. |
+| **XRD** | The Radix network's native token; used to pay fees and for staking. |
+| **dApp** | A decentralised application that uses the Radix network. |
+| **Wallet** | The user's application that stores their keys and signs transactions. |
+| **NFT** | A non-fungible token: each unit is unique. |
+| **Preview** | A simulation of a transaction without submitting it, to see its result and fees. |
+| **`api_endpoints`** | Metadata proposed in this report so that each validator publishes its read access points. |
+| **Koios / Leios / Geyser** | Koios: a Cardano community API with several operators. Leios: an improvement to Cardano's consensus to increase its capacity. Geyser: the Solana validator's plugin interface for sending data to indexers. |
 | **Mainnet / Stokenet** | Mainnet is Radix's main network. Stokenet is its public test network. |
 | **Radix Foundation** | The organisation that developed Radix and ran its central services; in maintenance mode since 2026. |
 | **Radix Dashboard** | The network's official explorer, run by the Foundation; its source code is not public. |
@@ -70,7 +77,7 @@ Terms used in the report, briefly explained.
 | **Royalties** | A fee a developer can charge when their package or component is used. |
 | **Intent hash** | The identifier of a transaction on Radix. |
 | **Moratorium** | A mechanism added in `v1.4.0.0` (commit `8ea6cf97`) to temporarily halt user transactions. |
-| **Report codes** | E1-E6: strategies (chapter [4](04-05-strategies.md#s4)). N1-N9 and N5b: capabilities missing from the node (chapter [3](03-what-the-node-offers.md#s3) and section [7.2](07-per-repository-changes.md#s7-2)). (D): on-ledger discovery; (L): the `LedgerBackend` interface (chapter [6](06-recommended-solution.md#s6)). R1-R11: changes to lighten nodes (chapter [9](09-lighter-nodes.md#s9)). M1-M3: migration strategies to Hyperscale (chapter [11](11-hyperscale-evolution.md#s11)). (a)-(j): light-indexer indexes (section [7.1](07-per-repository-changes.md#s7-1)). |
+| **Report codes** | E1-E6: strategies (chapter [4](04-05-strategies.md#s4)). N1-N9 and N5b: capabilities missing from the node (chapter [3](03-what-the-node-offers.md#s3) and section [7.2](07-per-repository-changes.md#s7-2)). (D): on-ledger discovery; (L): the `LedgerBackend` interface (chapter [6](06-recommended-solution.md#s6)). R1-R11: changes to lighten nodes (chapter [9](09-lighter-nodes.md#s9)). M1-M3: migration strategies to Hyperscale (chapter [11](11-hyperscale-evolution.md#s11)). F0-F5: roadmap phases (chapter [8](08-roadmap.md#s8)). (a)-(j): light-indexer indexes (section [7.1](07-per-repository-changes.md#s7-1)). |
 | **Priority P0-P2 / effort S-XL** | P0 essential, P1 needed, P2 improvement. S days, M 1-3 weeks, L more than a month, XL several months or more. |
 | **Access point (endpoint)** | A network address to which an application sends its requests. |
 | **OpenAPI** | A standard format for describing a web API (routes, requests and responses). |

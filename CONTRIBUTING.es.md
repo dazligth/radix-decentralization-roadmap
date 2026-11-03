@@ -31,7 +31,7 @@ El valor de este informe depende de que todo lo que dice sea comprobable. Por es
 
 - **No se inventa nada.** Cada dato debe tener una fuente: `fichero:línea` y versión del código, una URL o una medición descrita (método, fecha, versión).
 - **Las estimaciones se marcan como tales** («estimación», «est.») y se explica de dónde salen.
-- **Las valoraciones usan el mismo formato** al principio de cada apartado:
+- **Las valoraciones usan el mismo formato** al principio de cada apartado que valore una propuesta:
 
   ```markdown
   > [!IMPORTANT]

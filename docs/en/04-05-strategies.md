@@ -117,7 +117,7 @@ Scoring scale: 1 = bad, 5 = very good.
 | Storage per operator | 0 extra | Tens of GB (est.) | **~10-50 GB (est.)** | — | — | — |
 | Monthly cost per operator | ~0 on top of the node | ~0 | **~€0-20 on top of the node (est.)** | — | — | — |
 | Client changes required | Many | Many (none if the node also serves the current format) | **None to get it working** | Many | Many | Per dApp |
-| Available before December 2026? | Partly | No | **Prototype of the critical subset: possible** | No | No | No |
+| Available before 31 Dec 2026? | Partly | No | **Prototype of the critical subset: possible** | No | No | No |
 | Development effort (est.) | 15-25 person-months | 6-10 person-months (node) + ~4-6 (clients) | **4-7 person-months** (+1-2 for explorer indexes) | — | ~40-80 person-months; years | Per dApp |
 | Technical risk | Medium | Medium-high (node core) | **Medium** | High | Very high | Low |
 | Valid for Xi'an / Hyperscale | No | No | Partly (interface reusable) | — | Partly (would need adapting) | No (they must be rewritten) |

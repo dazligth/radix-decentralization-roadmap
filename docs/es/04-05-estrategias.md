@@ -117,7 +117,7 @@ Escala de puntuación: 1 = malo, 5 = muy bueno.
 | Almacenamiento por operador | 0 extra | Decenas de GB (est.) | **~10-50 GB (est.)** | — | — | — |
 | Coste mensual por operador | ~0 sobre el nodo | ~0 | **~0-20 € sobre el nodo (est.)** | — | — | — |
 | Cambios necesarios en clientes | Muchos | Muchos (ninguno si el nodo sirve también el formato actual) | **Ninguno para funcionar** | Muchos | Muchos | Por dApp |
-| ¿Disponible antes de diciembre de 2026? | Parcial | No | **Prototipo con el subconjunto crítico: posible** | No | No | No |
+| ¿Disponible antes del 31-dic-2026? | Parcial | No | **Prototipo con el subconjunto crítico: posible** | No | No | No |
 | Trabajo de desarrollo (est.) | 15-25 personas-mes | 6-10 personas-mes (nodo) + ~4-6 (clientes) | **4-7 personas-mes** (+1-2 para índices de exploradores) | — | ~40-80 personas-mes; años | Por dApp |
 | Riesgo técnico | Medio | Medio-alto (núcleo del nodo) | **Medio** | Alto | Muy alto | Bajo |
 | Válido con Xi'an / Hyperscale | No | No | Parcial (interfaz reutilizable) | — | Parcial (habría que adaptarlo) | No (habría que reescribirlos) |

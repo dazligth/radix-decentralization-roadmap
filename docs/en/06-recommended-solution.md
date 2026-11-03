@@ -9,7 +9,7 @@
 > - **Difficulty:** Medium.
 > - **Effort and timeline:** 7-12 person-months for the minimum viable solution; months (estimate).
 
-### Short-term infrastructure: no Gateway
+## Short-term infrastructure: no Gateway
 
 ```mermaid
 flowchart TB
@@ -44,6 +44,8 @@ flowchart TB
     class READ,REG,ARCH,SELF good
 ```
 
+Detail: how applications find read nodes.
+
 ```mermaid
 flowchart LR
     C["Wallets, dApps, ROLA and explorers"]
@@ -66,7 +68,7 @@ flowchart LR
     Z1 --> R
 ```
 
-### How a read node works
+## How a read node works
 
 ```mermaid
 flowchart TB
@@ -90,7 +92,7 @@ flowchart TB
     RES --> CORE
 ```
 
-### Submitting a transaction without the Gateway
+## Submitting a transaction without the Gateway
 
 ```mermaid
 sequenceDiagram

@@ -15,7 +15,7 @@ Informe del 3 de noviembre de 2026.
 5. **Conservar el historial de Olympia** de forma verificable.
 6. **Preparar la evolución final hacia Hyperscale**, si la comunidad decide adoptarla.
 
-### Cifras clave
+## Cifras clave
 
 | | |
 |---|---|
@@ -23,12 +23,12 @@ Informe del 3 de noviembre de 2026.
 | Base de datos del Gateway | **~2,5 TB** (estimación), +60 GB/mes |
 | Ledger de mainnet (snapshot comprimido, sep-2026) | **274 GiB**, +5-8 GiB/mes |
 | Versiones de estado en mainnet (nov-2026) | **~567 millones**, ~97-98 % cambios de ronda |
-| Transacciones de usuario desde el génesis | **~10-15 millones** (estimación) |
+| Transacciones de usuario desde la génesis | **~10-15 millones** (estimación) |
 | Capacidades que el nodo ya cubre sin Gateway | **9 de 19** por completo y 2 en parte (tabla 3.2) |
 | Indexador ligero propuesto | **~10-50 GB** (estimación) |
 | Validadores activos (3-nov-2026) | **100** (de 290 registrados) |
 | Titulares de XRD (3-nov-2026) | **435 605** |
-| RAM de un nodo hoy → objetivo | **16 GB** (requisito oficial) → **4-8 GB** (objetivo, estimado) |
+| RAM de un nodo hoy → objetivo | **16 GB** (requisito oficial) → **4-8 GB** (objetivo, estimación) |
 
 ## Guía de lectura
 
@@ -61,8 +61,8 @@ Informe del 3 de noviembre de 2026.
 1. **El Gateway es hoy un punto único de fallo para el ecosistema.**
    - Ningún cliente oficial se comunica directamente con los nodos: ni los wallets (Sargon), ni la RDT, ni ROLA, ni la Connector Extension, ni el Dashboard.
    - Según la Foundation, su operación está **financiada solo hasta el 31 de diciembre de 2026**, y no hay un plan público para después.
-2. **Los nodos ya resuelven directamente las operaciones más habituales** (enviar transacciones, consultar su estado, saldos, NFT, metadatos, validadores), según el código de `babylon-node`: de las 19 capacidades de la tabla de la sección [3.2](docs/es/03-que-ofrece-el-nodo.md#s3-2), 9 están cubiertas por completo y 2 en parte. Faltan, total o parcialmente, seis capacidades principales (N1-N6, capítulo [3](docs/es/03-que-ofrece-el-nodo.md#s3)) y algunas menores (N5b y N7-N9, sección [7.2](docs/es/07-cambios-por-repositorio.md#s7-2)).
-3. **Se han comparado seis estrategias.** Con los datos medidos, la más adecuada combina dos (E3 y E2), con E6 como complemento:
+2. **Los nodos ya resuelven directamente las operaciones más habituales** (enviar transacciones, consultar su estado, saldos, NFT, metadatos, validadores), según el código de `babylon-node`: de las 19 capacidades de la tabla de la sección [3.2](docs/es/03-que-ofrece-el-nodo.md#s3-2), 9 están cubiertas por completo y 2 en parte. Faltan, total o parcialmente, seis funciones principales (N1-N6, capítulo [3](docs/es/03-que-ofrece-el-nodo.md#s3)): el estado de las pre-autorizaciones, la ubicación de un NFT, el historial completo, la búsqueda por reglas de acceso, el estado histórico y un acceso público seguro.
+3. **Se han comparado seis estrategias.** Con los datos medidos, la más adecuada combina dos (E3 y E2), con E6 (guardar en la cadena los datos de aplicaciones concretas, como las votaciones) como complemento:
    - **A corto plazo (E3): un indexador ligero junto a cada nodo**, que sustituye al Gateway. El Gateway deja de existir.
      - Para que los wallets y dApps ya publicados sigan funcionando sin actualizarse, el indexador acepta las mismas peticiones que esas aplicaciones envían hoy. Solo se conserva el **formato de la API (peticiones y respuestas)**, no el software del Gateway.
      - Ocuparía **unos 10-50 GB** (estimación), frente a los **~2,5 TB** del Gateway, con un coste casi nulo para quien ya opera un nodo.
@@ -79,14 +79,14 @@ Informe del 3 de noviembre de 2026.
 
 6. **Referencias de otras redes (capítulo [12](docs/es/12-referencias-otras-redes.md#s12)).** Cardano, Sui, Aptos, Solana, NEAR, Polkadot, Kaspa, Ethereum y Cosmos ya aplican técnicas equivalentes a las propuestas (snapshots verificados, poda, lectura en el nodo, clientes ligeros, reescritura en Rust), lo que confirma que son viables. También se analiza cómo implementa Midnight la privacidad, como referencia para la capa 1 de Radix.
 
-La sección «Conclusión», a continuación, resume la viabilidad y la dificultad de cada objetivo. La sección [9.4](docs/es/09-nodos-ligeros.md#s9-4) detalla cada cambio en los nodos, el capítulo [10](docs/es/10-guia-de-implementacion.md#s10) explica paso a paso cómo construir las piezas principales, y el glosario, al final, explica los términos técnicos.
+La sección «Conclusión», a continuación, resume la viabilidad y la dificultad de cada objetivo. La sección [9.4](docs/es/09-nodos-ligeros.md#s9-4) detalla cada cambio en los nodos, el capítulo [10](docs/es/10-guia-de-implementacion.md#s10) explica paso a paso cómo construir las piezas principales, y el [glosario](docs/es/glosario.md) explica los términos técnicos.
 
 ## Conclusión
 
 > [!IMPORTANT]
 > - **¿Es posible?** Sí. La red puede dar servicio a todos sus usuarios y casos de uso sin el Gateway.
 > - **Dificultad:** Media-alta (organización y plazo más que técnica).
-> - **Esfuerzo y plazo:** 7-12 personas-mes para la solución mínima viable; 21-35 para la completa (estimaciones).
+> - **Esfuerzo y plazo:** 7-12 personas-mes para la solución mínima viable, en meses; 21-35 para la completa, a lo largo de 2027 (estimaciones).
 
 **¿Puede la red Radix dar servicio a todos sus usuarios y casos de uso sin depender del Gateway?** **Sí.**
 
@@ -117,6 +117,8 @@ La sección «Conclusión», a continuación, resume la viabilidad y la dificult
 
 ### Qué hacer para cada objetivo: mejor estrategia y tecnología
 
+Es una tabla técnica: los nombres de tecnologías de otras redes (Geyser, smoldot, Helios, Leios…) se explican en el capítulo [12](docs/es/12-referencias-otras-redes.md#s12).
+
 | Objetivo | Qué hay que hacer | Mejor estrategia o tecnología | Por qué | Detalle |
 |---|---|---|---|---|
 | **Eliminar el Gateway antes de que acabe su financiación** | Construir y desplegar el indexador ligero junto a los nodos, con el formato de API que ya usan las apps; pruebas de conformidad mientras el Gateway siga activo | **Indexador ligero en Rust junto al nodo (E3)**, alimentado por el stream de transacciones del nodo, al estilo de Geyser (Solana) o del servicio de flujo de Aptos | Funciona con los wallets actuales sin publicar versiones nuevas; ocupa ~10-50 GB (estimación) frente a ~2,5 TB | [6](docs/es/06-solucion-recomendada.md#s6), [7.1](docs/es/07-cambios-por-repositorio.md#s7-1), [10.1](docs/es/10-guia-de-implementacion.md#s10-1) |
@@ -146,7 +148,7 @@ La sección «Conclusión», a continuación, resume la viabilidad y la dificult
 - funciona con los wallets actuales sin publicar versiones nuevas;
 - es la única opción que puede estar lista antes de que termine la financiación.
 
-**¿Es posible?** Sí. **Dificultad:** media.
+**¿Es posible?** Sí. **Dificultad técnica:** media.
 
 **Nodos de 4-8 GB y 500 GB** (capítulo [9](docs/es/09-nodos-ligeros.md#s9)). **¿Es posible?** Sí: con R1-R2, un nodo de 8 GB como máximo parece alcanzable, y 4 GB es plausible (estimaciones que hay que medir). Radix lo tiene más fácil que otras redes porque su estado ya está en disco, su conjunto de validadores es pequeño y su carga es baja (sección [12.9](docs/es/12-referencias-otras-redes.md#s12-9)). **Dificultad:** media con Java (R1-R9); muy alta para tener margen holgado (R11).
 

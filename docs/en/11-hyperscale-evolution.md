@@ -117,7 +117,7 @@ flowchart TB
 > **Reference from other networks:** Cosmos Hub migrated its state into a new genesis (`cosmoshub-3` → `cosmoshub-4`, 2021), and Uniswap's `MerkleDistributor` contract implements claims with a Merkle proof. See chapter [12](12-references-other-networks.md#s12).
 
 1. **Freeze Babylon** at an agreed epoch. `v1.4.0.0` already includes a user-transaction "moratorium" mechanism (commit `8ea6cf97`, "Add support for user transaction moratoriums") that can serve as a basis.
-2. **Publish Babylon's final state root** (the validator-signed `state_tree_hash` at the last epoch) and archive the ledger on archive nodes and distributed storage (sections [9.4](09-lighter-nodes.md#s9-4), R9, and 9.6; a procedure similar to the Olympia archive, section [10.5](10-implementation-guide.md#s10-5)).
+2. **Publish Babylon's final state root** (the validator-signed `state_tree_hash` at the last epoch) and archive the ledger on archive nodes and distributed storage (sections [9.4](09-lighter-nodes.md#s9-4) (R9) and 9.6; a procedure similar to the Olympia archive, section [10.5](10-implementation-guide.md#s10-5)).
 3. **Hyperscale genesis** with the XRD balances that can be assigned directly: accounts whose public key is already known because the account has signed at some point.
 4. **A claim contract on Hyperscale** for everything else. The user presents:
    - a **Merkle proof** of their balance against Babylon's final root;
@@ -277,7 +277,7 @@ These are order-of-magnitude estimates for planning, not budgets:
 
 ## 11.8 How it fits with the rest of the report
 
-1. **Babylon has to keep running for years**, because the migration would take 2 to 4 years. The work to remove the Gateway and lighten nodes (chapters [6](06-recommended-solution.md#s6), 9 and 10) is still needed.
+1. **Babylon has to keep running for years**, because the migration would take 2 to 4 years. The work to remove the Gateway and lighten nodes (chapter [6](06-recommended-solution.md#s6), chapter [9](09-lighter-nodes.md#s9) and chapter [10](10-implementation-guide.md#s10)) is still needed.
 2. **Many pieces are reused:**
    - the clients' `LedgerBackend` interface;
    - on-ledger node discovery;

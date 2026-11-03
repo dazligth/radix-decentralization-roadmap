@@ -7,9 +7,9 @@
 > [!IMPORTANT]
 > - **¿Es posible?** Sí. Es la solución recomendada a corto plazo.
 > - **Dificultad:** Media.
-> - **Esfuerzo y plazo:** 7-12 personas-mes la solución mínima viable; meses (estimación).
+> - **Esfuerzo y plazo:** 7-12 personas-mes para la solución mínima viable; meses (estimación).
 
-### Infraestructura a corto plazo: sin Gateway
+## Infraestructura a corto plazo: sin Gateway
 
 ```mermaid
 flowchart TB
@@ -44,6 +44,8 @@ flowchart TB
     class READ,REG,ARCH,SELF good
 ```
 
+Detalle: cómo encuentran las aplicaciones los nodos de lectura.
+
 ```mermaid
 flowchart LR
     C["Wallets, dApps, ROLA y exploradores"]
@@ -66,7 +68,7 @@ flowchart LR
     Z1 --> R
 ```
 
-### Cómo funciona un nodo de lectura
+## Cómo funciona un nodo de lectura
 
 ```mermaid
 flowchart TB
@@ -90,7 +92,7 @@ flowchart TB
     RES --> CORE
 ```
 
-### Envío de una transacción sin Gateway
+## Envío de una transacción sin Gateway
 
 ```mermaid
 sequenceDiagram
@@ -257,7 +259,7 @@ sequenceDiagram
 | 5 | **Descubrimiento y transporte sin intermediarios** | Registro de nodos de lectura en la cadena (metadatos de validadores u otro componente) y conexión directa por QUIC/iroh entre wallet y nodo. Esto reduce la dependencia de DNS y de certificados TLS, y los relés pueden ser propios o varios; la misma tecnología ya se usa en Radix Connect. |
 | 6 | **Incentivos para servir lecturas** | Una parte de las emisiones o comisiones de la red, o micropagos en XRD por consulta, para quien opere nodos de lectura. Lo decide la gobernanza. Sin incentivos, el servicio depende del compromiso voluntario de los operadores. |
 | 7 | **Archivo histórico verificable** | La historia antigua (incluido Olympia) se guarda en almacenamiento distribuido (IPFS o Arweave). Su integridad se comprueba contra `transaction_tree_hash` y `receipt_tree_hash`. Ningún nodo necesita guardarla entera. |
-| 8 | **Preparado para Hyperscale** | Hyperscale ya usa multipruebas JMT. El cliente ligero y la API nativa se pueden adaptar a esa red. La migración completa a Hyperscale se analiza en la sección [11](11-evolucion-hyperscale.md#s11). |
+| 8 | **Preparado para Hyperscale** | Hyperscale ya usa multipruebas JMT. El cliente ligero y la API nativa se pueden adaptar a esa red. La migración completa a Hyperscale se analiza en el capítulo [11](11-evolucion-hyperscale.md#s11). |
 
 **Comparación con la solución a corto plazo:**
 

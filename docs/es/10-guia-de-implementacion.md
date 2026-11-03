@@ -4,7 +4,14 @@
 
 # 10. Guía de implementación paso a paso
 
-Las secciones de este capítulo heredan la valoración (¿es posible?, dificultad y esfuerzo) de lo que implementan: E3 (sección [10.1](#s10-1)), el descubrimiento ([10.2](#s10-2), con su propio recuadro), E2 ([10.3](#s10-3)), los cambios en clientes (recuadro de la sección [10.2](#s10-2) y tabla de la conclusión), el archivo de Olympia ([10.5](#s10-5)) y la solución ideal ([6.2](06-solucion-recomendada.md#s6-2)).
+Las secciones de este capítulo heredan la valoración (¿es posible?, dificultad y esfuerzo) de lo que implementan:
+
+- 10.1 → recuadro de la estrategia E3 (capítulo [4](04-05-estrategias.md#s4));
+- 10.2 → su propio recuadro;
+- 10.3 → recuadro de la estrategia E2 (capítulo [4](04-05-estrategias.md#s4));
+- 10.4 → recuadro de la sección [10.2](#s10-2) y tabla de la conclusión;
+- 10.5 → su propio recuadro;
+- 10.6 → recuadro de la sección [6.2](06-solucion-recomendada.md#s6-2).
 
 Este capítulo explica **cómo** construir las piezas principales. Los fragmentos de código son **orientativos**: muestran la forma de la solución, no código listo para producción, y hay que ajustarlos a la versión exacta de cada dependencia.
 
@@ -81,7 +88,7 @@ loop {
 
 **Detalles importantes:**
 
-1. **Génesis.** Se empieza en la versión 1. Las transacciones de génesis (~669) contienen el estado migrado de Olympia y tienen recibos muy grandes. Hay que procesarlas en streaming, sin cargar el recibo entero en memoria.
+1. **Génesis.** Se empieza en la versión 1. Las transacciones de génesis (versiones 1-647) contienen el estado migrado de Olympia y tienen recibos muy grandes. Hay que procesarlas en streaming, sin cargar el recibo entero en memoria.
 2. **Ancestro global de un vault.** El recibo dice qué vault cambió. Para saber de qué cuenta o componente es, se usa la ascendencia del nodo: se guarda al ver la creación del vault, o se consulta `/entity/info` la primera vez.
 3. **Escritura atómica.** Los índices y el cursor se escriben en el mismo lote. Si el proceso se cae, se reanuda desde el cursor y repetir trabajo no causa problemas, porque las escrituras son idempotentes.
 4. **Rendimiento.** Para la primera sincronización (~567 millones de versiones), descargar lotes grandes en paralelo y escribir en orden. Los cambios de ronda solo se cuentan.
@@ -161,7 +168,7 @@ services:
     image: radixdlt/babylon-node:v1.4.0.0
     environment:
       RADIXDLT_DB_HISTORICAL_SUBSTATE_VALUES_ENABLE: "true"   # lecturas coherentes recientes
-      RADIXDLT_DB_ENTITY_LISTING_INDICES_ENABLE: "true"
+      RADIXDLT_ENTITY_LISTING_INDICES_ENABLE: "true"
       RADIXDLT_ENGINE_STATE_API_PORT: "3336"
   indexer:
     image: radix-lite-indexer:latest
@@ -222,7 +229,9 @@ pub(crate) async fn handle_transaction_subintent_status(
 ) -> Result<Json<models::TransactionSubintentStatusResponse>, ResponseError> {
     let hash = extract_subintent_hash(&request.subintent_hash)?;
     let db = state.state_manager.database.snapshot();
-    let committed_at = db.get_txn_state_version_by_identifier(&hash);   // ya existe (rocks_db.rs:899-919)
+    // El índice ya existe (column family finalized_subintent_hashes, column_families.rs:153-163);
+    // hay que añadir `impl TransactionIndex<&SubintentHash>` para poder consultarlo.
+    let committed_at = db.get_txn_state_version_by_identifier(&hash);
     let identifiers = committed_at.and_then(|v| db.get_committed_transaction_identifiers(v));
     Ok(Json(to_api_subintent_status(committed_at, identifiers)?))
 }
@@ -259,7 +268,7 @@ Además hay que:
    - añadir el descubrimiento de 10.2 detrás de una opción.
 5. **Reenvío:**
    - guardar el contenido de la transacción notarizada en el almacenamiento seguro del host (el driver ya existe) hasta que se confirme o caduque su época;
-   - el bucle de `sargon_os_transaction_status.rs:38-105` reenvía cuando el estado es `NotSeen` o `FateUncertain`.
+   - el bucle de `sargon_os_transaction_status.rs:38-105` reenvía cuando el estado indica que la transacción no se conoce o tiene un destino incierto (`Unknown` o `CommitPendingOutcomeUnknown` con el Gateway; `NotSeen` o `FateUncertain` con la LTS del nodo).
 6. **Pruebas:** un mock del trait para las pruebas unitarias, y pruebas de integración contra un indexador en Stokenet.
 
 **Android: corregir que se pierda el puerto y la ruta** (`di/HttpModule.kt:128-144`):
@@ -279,7 +288,7 @@ const gatewayApiService = FailoverGatewayApiService({
   endpoints: ['https://read.a.org', 'https://read.b.org'],   // o descubiertos en la cadena
   networkId,
 })
-const rdt = RadixDappToolkit({ /* ... */, providers: { gatewayModule: GatewayModule({ providers: { gatewayApiService } }) } })
+const rdt = RadixDappToolkit({ /* ... */, providers: { gatewayModule: GatewayModule({ clientConfig, providers: { gatewayApiService } }) } })
 ```
 
 **ROLA:** lector de `owner_keys` inyectable:

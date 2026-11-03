@@ -20,7 +20,7 @@
 - Pruning, verified snapshots, the migration to Rust and verifiable reads are changes to Layer-1 node software.
 - Incentives for serving reads would be paid on Layer 1 itself (for example, through an on-ledger component), as governance decides.
 - Hyperscale scales **on Layer 1 itself**, through sharding with atomic composability, which is consistent with that goal.
-- The bridge in strategy M2 would only connect two Layer-1 networks during the transition, and it is optional.
+- The bridge in strategy M2 (chapter [11](11-hyperscale-evolution.md#s11)) would only connect two Layer-1 networks during the transition, and it is optional.
 
 References to Layer-2 or partner-chain mechanisms in other networks (chapter [12](12-references-other-networks.md#s12)) are included only as a contrast, not as a model.
 
@@ -242,7 +242,7 @@ flowchart LR
 Radix had an earlier network, **Olympia**, which was migrated to Babylon on 28 Sep 2023. This was checked against the live ledger and the code: it **does not block the solution**, but it adds four considerations, two of which require work (items 1 and 3).
 
 1. **Olympia's state is inside the Babylon genesis.**
-   - Mainnet state versions 1 to ~669 are genesis transactions. The first user transaction is version 670 (2023-09-28 07:26 UTC).
+   - Mainnet state versions 1 to 647 are genesis transactions (648-669 are already round updates). The first user transaction is version 670 (2023-09-28 07:26 UTC).
    - Those transactions load, in chunks (`GenesisDataChunk`: `Validators`, `Stakes`, `Resources`, `ResourceBalances`, `XrdBalances`; `radix-engine/.../genesis_helper/src/lib.rs:34-46`), the validators, stakes, tokens and balances that existed on Olympia. Accounts are derived from the Olympia secp256k1 keys.
    - **Consequence for the indexer (E3/E2):**
      - the first sync must start at version 1 and process genesis, whose receipts are very large;
@@ -250,9 +250,9 @@ Radix had an earlier network, **Olympia**, which was migrated to Babylon on 28 S
    - This is a one-off job and can be included in the signed snapshots.
 2. **Olympia accounts keep working without the Gateway.**
    - Importing Olympia accounts into the Babylon wallet is **offline**: export with `olympia-wallet`, and `MigrateOlympiaAccountsUseCase` in the Android wallet.
-   - ROLA verifies secp256k1 accounts by derivation, without querying the ledger.
+   - ROLA accepts address derivation for accounts without `owner_keys`, including Olympia's secp256k1 ones, although it always queries the ledger to check this (section [7.9](07-per-repository-changes.md#s7-9)).
    - The **recovery scan** with an Olympia seed phrase (BIP44 path, `ResolveDerivationPathsForRecoveryScanUseCase.kt:42-79`) uses the same ledger queries as everything else. It works against a node: genesis-created accounts exist and are detected with `/entity/info`, even without `last_updated_at_state_version`.
-3. **Olympia transaction history (before 28 Sep 2023) is **not** in the Babylon ledger.**
+3. **Olympia transaction history (before 28 Sep 2023) is not in the Babylon ledger.**
    - It is served only by the **Olympia Gateway**, `olympia-gateway.radixdlt.com`. It is still live today, running Gateway API 1.1.14, frozen at version 337,759,839 from 2023-09-28T06:33:34Z.
    - It is used by `olympia-wallet` (`src/helpers/network.ts:14-39`) and the Olympia explorer (`radixdlt/explorer`).
    - It is **another central service**, and it does not appear in the transition service lists published by the Foundation that were reviewed.

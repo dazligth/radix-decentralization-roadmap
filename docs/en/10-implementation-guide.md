@@ -4,7 +4,14 @@
 
 # 10. Step-by-step implementation guide
 
-The sections of this chapter inherit the assessment (is it possible?, difficulty and effort) of what they implement: E3 (section [10.1](#s10-1)), discovery ([10.2](#s10-2), with its own box), E2 ([10.3](#s10-3)), client changes (the box in section [10.2](#s10-2) and the conclusion table), the Olympia archive ([10.5](#s10-5)) and the ideal solution ([6.2](06-recommended-solution.md#s6-2)).
+The sections of this chapter inherit the assessment (is it possible?, difficulty and effort) of what they implement:
+
+- 10.1 → the box of strategy E3 (chapter [4](04-05-strategies.md#s4));
+- 10.2 → its own box;
+- 10.3 → the box of strategy E2 (chapter [4](04-05-strategies.md#s4));
+- 10.4 → the box of section [10.2](#s10-2) and the conclusion table;
+- 10.5 → its own box;
+- 10.6 → the box of section [6.2](06-recommended-solution.md#s6-2).
 
 This chapter explains **how** to build the main pieces. Code snippets are **indicative**: they show the shape of the solution, not production-ready code, and must be adjusted to the exact version of each dependency.
 
@@ -81,7 +88,7 @@ loop {
 
 **Important details:**
 
-1. **Genesis.** Start at version 1. The ~669 genesis transactions contain Olympia's migrated state and have very large receipts. Process them as a stream, without loading the whole receipt into memory.
+1. **Genesis.** Start at version 1. The genesis transactions (versions 1-647) contain Olympia's migrated state and have very large receipts. Process them as a stream, without loading the whole receipt into memory.
 2. **A vault's global ancestor.** The receipt says which vault changed. To know which account or component owns it, use the node's ancestry: store it when the vault is created, or query `/entity/info` the first time.
 3. **Atomic writes.** Indexes and cursor are written in the same batch. If the process crashes, it resumes from the cursor, and repeated work is harmless because writes are idempotent.
 4. **Performance.** For the first sync (~567 million versions), fetch large batches in parallel and write in order. Round updates are only counted.
@@ -161,7 +168,7 @@ services:
     image: radixdlt/babylon-node:v1.4.0.0
     environment:
       RADIXDLT_DB_HISTORICAL_SUBSTATE_VALUES_ENABLE: "true"   # consistent recent reads
-      RADIXDLT_DB_ENTITY_LISTING_INDICES_ENABLE: "true"
+      RADIXDLT_ENTITY_LISTING_INDICES_ENABLE: "true"
       RADIXDLT_ENGINE_STATE_API_PORT: "3336"
   indexer:
     image: radix-lite-indexer:latest
@@ -222,7 +229,9 @@ pub(crate) async fn handle_transaction_subintent_status(
 ) -> Result<Json<models::TransactionSubintentStatusResponse>, ResponseError> {
     let hash = extract_subintent_hash(&request.subintent_hash)?;
     let db = state.state_manager.database.snapshot();
-    let committed_at = db.get_txn_state_version_by_identifier(&hash);   // already exists (rocks_db.rs:899-919)
+    // The index already exists (finalized_subintent_hashes column family, column_families.rs:153-163);
+    // an `impl TransactionIndex<&SubintentHash>` must be added to query it.
+    let committed_at = db.get_txn_state_version_by_identifier(&hash);
     let identifiers = committed_at.and_then(|v| db.get_committed_transaction_identifiers(v));
     Ok(Json(to_api_subintent_status(committed_at, identifiers)?))
 }
@@ -259,7 +268,7 @@ It also needs:
    - add the discovery from 10.2 behind an option.
 5. **Resubmission:**
    - store the notarised payload in the host's secure storage (the driver already exists) until it is committed or its epoch expires;
-   - the loop in `sargon_os_transaction_status.rs:38-105` resubmits when the status is `NotSeen` or `FateUncertain`.
+   - the loop in `sargon_os_transaction_status.rs:38-105` resubmits when the status shows the transaction is unknown or its fate uncertain (`Unknown` or `CommitPendingOutcomeUnknown` with the Gateway; `NotSeen` or `FateUncertain` with the node's LTS).
 6. **Tests:** a mock of the trait for unit tests, and integration tests against an indexer on Stokenet.
 
 **Android: fix the lost port and path** (`di/HttpModule.kt:128-144`):
@@ -279,7 +288,7 @@ const gatewayApiService = FailoverGatewayApiService({
   endpoints: ['https://read.a.org', 'https://read.b.org'],   // or discovered on ledger
   networkId,
 })
-const rdt = RadixDappToolkit({ /* ... */, providers: { gatewayModule: GatewayModule({ providers: { gatewayApiService } }) } })
+const rdt = RadixDappToolkit({ /* ... */, providers: { gatewayModule: GatewayModule({ clientConfig, providers: { gatewayApiService } }) } })
 ```
 
 **ROLA:** an injectable `owner_keys` reader:

@@ -9,7 +9,7 @@
 > - **Difficulty:** Medium while on Java (R1-R9); very high for comfortable headroom (R11, migration to Rust).
 > - **Effort and timeline:** 8-14 person-months for R1-R9, including Stokenet testing, review and rollout (assumption); 30-50 person-months for R11 (estimates).
 
-**Goal.** A mainnet validator or full node should run on **4 GB of RAM and 500 GB of disk**, and the network should keep working without the Gateway.
+**Goal.** A mainnet validator or full node should run on **4-8 GB of RAM (ideally 4 GB) and 500 GB of disk or less**, and the network should keep working without the Gateway.
 
 **Code reviewed:**
 
@@ -109,13 +109,13 @@ About 555 of the ledger's ~567 million versions (~97-98 %) are **round updates**
 | Ledger proofs | ~5-8 KB | Yes, after 12 epochs ~1 in 1,000 remain | Sync |
 | State tree (JMT) nodes | ~3-6 KB | Yes, 60,000-version window | Consensus (state root) |
 
-- **Estimated permanent cost per round update:** the table adds up to ~6-6.5 KB **uncompressed** with local executions enabled. Over ~555 million rounds that is **in the order of 3-4 TB uncompressed**. These are **upper-bound** figures: much of this data (receipts that are nearly identical from one round to the next) compresses very well, and the full compressed snapshot is 274 GiB. The real on-disk size can only be known by measuring it.
+- **Estimated permanent cost per round update:** the table adds up to ~6-7.5 KB **uncompressed** with local executions enabled. Over ~555 million rounds that is **in the order of 3-4 TB uncompressed**. These are **upper-bound** figures: much of this data (receipts that are nearly identical from one round to the next) compresses very well, and the full compressed snapshot is 274 GiB. The real on-disk size can only be known by measuring it.
 - **Order of importance:** receipts > accumulator slices > local executions > identifiers. Raw round-update transactions only add up to ~25-30 GB.
 - **How to confirm:** the node already publishes per-column-family sizes (`raw_db_size` metrics, `SM/metrics.rs:590-640`). The **first step** of the plan is to publish those figures from a mainnet node.
 - **Root cause:** the ConsensusManager's `CurrentProposalStatistic` field, ~1.9 KB, is rewritten in full every round. Its previous value is stored in the receipt and its path is rewritten in the state tree.
 - **New in `v1.4.0.0`:**
   - It adds the option **`db.keep_previous_substate_values`**: with `false`, receipts stop storing previous values (`rocks_db.rs:705-714` in `v1.4.0.0`), which **roughly halves each round's receipt**.
-  - It is **on by default** (`true`) on mainnet and only applies to data written from then on.
+  - Its default on mainnet is `true`, that is, previous values **are still stored**; the option only affects data written after it is enabled.
   - `v1.4.0.0` also **removes the Mesh API**.
 
 <a id="s9-4"></a>
@@ -244,7 +244,7 @@ let cf_opts = |cf: &str| {
 ### R8. "Pruned node" mode (P1, M-L)
 
 > [!NOTE]
-> **Reference from other networks:** Cosmos SDK offers pruning as a configurable option (pruned and archive nodes), and in July 2025 every Ethereum execution client added expiry of pre-Merge history (EIP-4444), saving 300-500 GB per node. See chapter [12](12-references-other-networks.md#s12).
+> **Reference from other networks:** Cosmos SDK offers pruning as a configurable option (pruned and archive nodes), and since July 2025 every Ethereum execution client supports expiry of pre-Merge history (EIP-4444; not always on by default), saving 300-500 GB per node. See chapter [12](12-references-other-networks.md#s12).
 
 - **What:** an option `ledger.retain_epochs=N`. It range-deletes transactions, identifiers, receipts and executions older than N epochs. It keeps:
   - epoch and protocol-update proofs;

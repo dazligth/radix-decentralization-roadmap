@@ -44,9 +44,16 @@ Términos usados en el informe, explicados de forma breve.
 | **Fragmento (*shard*)** | En Hyperscale, cada partición del estado con su propio consenso. |
 | **Cadena beacon** | En Hyperscale, la cadena lenta que gestiona los validadores y la topología de fragmentos. |
 | **BLS12-381** | Esquema de firmas que usa Hyperscale para los validadores, que permite agregar muchas firmas en una sola. |
-| **WASM** | Formato de código ejecutable portable. Scrypto compila a WASM y la VM de Hyperscale también ejecuta WASM. |
+| **WASM (WebAssembly)** | Formato de código ejecutable portable. Scrypto compila a WASM y la VM de Hyperscale también ejecuta WASM. |
 | **RAC (Radix Accountability Council)** | Consejo elegido que hace de puente en la gobernanza mientras se constituye la DAO. |
 | **DAO** | Organización comunitaria que gobierna la red tras la Foundation, con decisiones y financiación en la cadena. |
+| **XRD** | Token nativo de la red Radix; se usa para pagar comisiones y para el *staking*. |
+| **dApp** | Aplicación descentralizada que usa la red Radix. |
+| **Wallet** | Aplicación del usuario que guarda sus claves y firma transacciones. |
+| **NFT** | Token no fungible: cada unidad es única. |
+| **Preview** | Simulación de una transacción sin enviarla, para ver su resultado y sus comisiones. |
+| **`api_endpoints`** | Metadato propuesto en este informe para que cada validador publique sus puntos de acceso de lectura. |
+| **Koios / Leios / Geyser** | Koios: API comunitaria de Cardano con varios operadores. Leios: mejora del consenso de Cardano para aumentar su capacidad. Geyser: interfaz de complementos del validador de Solana para enviar datos a indexadores. |
 | **Mainnet / Stokenet** | Mainnet es la red principal de Radix. Stokenet es su red de pruebas pública. |
 | **Radix Foundation** | Organización que desarrolló Radix y operó sus servicios centrales; desde 2026 está en modo de mantenimiento. |
 | **Radix Dashboard** | Explorador oficial de la red, operado por la Foundation; su código no es público. |
@@ -70,7 +77,7 @@ Términos usados en el informe, explicados de forma breve.
 | **Royalties** | Comisión que un desarrollador puede cobrar cuando se usa su paquete o componente. |
 | **Intent hash** | Identificador de una transacción en Radix. |
 | **Moratoria** | Mecanismo añadido en `v1.4.0.0` (commit `8ea6cf97`) para detener temporalmente las transacciones de usuario. |
-| **Códigos del informe** | E1-E6: estrategias (capítulo [4](04-05-estrategias.md#s4)). N1-N9 y N5b: capacidades que faltan en el nodo (capítulo [3](03-que-ofrece-el-nodo.md#s3) y sección [7.2](07-cambios-por-repositorio.md#s7-2)). (D): descubrimiento en la cadena; (L): interfaz `LedgerBackend` (capítulo [6](06-solucion-recomendada.md#s6)). R1-R11: cambios para aligerar los nodos (capítulo [9](09-nodos-ligeros.md#s9)). M1-M3: estrategias de migración a Hyperscale (capítulo [11](11-evolucion-hyperscale.md#s11)). (a)-(j): índices del indexador ligero (sección [7.1](07-cambios-por-repositorio.md#s7-1)). |
+| **Códigos del informe** | E1-E6: estrategias (capítulo [4](04-05-estrategias.md#s4)). N1-N9 y N5b: capacidades que faltan en el nodo (capítulo [3](03-que-ofrece-el-nodo.md#s3) y sección [7.2](07-cambios-por-repositorio.md#s7-2)). (D): descubrimiento en la cadena; (L): interfaz `LedgerBackend` (capítulo [6](06-solucion-recomendada.md#s6)). R1-R11: cambios para aligerar los nodos (capítulo [9](09-nodos-ligeros.md#s9)). M1-M3: estrategias de migración a Hyperscale (capítulo [11](11-evolucion-hyperscale.md#s11)). F0-F5: fases de la hoja de ruta (capítulo [8](08-hoja-de-ruta.md#s8)). (a)-(j): índices del indexador ligero (sección [7.1](07-cambios-por-repositorio.md#s7-1)). |
 | **Prioridad P0-P2 / esfuerzo S-XL** | P0 imprescindible, P1 necesario, P2 mejora. S días, M 1-3 semanas, L más de un mes, XL varios meses o más. |
 | **Punto de acceso (*endpoint*)** | Dirección de red a la que una aplicación envía sus peticiones. |
 | **OpenAPI** | Formato estándar para describir una API web (rutas, peticiones y respuestas). |

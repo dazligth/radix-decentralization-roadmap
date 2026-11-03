@@ -7,7 +7,7 @@
 Cada cambio indica su prioridad y su esfuerzo. La valoración global de cada bloque está en el capítulo [4](04-05-estrategias.md#s4), el capítulo [6](06-solucion-recomendada.md#s6) y el capítulo [9](09-nodos-ligeros.md#s9).
 
 Prioridad: **P0** imprescindible · **P1** necesario para todos los casos de uso · **P2** mejora.
-Esfuerzo: **S** días · **M** 1-3 semanas · **L** más de un mes · **XL** varios meses o más. Como referencia aproximada: S < 0,25 personas-mes; M ≈ 0,25-0,75; L ≈ 1 o más; XL > 3.
+Esfuerzo: **S** días · **M** 1-3 semanas · **L** más de un mes · **XL** varios meses o más. Como referencia aproximada: S < 0,25 personas-mes; M ≈ 0,25-0,75; L ≈ 1-3; XL > 3.
 
 <a id="s7-1"></a>
 
@@ -78,7 +78,7 @@ Esfuerzo: **S** días · **M** 1-3 semanas · **L** más de un mes · **XL** var
 | N5 | Nodo de archivo: `state_version_history_length` sin límite práctico, `LedgerStateSelector::ByTimestamp` (ya está previsto en el esquema, `engine-state-api-schema.yaml:592`) y `at_ledger_state` en la LTS | P1 / M |
 | N7 | Endpoints por lotes (metadatos y estado de varias entidades a la vez) | P2 / S |
 | N8-N9 | Toques de lockers y emisiones de validadores | P2 / S |
-| D | Convención de metadatos del validador `api_endpoints` (lista de URLs con capacidades) y documentación para operadores | P0 / S |
+| (D) | Convención de metadatos del validador `api_endpoints` (lista de URLs con capacidades) y documentación para operadores | P0 / S |
 
 Los cambios para **reducir la RAM y el disco del nodo** (R1-R11: ajustes de RocksDB, poda, arranque desde un snapshot verificado, actualización de protocolo de la estadística de propuestas y migración de Java a Rust) están en el **capítulo [9](09-nodos-ligeros.md#s9)**, con el detalle de cada uno en la sección [9.4](09-nodos-ligeros.md#s9-4).
 
@@ -95,7 +95,7 @@ Todos los índices deben ser **flags opcionales**, como los que ya existen, para
   - proxy TLS.
 - **P1/S:** asistente para publicar `api_endpoints` en los metadatos del validador.
 - **P0/S:** perfil **«nodo pequeño» de 4 GB** (R2, sección [9.4](09-nodos-ligeros.md#s9-4)): memoria Java, mempool y canales P2P reducidos, opciones de RocksDB y validador sin índices de API.
-- **P0/S, seguridad:** el comando de snapshot comunitario descarga sin verificar TLS (`verify=False`) un *script* remoto que después se ejecuta con bash, y no comprueba ningún hash ni firma del snapshot (`node-runner-cli/ledger_snapshot/__init__.py:30-42`). Hay que verificar TLS y un hash o firma publicados; a medio plazo, sustituirla por el arranque verificado (R9).
+- **P0/S, seguridad:** el comando de snapshot comunitario descarga sin verificar TLS (`verify=False`) un *script* remoto que después se ejecuta con bash, y no comprueba ningún hash ni firma del snapshot (`node-runner-cli/ledger_snapshot/__init__.py:30-42`). Hay que verificar TLS y un hash o firma publicados; a medio plazo, sustituirlo por el arranque verificado (R9).
 
 <a id="s7-4"></a>
 
@@ -194,6 +194,8 @@ Los cambios son simétricos a los de Android. Los clientes de DI (`DependencyKey
 
 ## 7.10 `connector-extension` y `connector-extension-iroh`
 
+Las referencias de línea corresponden a `connector-extension-iroh`; en `connector-extension` los ficheros equivalentes pueden tener otra numeración.
+
 - **P1/S.** `src/chrome/background/create-gateway-module.ts:1-13` usa la URL fija de `RadixNetworkConfigById`. Hay que añadir la URL o la lista de puntos de acceso a la página de opciones (`src/options/index.ts:20-23`).
 - **P1/S.** Con un servidor de señalización propio, la extensión sigue usando los TURN de RDX con credenciales fijas (`src/config.ts:44-53, 97-101`). Hay que permitir configurar el TURN.
 - **P2/S.** Explorador configurable (`src/utils/explorer.ts:6`).
@@ -285,7 +287,7 @@ No usan el Gateway, pero son infraestructura P1 que también depende de un únic
 
 <a id="s7-17"></a>
 
-## 7.17 Repositorios que no necesitan cambios
+## 7.17 Repositorios con cambios menores o sin cambios
 
 - **`olympia-wallet`:** su uso actual (exportar cuentas) es fuera de línea. **P2/S:** cuando exista el archivo de Olympia ([2.2](01-02-situacion-actual.md#s2-2)), apuntar a él en vez de a `olympia-gateway.radixdlt.com` (`src/helpers/network.ts:14-39`).
 - **`radixdlt/explorer`** (explorador de Olympia): **P1/S:** servir el historial desde el archivo estático de Olympia en vez de desde el Gateway de Olympia; o integrarlo en el explorador de referencia ([7.16](#s7-16)).

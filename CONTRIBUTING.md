@@ -21,9 +21,9 @@ This repository is open source and intended to be improved by the Radix communit
 2. Edit the files:
    - **Report content:** `docs/en/` and `docs/es/`. The summaries and the conclusion are in `README.md` and `README.es.md`.
    - **Community notes:** `community/`.
-3. Keep **both languages** in sync. If you can only write in one, say so in the PR with the "needs translation" label and someone else will complete it.
+3. Keep **both languages** in sync. Contributors who can only write in one should say so in the PR with the "needs translation" label, and someone else will complete it.
 4. Open the PR using the template and explain what changes and why.
-5. Content changes are reviewed before they are merged. You may be asked for sources or adjustments.
+5. Content changes are reviewed before they are merged. Sources or adjustments may be requested.
 
 ## Quality rules
 
@@ -31,7 +31,7 @@ The value of this report depends on everything in it being verifiable. Therefore
 
 - **Nothing is made up.** Every figure needs a source: `file:line` and code version, a URL, or a described measurement (method, date, version).
 - **Estimates are marked as such** ("estimate", "est.") and their basis is explained.
-- **Assessments use the same format** at the start of each section:
+- **Assessments use the same format** at the start of each section that assesses a proposal:
 
   ```markdown
   > [!IMPORTANT]
@@ -43,11 +43,11 @@ The value of this report depends on everything in it being verifiable. Therefore
 - **Register:** clear and neutral, understandable by non-technical readers, without unnecessary jargon or a colloquial tone. Impersonal wording.
 - **No emojis** in the text.
 - **Diagrams in Mermaid**, so they can be edited as text.
-- If a change affects other sections (for example, an effort figure that also appears in the conclusion), update all of them.
+- If a change affects other sections (for example, an effort figure that also appears in the conclusion), all of them are updated.
 
 ## Disagreements and debate
 
-If you disagree with a conclusion or a strategy, open an issue explaining why and bring data. Reasoned alternative positions are welcome. If there is no consensus, the position can be recorded as a community note in `community/` and linked from the relevant section.
+Anyone who disagrees with a conclusion or a strategy can open an issue explaining why and bringing data. Reasoned alternative positions are welcome. If there is no consensus, the position can be recorded as a community note in `community/` and linked from the relevant section.
 
 ## Licence
 

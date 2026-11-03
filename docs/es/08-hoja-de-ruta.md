@@ -21,7 +21,7 @@ gantt
     Fin de la financiación del Gateway       :milestone, 2026-12-31, 0d
     section Paridad
     Índices completos y exploradores         :2027-01-01, 60d
-    Clientes con failover y descubrimiento   :2027-02-01, 90d
+    Clientes con conmutación por error y descubrimiento   :2027-02-01, 90d
     section Nodo
     Índices dentro de babylon-node           :2027-03-01, 270d
     R3-R8 reducción de disco y nodo podado   :2027-01-15, 150d

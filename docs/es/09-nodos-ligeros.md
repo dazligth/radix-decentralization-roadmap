@@ -9,7 +9,7 @@
 > - **Dificultad:** Media con Java (R1-R9); muy alta para tener margen holgado (R11, migración a Rust).
 > - **Esfuerzo y plazo:** 8-14 personas-mes para R1-R9, incluidas pruebas en Stokenet, revisión y despliegue (supuesto); 30-50 personas-mes para R11 (estimaciones).
 
-**Objetivo.** Que un validador o un nodo completo de mainnet funcione con **4 GB de RAM y 500 GB de disco**, y que la red siga funcionando sin el Gateway.
+**Objetivo.** Que un validador o un nodo completo de mainnet funcione con **4-8 GB de RAM (idealmente 4 GB) y 500 GB de disco o menos**, y que la red siga funcionando sin el Gateway.
 
 **Código revisado:**
 
@@ -56,7 +56,7 @@ flowchart LR
         CONS["Consenso HotStuff<br/>~17 400 líneas"]
         P2P["Red P2P Netty<br/>~9 300 líneas + DSON/CBOR"]
         SYNC["Sincronización del ledger<br/>y BFT sync"]
-        REL["Relay de la mempool"]
+        REL["Retransmisión de la mempool"]
         CFG["Configuración Guice + RxJava"]
     end
     JNI{{"Puente JNI<br/>92 funciones, datos SBOR copiados"}}
@@ -109,13 +109,13 @@ Unos 555 de los ~567 millones de versiones del ledger (~97-98 %) son **cambios d
 | Pruebas del ledger | ~5-8 KB | Sí, tras 12 épocas queda ~1 de cada 1 000 | Sincronización |
 | Nodos del árbol de estado (JMT) | ~3-6 KB | Sí, ventana de 60 000 versiones | Consenso (raíz de estado) |
 
-- **Coste permanente estimado por cambio de ronda:** la suma de la tabla da ~6-6,5 KB **sin comprimir** con la ejecución local activada. En ~555 millones de rondas serían **del orden de 3-4 TB sin comprimir**. Son cifras de **límite superior**: buena parte de estos datos (recibos casi idénticos de una ronda a otra) se comprime muy bien, y el snapshot comprimido completo ocupa 274 GiB. El tamaño real en disco solo se puede conocer midiéndolo.
+- **Coste permanente estimado por cambio de ronda:** la suma de la tabla da ~6-7,5 KB **sin comprimir** con la ejecución local activada. En ~555 millones de rondas serían **del orden de 3-4 TB sin comprimir**. Son cifras de **límite superior**: buena parte de estos datos (recibos casi idénticos de una ronda a otra) se comprime muy bien, y el snapshot comprimido completo ocupa 274 GiB. El tamaño real en disco solo se puede conocer midiéndolo.
 - **Orden de importancia:** recibos > fragmentos del acumulador > ejecuciones locales > identificadores. Las transacciones en bruto de los cambios de ronda solo suman ~25-30 GB.
 - **Cómo confirmarlo:** el nodo ya publica el tamaño por column family (métricas `raw_db_size`, `SM/metrics.rs:590-640`). El **primer paso** del plan es publicar esas cifras de un nodo de mainnet.
 - **Causa de fondo:** el campo `CurrentProposalStatistic` del ConsensusManager, ~1,9 KB, se reescribe entero en cada ronda. Su valor previo se guarda en el recibo y su ruta se reescribe en el árbol de estado.
 - **Novedad de `v1.4.0.0`:**
   - Añade la opción **`db.keep_previous_substate_values`**: con `false`, el recibo deja de guardar los valores previos (`rocks_db.rs:705-714` en `v1.4.0.0`), lo que **casi divide por dos el recibo de cada ronda**.
-  - Está **activada por defecto** (`true`) en mainnet y solo se aplica a lo que se escriba a partir de ese momento.
+  - Su valor por defecto en mainnet es `true`, es decir, **se siguen guardando** los valores previos; la opción solo afecta a lo que se escriba a partir de su activación.
   - Además, `v1.4.0.0` **elimina la Mesh API**.
 
 <a id="s9-4"></a>
@@ -244,7 +244,7 @@ let cf_opts = |cf: &str| {
 ### R8. Modo «nodo podado» (P1, M-L)
 
 > [!NOTE]
-> **Referencia en otras redes:** Cosmos SDK ofrece la poda como opción configurable (nodos podados y de archivo), y en julio de 2025 todos los clientes de ejecución de Ethereum incorporaron la expiración del historial anterior al Merge (EIP-4444), ahorrando 300-500 GB por nodo. Ver capítulo [12](12-referencias-otras-redes.md#s12).
+> **Referencia en otras redes:** Cosmos SDK ofrece la poda como opción configurable (nodos podados y de archivo), y desde julio de 2025 todos los clientes de ejecución de Ethereum admiten la expiración del historial anterior al Merge (EIP-4444; no siempre activada por defecto), ahorrando 300-500 GB por nodo. Ver capítulo [12](12-referencias-otras-redes.md#s12).
 
 - **Qué:** opción `ledger.retain_epochs=N`. Borra por rangos las transacciones, identificadores, recibos y ejecuciones de más de N épocas. Conserva:
   - las pruebas de época y de actualización de protocolo;
@@ -318,7 +318,7 @@ sequenceDiagram
 ### R11. Migrar el núcleo de Java a Rust (P1 para 4 GB con margen, XL)
 
 > [!NOTE]
-> **Referencia en otras redes:** En Solana, Frankendancer combina componentes del nuevo cliente Firedancer con los del cliente existente, un ejemplo real de sustitución por partes. Ver capítulo [12](12-referencias-otras-redes.md#s12).
+> **Referencia en otras redes:** en Solana, Frankendancer combina componentes del nuevo cliente Firedancer con los del cliente existente, un ejemplo real de sustitución por partes. Ver capítulo [12](12-referencias-otras-redes.md#s12).
 
 **Qué queda en Java** (versión `develop`):
 
