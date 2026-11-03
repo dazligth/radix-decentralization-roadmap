@@ -28,6 +28,7 @@ Informe del 3 de noviembre de 2026.
 | Desarrollador de wallets, dApps o herramientas | [Capítulo 7: cambios por repositorio](docs/es/05-cambios-por-repositorio.md) y [capítulo 10: guía de implementación](docs/es/08-guia-de-implementacion.md) |
 | Gobernanza (RAC, DAO) | La conclusión, la [hoja de ruta](docs/es/06-hoja-de-ruta.md) y el [capítulo 11: evolución hacia Hyperscale](docs/es/09-evolucion-hyperscale.md) |
 | Quien no conozca algún término | El [glosario](docs/es/11-glosario.md) |
+| Quien quiera aportar correcciones, datos o ideas | La [guía de contribución](CONTRIBUTING.es.md) y la carpeta [`community/`](community/README.md) |
 
 ## Resumen ejecutivo
 
@@ -298,4 +299,16 @@ flowchart LR
 10. [Fuentes y metodología](docs/es/10-fuentes.md)
 11. [Glosario](docs/es/11-glosario.md)
 
-> Las cifras marcadas como *estimación* deben validarse con un prototipo. Las correcciones y aportaciones son bienvenidas mediante *issues* o *pull requests*.
+## Cómo contribuir
+
+Este repositorio es de código abierto y la comunidad puede mejorarlo mediante *issues* y *pull requests*:
+
+- **Correcciones** de datos, referencias, enlaces o traducciones.
+- **Datos y mediciones** reales (tamaño del ledger, RAM, tiempos de sincronización), con su método y fecha.
+- **Nuevas estrategias** o alternativas a las propuestas del informe.
+- **Ideas y notas de la comunidad** en la carpeta [`community/`](community/README.md).
+- **Enlaces a prototipos** o implementaciones que avancen alguna propuesta.
+
+La [guía de contribución](CONTRIBUTING.es.md) explica cómo hacerlo y las reglas de calidad: citar siempre las fuentes, marcar las estimaciones y mantener los dos idiomas sincronizados.
+
+> Las cifras marcadas como *estimación* deben validarse con un prototipo o una medición real.

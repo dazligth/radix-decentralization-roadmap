@@ -28,6 +28,7 @@ Report dated 3 November 2026.
 | A wallet, dApp or tooling developer | [Chapter 7: per-repository changes](docs/en/05-per-repository-changes.md) and [chapter 10: implementation guide](docs/en/08-implementation-guide.md) |
 | Governance (RAC, DAO) | The conclusion, the [roadmap](docs/en/06-roadmap.md) and [chapter 11: evolution to Hyperscale](docs/en/09-hyperscale-evolution.md) |
 | Anyone unsure about a term | The [glossary](docs/en/11-glossary.md) |
+| Anyone wanting to contribute corrections, data or ideas | The [contribution guide](CONTRIBUTING.md) and the [`community/`](community/README.md) folder |
 
 ## Executive summary
 
@@ -298,4 +299,16 @@ flowchart LR
 10. [Sources and methodology](docs/en/10-sources.md)
 11. [Glossary](docs/en/11-glossary.md)
 
-> Figures marked as *estimate* must be validated with a prototype. Corrections and contributions are welcome via issues or pull requests.
+## How to contribute
+
+This repository is open source and the community can improve it through issues and pull requests:
+
+- **Corrections** to figures, references, links or translations.
+- Real **data and measurements** (ledger size, RAM, sync times), with method and date.
+- **New strategies** or alternatives to the report's proposals.
+- **Community ideas and notes** in the [`community/`](community/README.md) folder.
+- **Links to prototypes** or implementations that advance a proposal.
+
+The [contribution guide](CONTRIBUTING.md) explains how, and the quality rules: always cite sources, mark estimates and keep both languages in sync.
+
+> Figures marked as *estimate* must be validated with a prototype or a real measurement.
