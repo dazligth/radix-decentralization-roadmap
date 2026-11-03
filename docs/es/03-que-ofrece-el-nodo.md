@@ -1,6 +1,10 @@
-[← Índice](../../README.es.md) · [Anterior: Secciones 1-2: situación actual, quién depende del Gateway, exploradores y Olympia](01-situacion-actual.md) · [Siguiente: Secciones 4-5: las seis estrategias evaluadas y su comparativa con datos](03-estrategias.md)
+[← Índice](../../README.es.md) · [Anterior: Alcance y capítulos 1-2: situación actual, quién depende del Gateway, exploradores y Olympia](01-02-situacion-actual.md) · [Siguiente: Capítulos 4-5: las seis estrategias evaluadas y su comparativa](04-05-estrategias.md)
+
+<a id="s3"></a>
 
 # 3. Qué ofrece el nodo hoy (comprobado en `babylon-node`: rama `develop` y versión `v1.4.0.0`)
+
+<a id="s3-1"></a>
 
 ## 3.1 Las APIs del nodo
 
@@ -31,6 +35,8 @@
   | `db.entity_listing_indices.enable` | — | `/extra/entity-search` |
   | `api.core.flags.enable_unbounded_endpoints` | `true` | Endpoints de coste no acotado |
 
+<a id="s3-2"></a>
+
 ## 3.2 Correspondencia con el Gateway
 
 | Capacidad | Con el nodo actual |
@@ -44,17 +50,17 @@
 | Validadores, LSU, pools | Sí: `/state/validator`, `/state/consensus-manager`, `/state/component`. El valor de canje se calcula en el cliente. |
 | Prevalidación de depósito | Sí: `/lts/state/account-deposit-behaviour` |
 | Resultado de una transacción | Sí: `/transaction/receipt` |
-| **N1** Estado de un subintent | No: No hay endpoint, pero el nodo **ya lo indexa**: column family `finalized_subintent_hashes`, en `state-manager/src/store/column_families.rs:154-162` y `rocks_db.rs:705-708` |
-| **N2** Ubicación de un NFT (qué vault o cuenta tiene el id X) | No: |
-| **N3** Historial filtrado por entidad, con cambios de NFT, clase de manifiesto y eventos | En parte: Solo `/lts/stream/account-transaction-outcomes`, que da cambios fungibles de cuentas |
-| **N4** Entidades que usan un badge en sus reglas | No: |
-| **N5** Estado histórico de cualquier antigüedad | En parte: Solo ≈ 4-5 h, y con un flag desactivado por defecto |
-| `last_updated_at_state_version` de los metadatos | No: Lo usa la recuperación de cuentas |
-| Lecturas por lotes (20 entidades por llamada) | No: Hay que hacer una llamada por entidad |
-| Uptime de validadores, titulares de un recurso, `touched-at` de lockers | No: |
-| **N6** Acceso público seguro (CORS, solo lectura, rate limit, TLS) | No: |
-| Reenvío de transacciones pendientes | No: Lo hace el Gateway. Con el nodo pasa a ser responsabilidad del cliente: guardar el payload y reenviar con backoff mientras la época sea válida. |
+| **N1** Estado de un subintent | No: no hay endpoint, pero el nodo **ya lo indexa**: column family `finalized_subintent_hashes`, en `state-manager/src/store/column_families.rs:154-162` y `rocks_db.rs:705-708` |
+| **N2** Ubicación de un NFT (qué vault o cuenta tiene el id X) | No |
+| **N3** Historial filtrado por entidad, con cambios de NFT, clase de manifiesto y eventos | En parte: solo `/lts/stream/account-transaction-outcomes`, que da cambios fungibles de cuentas |
+| **N4** Entidades que usan un badge en sus reglas | No |
+| **N5** Estado histórico de cualquier antigüedad | En parte: solo ≈ 4-5 h, y con un flag desactivado por defecto |
+| **N5b** `last_updated_at_state_version` de los metadatos | No: lo usa la recuperación de cuentas |
+| **N7** Lecturas por lotes (20 entidades por llamada) | No: hay que hacer una llamada por entidad |
+| **N8-N9** `touched-at` de lockers y uptime de validadores; titulares de un recurso (índice h del indexador ligero) | No |
+| **N6** Acceso público seguro (CORS, solo lectura, límite de peticiones, TLS) | No |
+| Reenvío de transacciones pendientes | No: Lo hace el Gateway. Con el nodo pasa a ser responsabilidad del cliente: guardar la transacción notarizada y reenviar con espera exponencial mientras la época sea válida. |
 
 ---
 
-[← Índice](../../README.es.md) · [Anterior: Secciones 1-2: situación actual, quién depende del Gateway, exploradores y Olympia](01-situacion-actual.md) · [Siguiente: Secciones 4-5: las seis estrategias evaluadas y su comparativa con datos](03-estrategias.md)
+[← Índice](../../README.es.md) · [Anterior: Alcance y capítulos 1-2: situación actual, quién depende del Gateway, exploradores y Olympia](01-02-situacion-actual.md) · [Siguiente: Capítulos 4-5: las seis estrategias evaluadas y su comparativa](04-05-estrategias.md)

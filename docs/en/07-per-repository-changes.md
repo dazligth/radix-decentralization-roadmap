@@ -1,9 +1,13 @@
-[← Index](../../README.md) · [Previous: Section 6: recommended solution, storage, and the ideal long-term solution](04-recommended-solution.md) · [Next: Section 8: roadmap](06-roadmap.md)
+[← Index](../../README.md) · [Previous: Chapter 6: recommended solution, storage, ideal solution and risks](06-recommended-solution.md) · [Next: Chapter 8: roadmap](08-roadmap.md)
+
+<a id="s7"></a>
 
 # 7. Per-repository changes
 
 Priority: **P0** essential · **P1** needed for every use case · **P2** improvement.
-Effort: **S** days · **M** 1-3 weeks · **L** more than a month · **XL** several months or more.
+Effort: **S** days · **M** 1-3 weeks · **L** more than a month · **XL** several months or more. As a rough reference: S < 0.5 person-months; M ≈ 0.25-0.75; L ≈ 1 or more; XL > 3.
+
+<a id="s7-1"></a>
 
 ## 7.1 New repository: `radix-lite-indexer` (strategy E3)
 
@@ -12,14 +16,14 @@ Effort: **S** days · **M** 1-3 weeks · **L** more than a month · **XL** sever
 - **Ingestion (P0/M):**
   - `/core/stream/transactions` with receipts and events;
   - persistent cursor that survives restarts;
-  - round changes are filtered out of the entity indexes.
+  - round updates are filtered out of the entity indexes.
 - **Indexes (P0/M):**
 
   | Index | Purpose |
   |---|---|
   | (a) `entity → [state_version]` with fungible and NFT changes, manifest class, event emitters and manifest resources | History |
   | (b) `(resource, nf_id) → vault → global entity` | NFT location |
-  | (c) `subintent_hash → state_version` | Pre-authorizations (or read it from the node once N1 exists) |
+  | (c) `subintent_hash → state_version` | Pre-authorisations (or read it from the node once N1 exists) |
   | (d) `badge → entities` | Role rules, for MFA |
   | (e) `(entity, metadata key) → last_updated_state_version` | Account recovery |
   | (f) `locker → account → last touch` | Lockers |
@@ -57,6 +61,8 @@ Effort: **S** days · **M** 1-3 weeks · **L** more than a month · **XL** sever
 - **Snapshots (P2/M).** Export and import signed indexes so a new operator does not have to sync from genesis.
 - **Conformance (P0/M).** Compare responses against the public Gateway with continuous sampling, before it is switched off.
 
+<a id="s7-2"></a>
+
 ## 7.2 `radixdlt/babylon-node` (strategy E2)
 
 | # | Change | P / Effort |
@@ -72,9 +78,11 @@ Effort: **S** days · **M** 1-3 weeks · **L** more than a month · **XL** sever
 | N8-N9 | Locker touches; validator emissions | P2 / S |
 | D | Validator metadata convention `api_endpoints` (list of URLs with capabilities), and operator documentation | P0 / S |
 
-The changes that **reduce node RAM and disk** (R1-R11: RocksDB tuning, pruning, verified snapshot bootstrap, the proposal-statistics protocol update and the Java-to-Rust migration) are in **section 9**, with each one detailed in section 9.4.
+The changes that **reduce node RAM and disk** (R1-R11: RocksDB tuning, pruning, verified snapshot bootstrap, the proposal-statistics protocol update and the Java-to-Rust migration) are in **section [9](09-lighter-nodes.md#s9)**, with each one detailed in section [9.4](09-lighter-nodes.md#s9-4).
 
 Every index should be an **optional flag**, like the existing ones, so validators who do not want to serve reads are not penalised.
+
+<a id="s7-3"></a>
 
 ## 7.3 `radixdlt/babylon-nodecli` (node deployment)
 
@@ -84,15 +92,21 @@ Every index should be an **optional flag**, like the existing ones, so validator
   - the `radix-lite-indexer` sidecar;
   - a TLS proxy.
 - **P1/S:** a wizard step to publish `api_endpoints` in the validator's metadata.
-- **P0/S:** a **4 GB "small node" profile** (R2, section 9.4): reduced Java memory, mempool and P2P channels, RocksDB options, and validators without API indexes.
+- **P0/S:** a **4 GB "small node" profile** (R2, section [9.4](09-lighter-nodes.md#s9-4)): reduced Java memory, mempool and P2P channels, RocksDB options, and validators without API indexes.
 - **P0/S, security:** the community snapshot download uses `verify=False` (no TLS verification, `node-runner-cli/ledger_snapshot/__init__.py`). Verify TLS and a published hash or signature; in the medium term, replace it with verified bootstrap (R9).
+
+<a id="s7-4"></a>
 
 ## 7.4 `radixdlt/babylon-gateway`
 
 - **No changes needed for the goal.** It serves as the **specification** of the API, of the resubmission logic and of submit-error classification (`TransactionSubmitter.cs:115-230`).
 - **P2:** split the OpenAPI contract into a standalone versioned package shared with `radix-lite-indexer`, to guarantee compatibility.
 
+<a id="s7-5"></a>
+
 ## 7.5 `radixdlt/sargon` (wallet core)
+
+This section describes **what** to change; section [10.4](10-implementation-guide.md#s10-4) explains **how**, step by step.
 
 1. **P0/M — `LedgerBackend` trait.**
    - `GatewayClient` (`crates/gateway/client-and-api/src/client/gateway_client.rs:11-40`) is a concrete struct. Extract a trait with the methods in `methods/state_methods.rs` and `methods/transaction_methods.rs`, and return it from `SargonOS::gateway_client()` (`system/os/os/src/sargon_os_gateway_client.rs:8-17`).
@@ -106,11 +120,13 @@ Every index should be an **optional flag**, like the existing ones, so validator
    - `SavedGateways` (`crates/profile/models/gateway/src/saved_gateways.rs:16-24`) stores a list but only uses the current entry.
    - Add failover and a network check.
    - Add discovery (D): read `api_endpoints` from the active validators via `/state/consensus-manager` and their metadata.
-3. **P0/M — Local resubmission.** Today `sargon_os_transaction_status.rs:38-105` only polls. Keep the notarized payload and resubmit with backoff until it is committed or its epoch expires. That way a transaction is not lost if the access point changes or restarts.
+3. **P0/M — Local resubmission.** Today `sargon_os_transaction_status.rs:38-105` only polls. Keep the notarised payload and resubmit with backoff until it is committed or its epoch expires. That way a transaction is not lost if the access point changes or restarts.
 4. **P1/M — Native `NodeBackend`** (Core and Engine State APIs, with DTOs generated from the node's YAML specs), for when E2 exists.
    - It implies a Profile schema change: `Gateway { network, url }` (`gateway.rs:21-27`) gains `kind: GatewayApi | NodeApi`.
    - This must be coordinated with iOS and Android, with a migration.
 5. **P1/S — Hard-coded services.** Make `nft-pricing-service.radixdlt.com` configurable (`non_fungibles_prices_service/remote_fetcher.rs:4-5`).
+
+<a id="s7-6"></a>
 
 ## 7.6 `babylon-wallet-android` (and the forks `-iroh`, `wallet-pr-*`)
 
@@ -131,6 +147,8 @@ Every index should be an **optional flag**, like the existing ones, so validator
   - `dapps-list.radixdlt.com` (`DAppDirectoryRepository.kt:81-87`);
   - dashboard links (`NetworkIdExtensions.kt:50-56`).
 
+<a id="s7-7"></a>
+
 ## 7.7 `radixdlt/babylon-wallet-ios`
 
 Symmetric to Android. The DI clients (`DependencyKey`) allow the `liveValue` to be replaced:
@@ -148,6 +166,8 @@ Symmetric to Android. The DI clients (`DependencyKey`) allow the `liveValue` to 
   - `dapps-list` (`DAppsDirectoryClient+Live.swift:4`);
   - dashboard links (`Radix+Dashboard.swift:48-102`).
 
+<a id="s7-8"></a>
+
 ## 7.8 `radix-dapp-toolkit`
 
 - **P0/S.** Accept **a list** of access points with failover in `gatewayBaseUrl`, or on-ledger discovery. The default URL is hard-coded in `modules/gateway/types.ts:60-97`.
@@ -158,6 +178,8 @@ Symmetric to Android. The DI clients (`DependencyKey`) allow the `liveValue` to 
 - **P1/S.** The Radix Connect relay is hard-coded at `modules/wallet-request/wallet-request.ts:159`; add a `relayUrl` option.
 - **P2/S.** Hard-coded links (`connect-button.module.ts:305,307`, `packages/connect-button/src/config.ts:3`).
 
+<a id="s7-9"></a>
+
 ## 7.9 `radixdlt/rola` (login for every dApp)
 
 - **P0/S.** `GatewayService` (`typescript/src/gateway.ts:14-38`) defaults to `RadixNetworkConfigById[networkId].gatewayUrl`. It should:
@@ -166,11 +188,15 @@ Symmetric to Android. The DI clients (`DependencyKey`) allow the `liveValue` to 
 - **P1/S.** The `python/` package already takes the metadata provider as a parameter (`rola/core.py:14`); it only needs a provider that reads `owner_keys` from the node or the indexer.
 - **P1/S.** If the ledger cannot be queried and the account is virtual (no `owner_keys`), address derivation alone is enough (`rola.ts:85`). Document that this case needs no network.
 
+<a id="s7-10"></a>
+
 ## 7.10 `connector-extension` and `connector-extension-iroh`
 
 - **P1/S.** `src/chrome/background/create-gateway-module.ts:1-13` uses the hard-coded URL from `RadixNetworkConfigById`. Add an access-point URL or list to the options page (`src/options/index.ts:20-23`).
 - **P1/S.** With a custom signalling server, the extension still uses RDX's TURN servers with hard-coded credentials (`src/config.ts:44-53, 97-101`). Make TURN configurable.
 - **P2/S.** Configurable explorer (`src/utils/explorer.ts:6`).
+
+<a id="s7-11"></a>
 
 ## 7.11 Radix Connect transport: `radix-connect-iroh`, `radix-connect-webrtc`, and the official `radix-connect-relay` and `signaling-server`
 
@@ -179,6 +205,8 @@ They do not use the Gateway, but they are P1 infrastructure that also depends on
 - **`radix-connect-iroh`:** already supports a custom relay (`Relays::Custom`, `crates/radix-connect-iroh/src/config.rs:15-18`). P2: several custom relays and a custom pkarr.
 - **`radix-connect-webrtc`:** P2/S. Allow **replacing** Google's STUN servers (`src/connector/connector-client.ts:115-131`), not just adding others.
 - **`radix-connect-relay` and `signaling-server`:** P1/S. Publish images and self-hosting guides, and announce instances through the same discovery mechanism (D).
+
+<a id="s7-12"></a>
 
 ## 7.12 `radixdlt-rust-sdk`
 
@@ -191,6 +219,8 @@ They do not use the Gateway, but they are P1 infrastructure that also depends on
 - **P1/S.** `connector-mcp/src/gateway.rs:10-15` has hard-coded URLs.
 - **P1/S.** `rola`: implement the `owner_keys` read (`crates/rola/src/lib.rs:8-9`).
 - **P1/S, security.** `connect-webrtc/src/connector.rs:56-70` has TURN credentials in source code.
+
+<a id="s7-13"></a>
 
 ## 7.13 `consultation_v3` (identical to `consultation_v2`)
 
@@ -207,6 +237,8 @@ They do not use the Gateway, but they are P1 infrastructure that also depends on
 - **P1/M.** With the node's native API, `poll.ts:30-45` loses `affected_global_entities_filter`: it must read the whole stream and filter by emitter.
 - **P2.** In the blueprint (`scrypto/`), emit the snapshot parameters in `Created` and consider on-ledger tallies. This affects the `governance-framework` rules on "snapshot at opening" and reruns.
 
+<a id="s7-14"></a>
+
 ## 7.14 `wallet-agent-ai`
 
 - **P0/S.** Hard-coded URLs in `src/network-config.ts:14-22`; the network is inferred from the URL (`:33-36`, `weft.ts:211-225`).
@@ -215,13 +247,22 @@ They do not use the Gateway, but they are P1 infrastructure that also depends on
 - **P1/S.** `waitForOwnerApproval` (`AgentWallet.ts:697-722`) should watch component state instead of filtering the stream.
 - **P2.** The Astrolescent API should accept a self-hosted instance.
 
+<a id="s7-15"></a>
+
 ## 7.15 `Radix-Desktop-Tool`
 
 - The URL can already be changed in the UI (`src/views/LocalSettings.vue`), so it works with E3 unchanged.
 - **P2/M.** The node's native API needs a fork of `@atlantis-l/radix-tool`.
 - **P1.** History (`HistoryCheck.vue:999`) depends on E3 index (a), or N3.
 
+<a id="s7-16"></a>
+
 ## 7.16 Transaction explorers: Radix Dashboard, community explorers, and a new reference explorer
+
+> [!IMPORTANT]
+> - **Is it possible?** Yes.
+> - **Difficulty:** Medium.
+> - **Effort and timeline:** ~2-3 person-months for the reference explorer + ~1-2 for its indexes (estimate).
 
 - **Radix Dashboard (closed source).** It uses the Gateway API, so it works with E3 if its API URL is configured and E3 includes indexes (h), (i) and (j). This must be confirmed with whoever operates it. **P0:** ask for its source to be published, or for a community deployment.
 - **Community explorers.** Their backends could not be verified. If they use the Gateway API, E3 serves them by changing the URL. If they run their own indexer, they no longer depend on the Gateway.
@@ -240,10 +281,12 @@ They do not use the Gateway, but they are P1 infrastructure that also depends on
   - **Verification:** show which node each piece of data came from and, optionally, compare two access points (`state_version` and accumulator hash).
 - **Developer Console (closed source).** It only needs preview, submit, status and entity details, so it works with E3 or the node. **P1:** publish its source, or provide a community replacement.
 
+<a id="s7-17"></a>
+
 ## 7.17 Repositories that need no changes
 
-- **`olympia-wallet`:** its current use (exporting accounts) is offline. **P2/S:** once the Olympia archive exists (2.2), point to it instead of `olympia-gateway.radixdlt.com` (`src/helpers/network.ts:14-39`).
-- **`radixdlt/explorer`** (the Olympia explorer): **P1/S:** serve history from the static Olympia archive instead of the Olympia Gateway, or fold it into the reference explorer (7.16).
+- **`olympia-wallet`:** its current use (exporting accounts) is offline. **P2/S:** once the Olympia archive exists ([2.2](01-02-current-situation.md#s2-2)), point to it instead of `olympia-gateway.radixdlt.com` (`src/helpers/network.ts:14-39`).
+- **`radixdlt/explorer`** (the Olympia explorer): **P1/S:** serve history from the static Olympia archive instead of the Olympia Gateway, or fold it into the reference explorer ([7.16](#s7-16)).
 - **`wallet-compatible-derivation`:** offline key derivation, no network access.
 - **`governance-framework`:** only the points in 7.13.
 - **`reference/hyperscale-rs`:**
@@ -253,4 +296,4 @@ They do not use the Gateway, but they are P1 infrastructure that also depends on
 
 ---
 
-[← Index](../../README.md) · [Previous: Section 6: recommended solution, storage, and the ideal long-term solution](04-recommended-solution.md) · [Next: Section 8: roadmap](06-roadmap.md)
+[← Index](../../README.md) · [Previous: Chapter 6: recommended solution, storage, ideal solution and risks](06-recommended-solution.md) · [Next: Chapter 8: roadmap](08-roadmap.md)

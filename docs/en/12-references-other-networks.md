@@ -1,10 +1,14 @@
-[← Index](../../README.md) · [Previous: Section 11: final evolution towards Hyperscale and migration](09-hyperscale-evolution.md) · [Next: Sources and methodology](11-sources.md)
+[← Index](../../README.md) · [Previous: Chapter 11: final evolution towards Hyperscale](11-hyperscale-evolution.md) · [Next: Sources, methodology and open questions](sources-and-methodology.md)
 
-# 12. References from other decentralized networks
+<a id="s12"></a>
+
+# 12. References from other decentralised networks
 
 Several proposals in this report have no precedent in Radix, but they do in other networks that have published their design and experience. This chapter collects those precedents with their sources, consulted on 3 Nov 2026. **A precedent does not guarantee that the same solution will work the same way in Radix**: each one must be validated here.
 
 Since Radix's goal is to solve everything on **Layer 1**, each reference states whether it is a Layer-1 mechanism (protocol or node software), an external read service, or a Layer-2 or partner-chain solution, which is cited only as a contrast.
+
+<a id="s12-1"></a>
 
 ## 12.1 Summary by proposal
 
@@ -20,7 +24,9 @@ Since Radix's goal is to solve everything on **Layer 1**, each reference states 
 | **6.2, item 6.** Incentives for serving reads | **Pocket Network** and **The Graph** pay whoever serves reads or indexes, with proofs of the work done. | They are useful models, but they run as separate networks. In Radix they would have to be implemented on Layer 1 itself. |
 | **R11.** Rewriting the node in Rust | **Kaspa:** `rusty-kaspa` replaced the Go node as a "drop-in replacement", coexisting on the P2P network, with gradual adoption and later deprecation of the Go node. **Solana:** Frankendancer, a hybrid client. **Cardano:** new nodes (Amaru in Rust, Dingo in Go) that join first as relays and later produce blocks. **Ethereum:** client diversity. | Rewriting a node in phases, coexisting on the network, is a well-trodden path. Kaspa is the closest precedent to R11. |
 | **M1.** Migration with claims | **Midnight (Glacier Drop):** a balance snapshot across eight networks; the user signs a message with the key of the snapshot address and names a new destination address, with a later window for those who did not claim in time. **Cosmos Hub:** state migration into a new genesis. **Uniswap:** the `MerkleDistributor` contract. | Signed claims and genesis migration are proven techniques. |
-| **Chapter 11.** Evolving Layer 1 | **Cardano: Ouroboros Leios**, which increases Layer-1 capacity through a protocol hard fork **on the same chain**, with a long-running dedicated testnet. | It shows the alternative to migrating to a new network. See 12.9. |
+| **Chapter [11](11-hyperscale-evolution.md#s11).** Evolving Layer 1 | **Cardano: Ouroboros Leios**, which increases Layer-1 capacity through a protocol hard fork **on the same chain**, with a long-running dedicated testnet. | It shows the alternative to migrating to a new network. See 12.9. |
+
+<a id="s12-2"></a>
 
 ## 12.2 Cardano
 
@@ -33,6 +39,8 @@ Since Radix's goal is to solve everything on **Layer 1**, each reference states 
 | **Amaru (Rust), Dingo (Go)** | Layer 1 | New node implementations that join first as relays | Amaru runs as a mainnet relay; its block-production date is not verified |
 | **Ouroboros Leios** | Layer 1 (protocol hard fork) | Adds endorser blocks voted by a committee, to increase capacity without changing the main chain (CIP-164, proposed) | Testnet since 23 Jun 2026; code complete targeted for Q4 2026; mainnet date not set. Needs more disk, and more relay resources for those with large stake. |
 
+<a id="s12-3"></a>
+
 ## 12.3 Sui
 
 | Mechanism | Type | What it does |
@@ -43,6 +51,8 @@ Since Radix's goal is to solve everything on **Layer 1**, each reference states 
 | **Indexer and GraphQL** | Read service | A PostgreSQL indexer and a GraphQL API that users or providers can host; JSON-RPC marked as deprecated |
 | **Full-node hardware** | — | 128 GB RAM and 4 TB NVMe |
 
+<a id="s12-4"></a>
+
 ## 12.4 Aptos
 
 - **Fast sync** (Layer 1): skips history and relies on validator signatures; it usually completes in a few hours.
@@ -50,12 +60,16 @@ Since Radix's goal is to solve everything on **Layer 1**, each reference states 
 - **Indexer** (read service): a gRPC transaction stream and a GraphQL API, which third parties can host.
 - **Validator hardware:** 128 GB RAM and 3 TB NVMe (official estimate for 2024).
 
+<a id="s12-5"></a>
+
 ## 12.5 Solana
 
 - **Geyser** (Layer 1): plugins inside the validator that send data to external indexers. It is the closest precedent to E3's light indexer.
 - **Snapshots** (Layer 1): they should be downloaded only from known validators to avoid malicious state; trust is social, not cryptographic.
 - **History** (external service): for years only in Google Bigtable; the Old Faithful project packages it into files that can be hosted on IPFS or Filecoin.
 - **Hardware:** an RPC node with 256 GB RAM. It is a counter-example of a light node.
+
+<a id="s12-6"></a>
 
 ## 12.6 NEAR and Polkadot
 
@@ -65,6 +79,8 @@ Since Radix's goal is to solve everything on **Layer 1**, each reference states 
   - warp sync (finality proofs + state);
   - the **smoldot** light client in the browser, which its documentation describes as a "trust-minimized" alternative to public RPC servers, which are "convenient but centralized".
   - Validator: 32 GB RAM and 2 TB NVMe.
+
+<a id="s12-7"></a>
 
 ## 12.7 Kaspa
 
@@ -76,6 +92,8 @@ Since Radix's goal is to solve everything on **Layer 1**, each reference states 
 | **Hardware** | — | Minimum 16 GB RAM and 256 GB SSD; preferred 32 GB and 512 GB |
 
 Kaspa is the most direct precedent for two of this report's proposals: **R11** (phased rewrite of the node in Rust) and **R8 + R9** (pruning by default with verifiable bootstrap).
+
+<a id="s12-8"></a>
 
 ## 12.8 Midnight: how it implements privacy (contrast)
 
@@ -102,22 +120,24 @@ Kaspa is the most direct precedent for two of this report's proposals: **R11** (
 
 What would **not** carry over: the separate chain, the federated operators, the dependency on Cardano and the bridge between networks.
 
+<a id="s12-9"></a>
+
 ## 12.9 Lessons for Radix
 
 1. **Bootstrapping from a verified snapshot (R9) is standard** on Sui, Polkadot, Cosmos, Cardano, Kaspa and Ethereum. It reinforces its priority.
 2. **Pruning by default and leaving history to archive nodes (R8)** is common practice.
 3. **4 GB of RAM: Radix is better placed than other networks, but it must be measured.**
-   - None of the networks analysed runs a full node doing consensus and execution in 4 GB today. Published requirements range from 16 GB (Kaspa, Geth) to 128-256 GB (Sui, Aptos, Solana). The closest precedent is **Cardano**, with ~5.0-5.8 GB after moving the ledger to disk, in its beta release.
+   - None of the networks analysed runs a full node doing consensus and execution in 4 GB today. Published requirements range from 8 GB (Cardano with the ledger on disk, pending confirmation) and 16 GB (Kaspa, Geth) to 128-256 GB (Sui, Aptos, Solana). The closest precedent is **Cardano**, with ~5.0-5.8 GB after moving the ledger to disk, in its beta release.
    - However, **Radix works differently** in three ways that reduce the memory needed:
-     - **its state is already on disk** (RocksDB, `substates` column family). Cardano's big reduction came precisely from moving an in-memory ledger to disk; Radix does not need that structural change, and its current consumption comes mostly from configuration (12 GB reserved for Java, unbounded RocksDB and a 1.18 GB mempool), which can be tuned (R1-R2);
+     - **its state is already on disk** (RocksDB, `substates` column family). Cardano's big reduction came precisely from moving an in-memory ledger to disk; Radix does not need that structural change, and its current consumption comes mostly from configuration (12 GB reserved for Java, unbounded RocksDB and a ~1.2 GB mempool), which can be tuned (R1-R2);
      - **its validator set is small** (about 100), so consensus state takes little space (the vertex store is capped at 150 MB);
-     - **its current load is low** (~4,400 user transactions a day, section 1.2), far from networks such as Solana or Sui, whose requirements reflect much higher volumes.
-   - **Assessment:** with R1-R4, a node of **at most 8 GB looks achievable**, and **4 GB is plausible**, especially after the migration to Rust (R11). Both figures are estimates that must be confirmed by measuring a real node, including during high-load periods such as the March 2025 peak (~35,000 user transactions a day).
+     - **its current load is low** (~4,400 user transactions a day, section [1.2](01-02-current-situation.md#s1-2)), far from networks such as Solana or Sui, whose requirements reflect much higher volumes.
+   - **Assessment:** with R1-R2, a node of **at most 8 GB looks achievable**, and **4 GB is plausible**, especially after the migration to Rust (R11). Both figures are estimates that must be confirmed by measuring a real node, including during high-load periods such as the March 2025 peak (~35,000 user transactions a day).
 4. **Reads built into the node (E2) and an indexer next to the node (E3)** have direct precedents (Kaspa, Sui, Acropolis; Geyser, Aptos).
 5. **Federated read networks exist** (Koios, Kaspa's public nodes), but they coordinate off chain. **Publishing access points on Layer 1 itself**, as this report proposes, would be a new contribution from Radix.
 6. **Depending on a single read service is a real risk:** NEAR Lake stopped indexing in March 2026.
 7. **The phased rewrite in Rust (R11)** has a very similar precedent in **Kaspa**, which moved from Go to Rust while coexisting on the network, with gradual adoption.
-8. **Evolving Layer 1 without changing network is possible** when the new design is compatible with the old one, as Cardano does with Leios. Hyperscale, by contrast, is not compatible with Babylon (section 11.2). That is why it requires a migration, and why the community should also weigh the option of improving Babylon on its own chain before deciding.
+8. **Evolving Layer 1 without changing network is possible** when the new design is compatible with the old one, as Cardano does with Leios. Hyperscale, by contrast, is not compatible with Babylon (section [11.2](11-hyperscale-evolution.md#s11-2)). That is why it requires a migration, and why the community should also weigh the option of improving Babylon on its own chain before deciding.
 9. **Privacy** can be approached on Layer 1 with ZK proof verification in the engine and shielded resources. It is a major undertaking, which Midnight solves with a separate network.
 
 **Could not be verified:**
@@ -136,4 +156,4 @@ None of these points is used as an argument in the report.
 
 ---
 
-[← Index](../../README.md) · [Previous: Section 11: final evolution towards Hyperscale and migration](09-hyperscale-evolution.md) · [Next: Sources and methodology](11-sources.md)
+[← Index](../../README.md) · [Previous: Chapter 11: final evolution towards Hyperscale](11-hyperscale-evolution.md) · [Next: Sources, methodology and open questions](sources-and-methodology.md)

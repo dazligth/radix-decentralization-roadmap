@@ -1,6 +1,10 @@
-[← Index](../../README.md) · [Previous: Sections 1-2: current situation, who depends on the Gateway, explorers and Olympia](01-current-situation.md) · [Next: Sections 4-5: the six strategies evaluated and their data-driven comparison](03-strategies.md)
+[← Index](../../README.md) · [Previous: Scope and chapters 1-2: current situation, who depends on the Gateway, explorers and Olympia](01-02-current-situation.md) · [Next: Chapters 4-5: the six strategies evaluated and their comparison](04-05-strategies.md)
+
+<a id="s3"></a>
 
 # 3. What the node offers today (verified in `babylon-node`: branch `develop` and release `v1.4.0.0`)
+
+<a id="s3-1"></a>
 
 ## 3.1 The node's APIs
 
@@ -31,6 +35,8 @@
   | `db.entity_listing_indices.enable` | — | `/extra/entity-search` |
   | `api.core.flags.enable_unbounded_endpoints` | `true` | Endpoints with unbounded cost |
 
+<a id="s3-2"></a>
+
 ## 3.2 Mapping to the Gateway
 
 | Capability | With today's node |
@@ -44,17 +50,17 @@
 | Validators, LSUs, pools | Yes: `/state/validator`, `/state/consensus-manager`, `/state/component`. The client computes redemption values. |
 | Deposit pre-validation | Yes: `/lts/state/account-deposit-behaviour` |
 | Transaction result | Yes: `/transaction/receipt` |
-| **N1** Subintent status | No: No endpoint, but the node **already indexes it**: column family `finalized_subintent_hashes` (`state-manager/src/store/column_families.rs:154-162`, `rocks_db.rs:705-708`) |
-| **N2** NFT location (which vault or account holds id X) | No: |
-| **N3** History filtered by entity, with NFT changes, manifest class and events | Partly: Only `/lts/stream/account-transaction-outcomes`, which gives fungible changes for accounts |
-| **N4** Entities that use a badge in their rules | No: |
-| **N5** Historical state of any age | Partly: Only ≈ 4-5 h, behind a flag that is off by default |
-| `last_updated_at_state_version` for metadata | No: Used by account recovery |
-| Batch reads (20 entities per call) | No: One call per entity |
-| Validator uptime, resource holders, locker `touched-at` | No: |
-| **N6** Safe public access (CORS, read-only, rate limiting, TLS) | No: |
+| **N1** Subintent status | No: there is no endpoint, but the node **already indexes it**: column family `finalized_subintent_hashes` (`state-manager/src/store/column_families.rs:154-162`, `rocks_db.rs:705-708`) |
+| **N2** NFT location (which vault or account holds id X) | No |
+| **N3** History filtered by entity, with NFT changes, manifest class and events | Partly: only `/lts/stream/account-transaction-outcomes`, which gives fungible changes for accounts |
+| **N4** Entities that use a badge in their rules | No |
+| **N5** Historical state of any age | Partly: only ≈ 4-5 h, behind a flag that is off by default |
+| **N5b** `last_updated_at_state_version` for metadata | No: used by account recovery |
+| **N7** Batch reads (20 entities per call) | No: one call per entity |
+| **N8-N9** locker `touched-at` and validator uptime; resource holders (light-indexer index h) | No |
+| **N6** Safe public access (CORS, read-only, rate limiting, TLS) | No |
 | Resubmission of pending transactions | No: The Gateway does it. With a node, it becomes the client's responsibility: keep the payload and resubmit with backoff while the epoch window is valid. |
 
 ---
 
-[← Index](../../README.md) · [Previous: Sections 1-2: current situation, who depends on the Gateway, explorers and Olympia](01-current-situation.md) · [Next: Sections 4-5: the six strategies evaluated and their data-driven comparison](03-strategies.md)
+[← Index](../../README.md) · [Previous: Scope and chapters 1-2: current situation, who depends on the Gateway, explorers and Olympia](01-02-current-situation.md) · [Next: Chapters 4-5: the six strategies evaluated and their comparison](04-05-strategies.md)

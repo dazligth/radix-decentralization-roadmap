@@ -1,10 +1,16 @@
-[← Índice](../../README.es.md) · [Anterior: Sección 9: nodos más ligeros, 4 GB de RAM y 500 GB de disco, migración de Java a Rust](07-nodos-ligeros.md) · [Siguiente: Sección 11: evolución final hacia Hyperscale y migración](09-evolucion-hyperscale.md)
+[← Índice](../../README.es.md) · [Anterior: Capítulo 9: nodos más ligeros (RAM y disco) y migración de Java a Rust](09-nodos-ligeros.md) · [Siguiente: Capítulo 11: evolución final hacia Hyperscale](11-evolucion-hyperscale.md)
+
+<a id="s10"></a>
 
 # 10. Guía de implementación paso a paso
 
 Este capítulo explica **cómo** construir las piezas principales. Los fragmentos de código son **orientativos**: muestran la forma de la solución, no código listo para producción, y hay que ajustarlos a la versión exacta de cada dependencia.
 
+<a id="s10-1"></a>
+
 ## 10.1 `radix-lite-indexer`: el sustituto del Gateway
+
+Los diagramas de funcionamiento del nodo de lectura y del envío de transacciones están en el capítulo [6](06-solucion-recomendada.md#s6).
 
 ### Arquitectura
 
@@ -22,28 +28,6 @@ radix-lite-indexer/
 ```
 
 Una ventaja importante: **Babylon tiene finalidad inmediata** (consenso BFT), así que una transacción confirmada nunca se revierte. El indexador **no necesita gestionar reorganizaciones de cadena**, lo que lo simplifica mucho frente a indexadores de otras redes.
-
-```mermaid
-flowchart TB
-    subgraph NODO["Nodo completo (sin cambios)"]
-        CORE["Core API y Engine State API<br/>solo en 127.0.0.1"]
-        LEDGER[("Ledger completo:<br/>transacciones, recibos, estado")]
-        CORE --- LEDGER
-    end
-    subgraph IDX["Indexador ligero (proceso aparte)"]
-        ING["Ingesta del stream<br/>desde la versión 1, génesis incluido"]
-        IX[("Índices pequeños:<br/>historial por entidad, ubicación de NFT,<br/>titulares, subintents, reglas de rol,<br/>estadísticas, búsqueda")]
-        API["API de lectura pública<br/>CORS, rate limit, TLS"]
-        RES["Reenvío de transacciones<br/>pendientes con backoff"]
-        ING --> IX
-    end
-    CORE -- "/stream/transactions" --> ING
-    APP["Wallet, dApp o explorador"] --> API
-    API -- "estado actual: saldos, NFT, metadatos" --> CORE
-    API -- "historial, titulares, ubicación de NFT" --> IX
-    API -- "enviar transacción" --> RES
-    RES --> CORE
-```
 
 ### Modelo de datos
 
@@ -149,33 +133,12 @@ cada 5 s:
     estado = Core /lts/transaction/status
     si CommittedSuccess/CommittedFailure/PermanentRejection -> cerrar
     si época_actual >= end_epoch                           -> cerrar como caducada
+    si intentos >= 5 o han pasado 5 min desde el primer envío -> dejar de reenviar (se sigue consultando el estado)
     si NotSeen o FateUncertain                             -> reenviar; intentos += 1;
-                                                              próximo_intento = ahora + 10 s * 2^intentos (máx. 5 min)
+                                                              próximo_intento = ahora + 10 s * 2^intentos
 ```
 
 Son los mismos parámetros que usa hoy el Gateway: base de 10 s, ×2, hasta 5 intentos, máximo 5 minutos.
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant W as Wallet
-    participant L as Nodo de lectura
-    participant N as Nodo completo
-    W->>L: preview de la transacción
-    L->>N: /transaction/preview
-    N-->>W: resultado y comisiones
-    W->>W: el usuario firma
-    W->>L: enviar transacción
-    L->>N: /lts/transaction/submit
-    loop mientras la época sea válida
-        L->>N: /lts/transaction/status
-        alt no confirmada
-            L->>N: reenvío con backoff
-        end
-    end
-    W->>L: ¿estado?
-    L-->>W: CommittedSuccess
-```
 
 ### Pruebas de conformidad
 
@@ -208,7 +171,14 @@ services:
     ports: [ "443:443" ]
 ```
 
+<a id="s10-2"></a>
+
 ## 10.2 Descubrimiento de nodos de lectura en la cadena
+
+> [!IMPORTANT]
+> - **¿Es posible?** Sí.
+> - **Dificultad:** Media.
+> - **Esfuerzo y plazo:** ~3-5 personas-mes en los clientes (estimación, incluye la conmutación por error y el reenvío).
 
 **Formato propuesto.** Un metadato `api_endpoints` en el componente del validador, que el propietario puede escribir con una transacción normal. Su valor es una cadena JSON:
 
@@ -229,10 +199,12 @@ services:
 2. **Lectura de la lista completa.** Leer de cualquiera de ellos el conjunto de validadores activos (`/state/consensus-manager`) y el metadato `api_endpoints` de cada uno.
 3. **Comprobación.** Comprobar cada punto de acceso:
    - que la red coincide (`status/network-configuration`);
-   - que la `state_version` está cerca de la mayoría (no va retrasado);
+   - que la `state_version` está cerca de la mayoría (no va retrasada);
    - la latencia.
 4. **Uso.** Elegir los 2-3 mejores y repartir peticiones. Si uno falla, pasar al siguiente. Opcionalmente, comparar `state_version` y el hash del acumulador entre dos para detectar un nodo que devuelve datos incorrectos.
 5. **Caché.** Guardar la lista y refrescarla cada pocas horas.
+
+<a id="s10-3"></a>
 
 ## 10.3 Cambios en `babylon-node` para servir lecturas (N1, N5b, N6)
 
@@ -268,18 +240,20 @@ Además hay que:
   - lista blanca de rutas: lecturas, preview, submit y status, **nunca** `/mempool/*` ni las rutas no acotadas;
   - forzar `enable_unbounded_endpoints=false`.
 
+<a id="s10-4"></a>
+
 ## 10.4 Cambios en los clientes
 
-**Sargon: interfaz `LedgerBackend` y reenvío.**
+**Sargon: interfaz `LedgerBackend` y reenvío** (qué cambiar: sección [7.5](07-cambios-por-repositorio.md#s7-5)).
 
 1. Definir el trait en un crate nuevo, `crates/gateway/backend`, con los métodos de alto nivel usados en `methods/state_methods.rs` y `methods/transaction_methods.rs`.
 2. Implementarlo para el `GatewayClient` actual, sin cambiar su comportamiento.
 3. Cambiar `SargonOS::gateway_client()` (`system/os/os/src/sargon_os_gateway_client.rs:8-17`) para que devuelva `Arc<dyn LedgerBackend>`, y los cinco sitios que construyen su propio cliente para que lo reciban.
 4. **Lista de puntos de acceso:**
-   - `SavedGateways` pasa a usar `current` + `other` como lista con failover;
+   - `SavedGateways` pasa a usar `current` + `other` como lista con conmutación por error;
    - añadir el descubrimiento de 10.2 detrás de una opción.
 5. **Reenvío:**
-   - guardar el payload notarizado en el almacenamiento seguro del host (el driver ya existe) hasta que se confirme o caduque su época;
+   - guardar el contenido de la transacción notarizada en el almacenamiento seguro del host (el driver ya existe) hasta que se confirme o caduque su época;
    - el bucle de `sargon_os_transaction_status.rs:38-105` reenvía cuando el estado es `NotSeen` o `FateUncertain`.
 6. **Pruebas:** un mock del trait para las pruebas unitarias, y pruebas de integración contra un indexador en Stokenet.
 
@@ -293,7 +267,7 @@ val newUrl = original.url.newBuilder()
     .build()
 ```
 
-**Radix dApp Toolkit:** lista de puntos de acceso con failover:
+**Radix dApp Toolkit:** lista de puntos de acceso con conmutación por error:
 
 ```ts
 const gatewayApiService = FailoverGatewayApiService({
@@ -312,7 +286,14 @@ const rola = Rola({
 })
 ```
 
+<a id="s10-5"></a>
+
 ## 10.5 Archivo verificable de Olympia
+
+> [!IMPORTANT]
+> - **¿Es posible?** Sí, si se obtiene una copia de la base de datos de Olympia o mientras su Gateway siga activo.
+> - **Dificultad:** Baja.
+> - **Esfuerzo y plazo:** semanas (estimación). Urgente.
 
 1. **Obtener los datos.** Pedir a la Foundation, o a cualquier operador que la conserve, una copia de la base de datos de un nodo de Olympia o de su Gateway (`olympia-gateway.radixdlt.com`, versión 337 759 839). Como alternativa, recorrer sus endpoints de transacciones por cuenta para todas las cuentas mientras siga activo.
 2. **Exportar.**
@@ -324,6 +305,8 @@ const rola = Rola({
    - Que **varias personas independientes** firmen la raíz y la publiquen, por ejemplo en RadixTalk y en una transacción de Babylon con un mensaje.
 4. **Publicar** en IPFS (con varios servicios de *pinning* independientes), BitTorrent y, si es posible, Arweave.
 5. **Integrar** en el explorador de referencia y en `olympia-wallet`: leer el índice estático y descargar solo los bloques necesarios.
+
+<a id="s10-6"></a>
 
 ## 10.6 Lecturas verificables: la solución a largo plazo
 
@@ -342,9 +325,11 @@ La ventana del árbol de estado ya conserva las versiones recientes (`state_hash
 3. **Verifica cada lectura:**
    - la prueba del ledger la firma más de 2/3 del stake de la época;
    - la multiprueba de Merkle cuadra con `state_tree_hash`.
-4. Si algo falla, descarta el nodo y pregunta a otro (10.2).
+4. Si algo falla, descarta el nodo y pregunta a otro ([10.2](#s10-2)).
 
 **Índices verificables (actualización de protocolo).** Para que el historial y los titulares también se puedan demostrar completos, el motor tendría que mantener en el estado una raíz por entidad (por ejemplo, un acumulador de las transacciones que la afectan). Requiere una actualización de protocolo y su diseño debe hacerse junto con R10.
+
+<a id="s10-7"></a>
 
 ## 10.7 Cómo probar y desplegar cada fase sin cortes
 
@@ -358,4 +343,4 @@ La ventana del árbol de estado ya conserva las versiones recientes (`state_hash
 
 ---
 
-[← Índice](../../README.es.md) · [Anterior: Sección 9: nodos más ligeros, 4 GB de RAM y 500 GB de disco, migración de Java a Rust](07-nodos-ligeros.md) · [Siguiente: Sección 11: evolución final hacia Hyperscale y migración](09-evolucion-hyperscale.md)
+[← Índice](../../README.es.md) · [Anterior: Capítulo 9: nodos más ligeros (RAM y disco) y migración de Java a Rust](09-nodos-ligeros.md) · [Siguiente: Capítulo 11: evolución final hacia Hyperscale](11-evolucion-hyperscale.md)

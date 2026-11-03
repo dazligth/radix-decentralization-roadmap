@@ -1,4 +1,6 @@
-[← Index](../../README.md) · [Previous: Section 8: roadmap](06-roadmap.md) · [Next: Section 10: step-by-step implementation guide](08-implementation-guide.md)
+[← Index](../../README.md) · [Previous: Chapter 8: roadmap](08-roadmap.md) · [Next: Chapter 10: step-by-step implementation guide](10-implementation-guide.md)
+
+<a id="s9"></a>
 
 # 9. Lighter nodes: target of 4 GB RAM and 500 GB disk
 
@@ -17,6 +19,8 @@
 
 `file:line` paths refer to `develop` unless stated otherwise. Differences in `v1.4.0.0` that matter here are called out explicitly.
 
+<a id="s9-1"></a>
+
 ## 9.1 Current situation: data
 
 | Data point | Value | Source |
@@ -31,13 +35,16 @@
 | Transaction-history pruning | **Does not exist** | code: only state-tree GC and ledger-proof GC exist |
 | Bootstrapping from a verified snapshot | **Does not exist.** A new node replays ~567 million transactions from genesis, or downloads a third-party snapshot with no cryptographic verification. | code; `babylon-nodecli/.../ledger_snapshot/__init__.py:26-80` |
 | RocksDB tuning | **None**: `Options::default()` for the database and all 26 column families, also in `v1.4.0.0` | `core-rust/state-manager/src/store/rocks_db.rs:164-170` |
-| Mempool | 512 MiB of transactions × factor 2.3 ≈ **1.18 GB** by default | `core-rust/node-common/src/config/mod.rs:74-75`, `RadixNodeModule.java:281-304` |
+| Mempool | 512 MiB of transactions × factor 2.3 ≈ **~1.2 GB** by default | `core-rust/node-common/src/config/mod.rs:74-75`, `RadixNodeModule.java:281-304` |
 | Java code remaining | ~55,500 hand-written lines in `core` + ~35,000 in `common` + ~14,000 of Java-Rust bridge classes (plus ~4,000 of JNI layer in Rust) | `wc -l` count |
-| Official "all-Rust" node | Xi'an / hyperscale-rs is a **different network** (not Babylon) with no launch date. According to radix.wiki, on 3 Sep 2026 its lead developer stopped proposals, grants and engagements with Radix, while continuing to develop the code (section 11.1). | radixdlt.com (roadmap 30 Nov 2024), radix.wiki |
+| Official "all-Rust" node | Xi'an / hyperscale-rs is a **different network** (not Babylon) with no launch date. According to radix.wiki, on 3 Sep 2026 its lead developer stopped proposals, grants and engagements with Radix, while continuing to develop the code (section [11.1](11-hyperscale-evolution.md#s11-1)). | radixdlt.com (roadmap 30 Nov 2024), radix.wiki |
 
-**Starting point:** with what is shipped today, a mainnet node **does not fit in 4 GB of RAM**.
+**Starting point:**
 
+- **RAM:** with what is shipped today, a mainnet node **does not fit in 4 GB**: it reserves a 12 GB Java heap, RocksDB has no memory limits and the mempool can take ~1.2 GB. The configured heap and direct memory (12 + 2 GB) already match the container limit (14 GB); they are reserved maximums, not measured use: the real consumption (RSS) of a mainnet node has not been published.
 - **Disk:** the compressed ledger is already 274 GiB. Uncompressed it is noticeably larger; the exact figure has not been published. So **500 GB of disk may already be insufficient, or soon will be**.
+
+<a id="s9-2"></a>
 
 ## 9.2 Where the memory goes
 
@@ -56,7 +63,7 @@ flowchart LR
     subgraph RUST["Rust library (libcorerust.so)"]
         ENG["Radix Engine<br/>execution"]
         SM["State manager"]
-        MP["Mempool ~1.18 GB"]
+        MP["Mempool ~1.2 GB"]
         API["Core API and Engine State API"]
         DB[("RocksDB with no memory limits<br/>full history, no pruning")]
     end
@@ -74,16 +81,18 @@ flowchart LR
 
 | Consumer | Today | Why | Can be reduced to |
 |---|---|---|---|
-| Java heap | 12 GB reserved up front (`-Xms12g`) | Installer default. Actual use has not been published; 1.5-7 GB was measured on betanet (2023). | **1-1.5 GB** with limits on Java structures (vertex store, message queues); **0 GB** after moving to Rust |
+| Java heap | 12 GB reserved up front (`-Xms12g`) | Installer default. Actual use has not been published; 1.5-7 GB was measured on betanet (2023). | **1-1.5 GB** (target) with limits on Java structures (vertex store, message queues); **0 GB** after moving to Rust |
 | Direct memory (Netty) | up to 2 GB | Network buffers | 256 MB; **0** after moving to Rust |
 | RocksDB: index and filter blocks of every SST file | **Unbounded**; grows with the ledger | `max_open_files=-1` and `cache_index_and_filter_blocks=false` (defaults) keep the indexes of **all** open files in memory, ~0.5-1.5 % of database size (*estimate*) | Counted inside a shared **512 MB** cache |
-| RocksDB: memtables | 64 MB × 2 per column family with no global cap; ~0.6-1.3 GB in practice (*estimate*) | Defaults (RocksDB documentation, chapter 12) | **256 MB** in total with `WriteBufferManager` |
+| RocksDB: memtables | 64 MB × 2 per column family with no global cap; ~0.6-1.3 GB in practice (*estimate*) | Defaults (RocksDB documentation, chapter [12](12-references-other-networks.md#s12)) | **256 MB** in total with `WriteBufferManager` |
 | RocksDB: block cache | a separate one per column family: 26 × 32 MB ≈ 0.8 GB with RocksDB 10.4 (`v1.4.0.0`); 26 × 8 MB with RocksDB 8.1 (`develop`) | Defaults | A single shared cache (the one above) |
-| Mempool | ~1.18 GB | 512 MiB default | **64-128 MB** on small validators |
-| Vertex store (consensus, Java) | up to 150 MB, fully re-serialized on every change | `VertexStoreJavaImpl.java:223-238` | Same, without re-serialization, once it moves to Rust |
+| Mempool | ~~1.2 GB | 512 MiB default | **64-128 MB** on small validators |
+| Vertex store (consensus, Java) | up to 150 MB, fully re-serialised on every change | `VertexStoreJavaImpl.java:223-238` | Same, without re-serialisation, once it moves to Rust |
 | Result and execution caches (Rust) | 3 LRUs of 10,000 entries and the staging cache | `state_manager.rs:257-264` | Configurable size |
 
 **The decisive factor is untuned RocksDB.** Its memory grows with the size of the ledger and nothing caps it. It can be fixed without touching consensus, with a few dozen lines in `rocks_db.rs` (change R1).
+
+<a id="s9-3"></a>
 
 ## 9.3 Where the disk goes
 
@@ -109,6 +118,8 @@ About 555 of the ledger's ~567 million versions (~97-98 %) are **round updates**
   - It is **on by default** (`true`) on mainnet and only applies to data written from then on.
   - `v1.4.0.0` also **removes the Mesh API**.
 
+<a id="s9-4"></a>
+
 ## 9.4 Changes: what to do, where and how
 
 Each change states:
@@ -124,7 +135,7 @@ Changes R1-R7 **do not touch consensus** and can ship in any node release. R8 an
 ### R1. Configure RocksDB with memory limits (P0, effort S-M)
 
 > [!NOTE]
-> **Reference from other networks:** the official RocksDB documentation describes these same settings (shared cache, index and filter blocks inside the cache, Write Buffer Manager). See chapter 12.
+> **Reference from other networks:** the official RocksDB documentation describes these same settings (shared cache, index and filter blocks inside the cache, Write Buffer Manager). See chapter [12](12-references-other-networks.md#s12).
 
 - **Where:**
   - `core-rust/state-manager/src/store/rocks_db.rs:164-170` (and the read-only and secondary opens, `:201-207`, `:237-243`);
@@ -167,7 +178,7 @@ let cf_opts = |cf: &str| {
 - **New properties:**
   - `db.rocksdb.block_cache_mb` (512);
   - `db.rocksdb.memtable_budget_mb` (256);
-  - `db.rocksdb.max_open_files` (1,024);
+  - `db.rocksdb.max_open_files` ([1](01-02-current-situation.md#s1),024);
   - `db.rocksdb.compression` (`lz4+zstd`).
 - **Tests:**
   - sync a Stokenet node, and a mainnet node from a snapshot;
@@ -198,8 +209,8 @@ let cf_opts = |cf: &str| {
   - drop the column families (`drop_cf` or `delete_range`);
   - run a manual compaction;
   - store the new option state in `extensions_data`.
-- **Savings:** ~0.7-1.5 KB per version, **possibly hundreds of GB** on mainnet.
-- **What is lost:** on that node, `/stream/transactions`, `/transaction/receipt` and the LTS history. Read nodes (section 6) keep them.
+- **Savings:** ~0.7-1.5 KB per version, **possibly hundreds of GB** on mainnet (uncompressed estimate: ~555 million round updates × 0.7-1.5 KB ≈ 0.4-0.8 TB, before compression).
+- **What is lost:** on that node, `/stream/transactions`, `/transaction/receipt` and the LTS history. Read nodes (section [6](06-recommended-solution.md#s6)) keep them.
 - **Risk:** low; the API handlers already check the option.
 
 ### R4. Receipts without previous values, old ones included (P0, S)
@@ -221,7 +232,7 @@ let cf_opts = |cf: &str| {
 
 - **Where:** `rocks_db.rs:676-690`.
 - **How:** omit the `put` and the duplicate check when the transaction is a `RoundUpdate`. The engine already rejects non-increasing rounds.
-- **Savings:** ~20-30 GB and some index RAM.
+- **Savings:** ~20-30 GB (estimate: ~555 million × 40 bytes) and some index RAM.
 
 ### R7. Optional round-update receipts (P1, S-M)
 
@@ -233,7 +244,7 @@ let cf_opts = |cf: &str| {
 ### R8. "Pruned node" mode (P1, M-L)
 
 > [!NOTE]
-> **Reference from other networks:** Cosmos SDK offers pruning as a configurable option (pruned and archive nodes), and in July 2025 every Ethereum execution client added expiry of pre-Merge history (EIP-4444), saving 300-500 GB per node. See chapter 12.
+> **Reference from other networks:** Cosmos SDK offers pruning as a configurable option (pruned and archive nodes), and in July 2025 every Ethereum execution client added expiry of pre-Merge history (EIP-4444), saving 300-500 GB per node. See chapter [12](12-references-other-networks.md#s12).
 
 - **What:** an option `ledger.retain_epochs=N`. It range-deletes transactions, identifiers, receipts and executions older than N epochs. It keeps:
   - epoch and protocol-update proofs;
@@ -249,7 +260,7 @@ let cf_opts = |cf: &str| {
 ### R9. Bootstrap from a verified state snapshot: "fast sync" (P0 for the goal, L)
 
 > [!NOTE]
-> **Reference from other networks:** CometBFT/Cosmos (state sync) and Ethereum (checkpoint sync) use this same scheme: a snapshot or checkpoint verified against the chain from a trust point. See chapter 12.
+> **Reference from other networks:** CometBFT/Cosmos (state sync) and Ethereum (checkpoint sync) use this same scheme: a snapshot or checkpoint verified against the chain from a trust point. See chapter [12](12-references-other-networks.md#s12).
 
 A new node starts **in hours (estimate), without replaying 567 million transactions and without trusting whoever provides the snapshot**.
 
@@ -296,6 +307,7 @@ sequenceDiagram
 
 ### R10. Protocol update: per-validator proposal statistics (P2, M; needs a validator vote)
 
+- **Effort:** not included in this report's person-month totals.
 - **What:** split `CurrentProposalStatistic` (~1.9 KB rewritten every round) into a collection with one entry per validator, so each round only rewrites the proposer's entry (~20 bytes).
 - **Where:**
   - the ConsensusManager blueprint in `radix-engine`;
@@ -306,7 +318,7 @@ sequenceDiagram
 ### R11. Migrate the node core from Java to Rust (P1 for 4 GB with headroom, XL)
 
 > [!NOTE]
-> **Reference from other networks:** on Solana, Frankendancer combines components of the new Firedancer client with those of the existing client, a real example of piece-by-piece replacement. See chapter 12.
+> **Reference from other networks:** on Solana, Frankendancer combines components of the new Firedancer client with those of the existing client, a real example of piece-by-piece replacement. See chapter [12](12-references-other-networks.md#s12).
 
 **What remains in Java** (`develop`):
 
@@ -314,7 +326,7 @@ sequenceDiagram
 |---|---|---|
 | Consensus: HotStuff, pacemaker, safety rules, vertex store, epochs | ~17,400 | Persistence (safety store, vertex store) and computing the next validator set |
 | P2P networking: Netty, RLPx-style ECIES handshake, AES-CTR + Keccak MAC encryption, discovery, address book | ~9,300 | Only address-book storage (`core-rust/p2p`) |
-| Messaging and DSON/CBOR serialization (47 message types) | ~5,400 + ~7,400 | No |
+| Messaging and DSON/CBOR serialisation (47 message types) | ~5,400 + ~7,400 | No |
 | Ledger sync and BFT sync | ~4,900 | The serving side (`getSyncableTxnsAndProof`) |
 | Mempool relay | ~1,700 | The whole mempool |
 | Configuration, Guice and RxJava | ~7,000 | `StateManagerConfig` |
@@ -328,7 +340,7 @@ sequenceDiagram
    - Port the deterministic Java harness (`core/src/test-core`, ~17,800 hand-written lines) to Rust, or wrap it so the same scenarios run against both implementations.
    - The *sans-io* design of `hyperscale-rs/crates/core` and its simulator are a useful reference.
 2. **Phase 1: pieces with no networking.**
-   - Vertex store and safety rules in Rust, called from Java via JNI. This removes the full re-serialization of the vertex store on every change.
+   - Vertex store and safety rules in Rust, called from Java via JNI. This removes the full re-serialisation of the vertex store on every change.
    - Mempool relay in Rust, which removes the `triggerMempoolRelay` callback.
    - Configuration in Rust.
 3. **Phase 2: sync.** Ledger-sync client and BFT sync in Rust. The serving side is already in Rust.
@@ -380,16 +392,18 @@ flowchart LR
 
 **Risk:** high, because it touches consensus. Mitigated by shadow mode, a mixed testnet and gradual adoption.
 
-**Relationship with Xi'an/hyperscale-rs:** it is a new network, with another virtual machine, BLS signatures and sharding. It does not replace Babylon in the short term and has no launch date (section 11). Migrating the Babylon node to Rust still makes sense. Patterns from hyperscale-rs (networking, memory-bounded RocksDB storage, deterministic testing) can be reused, but not its protocol.
+**Relationship with Xi'an/hyperscale-rs:** it is a new network, with another virtual machine, BLS signatures and sharding. It does not replace Babylon in the short term and has no launch date (section [11](11-hyperscale-evolution.md#s11)). Migrating the Babylon node to Rust still makes sense. Patterns from hyperscale-rs (networking, memory-bounded RocksDB storage, deterministic testing) can be reused, but not its protocol.
+
+<a id="s9-5"></a>
 
 ## 9.5 Memory budget with 4 GB
 
 > [!NOTE]
-> **Reference from other networks:** none of the networks analysed runs a full node in 4 GB today; the closest is Cardano, with ~5-5.8 GB after moving its ledger to disk. Radix starts with an advantage because its state is already on disk, it has about 100 validators and its load is low. See section 12.9.
+> **Reference from other networks:** none of the networks analysed runs a full node doing consensus and execution in 4 GB today; the closest is Cardano, with ~5-5.8 GB after moving its ledger to disk. Radix starts with an advantage because its state is already on disk, it has about 100 validators and its load is low. See section [12.9](12-references-other-networks.md#s12-9).
 
 These figures are *estimates* to be validated with R2's long-running test.
 
-| Component | Validator with Java (R1-R4) | Validator without Java (after R11) | Read node with light indexer (section 6), no Java |
+| Component | Validator with Java (R1-R4) | Validator without Java (after R11) | Read node with light indexer (section [6](06-recommended-solution.md#s6)), no Java |
 |---|---|---|---|
 | Operating system and other | 0.4 GB | 0.4 GB | 0.4 GB |
 | JVM: heap + metaspace + threads + direct memory | 1.5 + 0.4 GB | — | — |
@@ -404,6 +418,8 @@ These figures are *estimates* to be validated with R2's long-running test.
 - With Java and the R1-R4 tweaks, a validator **fits in 4 GB, but with no headroom**.
 - After the move to Rust it fits comfortably, **even a read node with an indexer**.
 - **4 GB of swap** is recommended as a safety net.
+
+<a id="s9-6"></a>
 
 ## 9.6 Disk budget with 500 GB
 
@@ -443,13 +459,15 @@ flowchart LR
 | Node type | RAM (estimate) | Disk (estimate) | What it stores |
 |---|---|---|---|
 | **Light validator** | 4 GB | ≤ 500 GB (estimated 50-250 GB depending on pruning) | Current state, N epochs, epoch proofs; no API indexes (R1-R9) |
-| **Read node** | 4 GB after R11 (6-8 GB before) | ≤ 500 GB with R4, R5 and R7 + light indexes | Transaction history + light-indexer indexes |
-| **Archive node** (a few, in several hands) | 8-16 GB | 1-2 TB | Full history; serves full sync and produces R9's verifiable snapshots |
+| **Read node** | 4 GB after R11; ~4.5 GB before (the Java column of 9.5 plus the indexer) | ≤ 500 GB with R4 and R5 + light indexes | Transaction history + light-indexer indexes |
+| **Archive node** (a few, in several hands) | 8-16 GB | 1-4 TB, depending on compression (see [9.3](#s9-3)) | Full history; serves full sync and produces R9's verifiable snapshots |
+
+<a id="s9-7"></a>
 
 ## 9.7 Conclusion of this chapter
 
 - **Is a 4 GB RAM / 500 GB disk node possible?** **Yes.**
-  - With **R1-R4** (weeks of work, no consensus changes), a validator drops to ~3.6 GB of RAM and its memory stops growing with the ledger.
+  - With **R1-R4** (weeks of work, no consensus changes), a validator would drop to ~3.6 GB of RAM (estimate) and its memory stops growing with the ledger.
   - With **R5-R9** (months), disk stays well under 500 GB, and new nodes start in hours from a verified snapshot.
   - With **R11** (more than a year) there is comfortable headroom, and the read nodes that replace the Gateway also fit in 4 GB.
 - **Most urgent:** measure the real per-column-family size on a mainnet node, and apply R1 and R2. They are low-cost and remove the main cause of today's 16 GB.
@@ -466,4 +484,4 @@ flowchart LR
 
 ---
 
-[← Index](../../README.md) · [Previous: Section 8: roadmap](06-roadmap.md) · [Next: Section 10: step-by-step implementation guide](08-implementation-guide.md)
+[← Index](../../README.md) · [Previous: Chapter 8: roadmap](08-roadmap.md) · [Next: Chapter 10: step-by-step implementation guide](10-implementation-guide.md)

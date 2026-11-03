@@ -1,11 +1,13 @@
-[← Índice](../../README.es.md) · [Anterior: Sección 8: hoja de ruta](06-hoja-de-ruta.md) · [Siguiente: Sección 10: guía de implementación paso a paso](08-guia-de-implementacion.md)
+[← Índice](../../README.es.md) · [Anterior: Capítulo 8: hoja de ruta](08-hoja-de-ruta.md) · [Siguiente: Capítulo 10: guía de implementación paso a paso](10-guia-de-implementacion.md)
+
+<a id="s9"></a>
 
 # 9. Nodos más ligeros: objetivo de 4 GB de RAM y 500 GB de disco
 
 > [!IMPORTANT]
 > - **¿Es posible?** Sí. Un nodo de 8 GB de RAM como máximo parece alcanzable, y 4 GB es plausible, con menos de 500 GB de disco (estimaciones que hay que confirmar midiendo un nodo real).
 > - **Dificultad:** Media con Java (R1-R9); muy alta para tener margen holgado (R11, migración a Rust).
-> - **Esfuerzo y plazo:** 8-14 persona-mes (R1-R9); 30-50 persona-mes (R11) (estimaciones).
+> - **Esfuerzo y plazo:** 8-14 personas-mes (R1-R9); 30-50 personas-mes (R11) (estimaciones).
 
 **Objetivo.** Que un validador o un nodo completo de mainnet funcione con **4 GB de RAM y 500 GB de disco**, y que la red siga funcionando sin el Gateway.
 
@@ -17,13 +19,15 @@
 
 Las rutas `fichero:línea` son de `develop` salvo que se indique lo contrario. Las diferencias de `v1.4.0.0` que importan aquí se señalan expresamente.
 
+<a id="s9-1"></a>
+
 ## 9.1 Situación actual: datos
 
 | Dato | Valor | Fuente |
 |---|---|---|
 | Requisitos oficiales | 4 CPU, **16 GB de RAM**, «500 GB de SSD (inicialmente)» | docs.radixdlt.com, *Node setup* |
 | Memoria configurada por defecto en mainnet | `-Xms12g -Xmx12g -XX:MaxDirectMemorySize=2048m`, contenedor de **14 GB** (`mem_limit: 14000m`) | `babylon-nodecli/node-runner-cli/config/CoreDockerConfig.py:23-32`, `templates/radix-fullnode-compose.yml.j2:17,46` |
-| Swap recomendada | 8 GB | docs.radixdlt.com, *Optimizing performance* |
+| Swap recomendado | 8 GB | docs.radixdlt.com, *Optimizing performance* |
 | Tamaño del ledger: snapshot comunitario **comprimido** (zstd) | 6,3 GiB (oct-2023) → 69 GiB (sep-2024) → 180 GiB (sep-2025) → 259 GiB (jul-2026) → **274 GiB (29-sep-2026)** | snapshots.radix.live |
 | Crecimiento reciente | **~5-8 GiB/mes** comprimidos | cálculo sobre la fila anterior |
 | Otro snapshot publicado | 343,9 GB (PublicNode, v1.4.0.0, altura 566 915 789; no se indica si está comprimido) | publicnode.com/snapshots |
@@ -31,13 +35,16 @@ Las rutas `fichero:línea` son de `develop` salvo que se indique lo contrario. L
 | Poda del historial de transacciones | **No existe** | código: solo hay GC del árbol de estado y de pruebas del ledger |
 | Arranque desde un snapshot verificado | **No existe**. Un nodo nuevo reproduce ~567 millones de transacciones desde la génesis, o descarga un snapshot de terceros sin verificación criptográfica. | código; `babylon-nodecli/.../ledger_snapshot/__init__.py:26-80` |
 | Ajuste de RocksDB | **Ninguno**: `Options::default()` para la base de datos y para las 26 column families, también en `v1.4.0.0` | `core-rust/state-manager/src/store/rocks_db.rs:164-170` |
-| Mempool | 512 MiB de transacciones × factor 2,3 ≈ **1,18 GB** por defecto | `core-rust/node-common/src/config/mod.rs:74-75`, `RadixNodeModule.java:281-304` |
+| Mempool | 512 MiB de transacciones × factor 2,3 ≈ **~1,2 GB** por defecto | `core-rust/node-common/src/config/mod.rs:74-75`, `RadixNodeModule.java:281-304` |
 | Código Java que queda | ~55 500 líneas escritas a mano en `core` + ~35 000 en `common` + ~14 000 de clases del puente Java-Rust (más ~4 000 de capa JNI en Rust) | recuento con `wc -l` |
-| Nodo «todo en Rust» oficial | Xi'an / hyperscale-rs es **otra red** (no Babylon) y no tiene fecha de lanzamiento. Según radix.wiki, el 3-sep-2026 su desarrollador principal dejó las propuestas, subvenciones y colaboraciones con Radix, aunque sigue desarrollando el código (sección 11.1). | radixdlt.com (hoja de ruta 30-nov-2024), radix.wiki |
+| Nodo «todo en Rust» oficial | Xi'an / hyperscale-rs es **otra red** (no Babylon) y no tiene fecha de lanzamiento. Según radix.wiki, el 3-sep-2026 su desarrollador principal dejó las propuestas, subvenciones y colaboraciones con Radix, aunque sigue desarrollando el código (sección [11.1](11-evolucion-hyperscale.md#s11-1)). | radixdlt.com (hoja de ruta 30-nov-2024), radix.wiki |
 
-**Conclusión de partida:** con lo que se publica hoy, un nodo de mainnet **no cabe en 4 GB de RAM**.
+**Conclusión de partida:**
 
+- **RAM:** con lo que se publica hoy, un nodo de mainnet **no cabe en 4 GB**: reserva 12 GB de heap para Java, RocksDB no tiene límites de memoria y la mempool puede ocupar ~1,2 GB. El heap y la memoria directa configurados (12 + 2 GB) ya igualan el límite del contenedor (14 GB); son máximos reservados, no consumo medido: el consumo real (RSS) de un nodo de mainnet no se ha publicado.
 - **Disco:** el ledger comprimido ya ocupa 274 GiB. Descomprimido ocupa bastante más; la cifra exacta no se ha publicado. Así que **500 GB de disco pueden ser ya insuficientes, o lo serán pronto**.
+
+<a id="s9-2"></a>
 
 ## 9.2 Dónde se va la memoria
 
@@ -56,7 +63,7 @@ flowchart LR
     subgraph RUST["Biblioteca Rust (libcorerust.so)"]
         ENG["Radix Engine<br/>ejecución"]
         SM["State manager"]
-        MP["Mempool ~1,18 GB"]
+        MP["Mempool ~1,2 GB"]
         API["Core API y Engine State API"]
         DB[("RocksDB sin límites de memoria<br/>historial completo, sin poda")]
     end
@@ -74,20 +81,22 @@ flowchart LR
 
 | Consumidor | Hoy | Por qué | Se puede bajar a |
 |---|---|---|---|
-| Heap de Java | 12 GB reservados de inicio (`-Xms12g`) | Valor por defecto del instalador. El consumo real no se ha publicado; en betanet (2023) se midieron 1,5-7 GB. | **1-1,5 GB** con límites en las estructuras Java (vertex store, colas de mensajes); **0 GB** tras migrar a Rust |
+| Heap de Java | 12 GB reservados de inicio (`-Xms12g`) | Valor por defecto del instalador. El consumo real no se ha publicado; en betanet (2023) se midieron 1,5-7 GB. | **1-1,5 GB** (objetivo) con límites en las estructuras Java (vertex store, colas de mensajes); **0 GB** tras migrar a Rust |
 | Memoria directa (Netty) | hasta 2 GB | Buffers de red | 256 MB; **0** tras migrar |
 | RocksDB: índices y filtros de cada fichero SST | **Sin límite**; crece con el ledger | `max_open_files=-1` y `cache_index_and_filter_blocks=false` (opciones por defecto) mantienen en memoria los índices de **todos** los ficheros abiertos, ~0,5-1,5 % del tamaño de la base de datos (*estimación*) | Contabilizados dentro de una caché compartida de **512 MB** |
-| RocksDB: memtables | 64 MB × 2 por column family, sin tope global; ~0,6-1,3 GB en la práctica (*estimación*) | Opciones por defecto (documentación de RocksDB, capítulo 12) | **256 MB** en total con `WriteBufferManager` |
+| RocksDB: memtables | 64 MB × 2 por column family, sin tope global; ~0,6-1,3 GB en la práctica (*estimación*) | Opciones por defecto (documentación de RocksDB, capítulo [12](12-referencias-otras-redes.md#s12)) | **256 MB** en total con `WriteBufferManager` |
 | RocksDB: caché de bloques | una independiente por column family: 26 × 32 MB ≈ 0,8 GB con RocksDB 10.4 (`v1.4.0.0`); 26 × 8 MB con RocksDB 8.1 (`develop`) | Opciones por defecto | Una sola, compartida (la de arriba) |
-| Mempool | ~1,18 GB | 512 MiB por defecto | **64-128 MB** en validadores pequeños |
+| Mempool | ~~1,2 GB | 512 MiB por defecto | **64-128 MB** en validadores pequeños |
 | Vertex store (consenso, Java) | hasta 150 MB, reserializado entero en cada cambio | `VertexStoreJavaImpl.java:223-238` | Igual, sin reserializar, cuando pase a Rust |
 | Cachés de resultados y de ejecución (Rust) | 3 LRU de 10 000 entradas y la caché de staging | `state_manager.rs:257-264` | Tamaño configurable |
 
 **El factor decisivo es RocksDB sin ajustar.** Su memoria crece con el tamaño del ledger y no hay ningún límite. Se corrige sin tocar el consenso, con unas decenas de líneas en `rocks_db.rs` (cambio R1).
 
+<a id="s9-3"></a>
+
 ## 9.3 Dónde se va el disco
 
-Unas 555 de las ~567 millones de versiones del ledger (~97-98 %) son **cambios de ronda**: transacciones de sistema, una por ronda de consenso. Cada una escribe, de forma **permanente**:
+Unos 555 de los ~567 millones de versiones del ledger (~97-98 %) son **cambios de ronda**: transacciones de sistema, una por ronda de consenso. Cada una escribe, de forma **permanente**:
 
 | Dato guardado por cada cambio de ronda | Bytes sin comprimir (estimación a partir de los esquemas) | ¿Se poda? | ¿Para qué hace falta? |
 |---|---|---|---|
@@ -109,6 +118,8 @@ Unas 555 de las ~567 millones de versiones del ledger (~97-98 %) son **cambios d
   - Está **activada por defecto** (`true`) en mainnet y solo se aplica a lo que se escriba a partir de ese momento.
   - Además, `v1.4.0.0` **elimina la Mesh API**.
 
+<a id="s9-4"></a>
+
 ## 9.4 Cambios: qué hacer, dónde y cómo
 
 Cada cambio indica:
@@ -124,7 +135,7 @@ Los cambios R1-R7 **no tocan el consenso** y se pueden publicar en cualquier ver
 ### R1. Configurar RocksDB con límites de memoria (P0, esfuerzo S-M)
 
 > [!NOTE]
-> **Referencia en otras redes:** la documentación oficial de RocksDB describe estos mismos ajustes (caché compartida, índices y filtros dentro de la caché, Write Buffer Manager). Ver capítulo 12.
+> **Referencia en otras redes:** la documentación oficial de RocksDB describe estos mismos ajustes (caché compartida, índices y filtros dentro de la caché, Write Buffer Manager). Ver capítulo [12](12-referencias-otras-redes.md#s12).
 
 - **Dónde:**
   - `core-rust/state-manager/src/store/rocks_db.rs:164-170` (y las aperturas de solo lectura y secundaria, `:201-207`, `:237-243`);
@@ -198,8 +209,8 @@ let cf_opts = |cf: &str| {
   - borrar las column families (`drop_cf` o `delete_range`);
   - lanzar una compactación manual;
   - guardar el nuevo estado de la opción en `extensions_data`.
-- **Ahorro:** ~0,7-1,5 KB por versión, **posiblemente cientos de GB** en mainnet.
-- **Qué se pierde:** en ese nodo, `/stream/transactions`, `/transaction/receipt` y la LTS de historial. Los nodos de lectura (sección 6) sí los mantienen.
+- **Ahorro:** ~0,7-1,5 KB por versión, **posiblemente cientos de GB** en mainnet (estimación sin comprimir: ~555 millones de cambios de ronda × 0,7-1,5 KB ≈ 0,4-0,8 TB, antes de la compresión).
+- **Qué se pierde:** en ese nodo, `/stream/transactions`, `/transaction/receipt` y la LTS de historial. Los nodos de lectura (sección [6](06-solucion-recomendada.md#s6)) sí los mantienen.
 - **Riesgo:** bajo; los handlers de la API ya comprueban la opción.
 
 ### R4. Recibos sin valores previos, también los antiguos (P0, S)
@@ -221,7 +232,7 @@ let cf_opts = |cf: &str| {
 
 - **Dónde:** `rocks_db.rs:676-690`.
 - **Cómo:** omitir el `put` y la comprobación de duplicados cuando la transacción es `RoundUpdate`. El motor ya rechaza rondas que no crecen.
-- **Ahorro:** ~20-30 GB y algo de RAM de índices.
+- **Ahorro:** ~20-30 GB (estimación: ~555 millones × 40 bytes) y algo de RAM de índices.
 
 ### R7. Recibos de cambio de ronda opcionales (P1, S-M)
 
@@ -233,7 +244,7 @@ let cf_opts = |cf: &str| {
 ### R8. Modo «nodo podado» (P1, M-L)
 
 > [!NOTE]
-> **Referencia en otras redes:** Cosmos SDK ofrece la poda como opción configurable (nodos podados y de archivo), y en julio de 2025 todos los clientes de ejecución de Ethereum incorporaron la expiración del historial anterior al Merge (EIP-4444), ahorrando 300-500 GB por nodo. Ver capítulo 12.
+> **Referencia en otras redes:** Cosmos SDK ofrece la poda como opción configurable (nodos podados y de archivo), y en julio de 2025 todos los clientes de ejecución de Ethereum incorporaron la expiración del historial anterior al Merge (EIP-4444), ahorrando 300-500 GB por nodo. Ver capítulo [12](12-referencias-otras-redes.md#s12).
 
 - **Qué:** opción `ledger.retain_epochs=N`. Borra por rangos las transacciones, identificadores, recibos y ejecuciones de más de N épocas. Conserva:
   - las pruebas de época y de actualización de protocolo;
@@ -249,7 +260,7 @@ let cf_opts = |cf: &str| {
 ### R9. Arranque desde un snapshot de estado verificado: «fast sync» (P0 para el objetivo, L)
 
 > [!NOTE]
-> **Referencia en otras redes:** CometBFT/Cosmos (*state sync*) y Ethereum (*checkpoint sync*) usan este mismo esquema: snapshot o punto de control verificado contra la cadena a partir de un punto de confianza. Ver capítulo 12.
+> **Referencia en otras redes:** CometBFT/Cosmos (*state sync*) y Ethereum (*checkpoint sync*) usan este mismo esquema: snapshot o punto de control verificado contra la cadena a partir de un punto de confianza. Ver capítulo [12](12-referencias-otras-redes.md#s12).
 
 Un nodo nuevo arranca **en horas (estimación), sin reproducir 567 millones de transacciones y sin confiar en quien le da el snapshot**.
 
@@ -296,6 +307,7 @@ sequenceDiagram
 
 ### R10. Actualización de protocolo: estadística de propuestas por validador (P2, M; requiere votación de validadores)
 
+- **Esfuerzo:** no incluido en los totales de personas-mes de este informe.
 - **Qué:** dividir `CurrentProposalStatistic` (~1,9 KB reescritos en cada ronda) en una colección con una entrada por validador, de modo que cada ronda solo reescriba la del proponente (~20 bytes).
 - **Dónde:**
   - el blueprint ConsensusManager en `radix-engine`;
@@ -306,7 +318,7 @@ sequenceDiagram
 ### R11. Migrar el núcleo de Java a Rust (P1 para 4 GB con margen, XL)
 
 > [!NOTE]
-> **Referencia en otras redes:** En Solana, Frankendancer combina componentes del nuevo cliente Firedancer con los del cliente existente, un ejemplo real de sustitución por partes. Ver capítulo 12.
+> **Referencia en otras redes:** En Solana, Frankendancer combina componentes del nuevo cliente Firedancer con los del cliente existente, un ejemplo real de sustitución por partes. Ver capítulo [12](12-referencias-otras-redes.md#s12).
 
 **Qué queda en Java** (versión `develop`):
 
@@ -376,20 +388,22 @@ flowchart LR
 - Un solo proceso y un solo asignador de memoria.
 - Desaparece la copia de datos por JNI.
 
-**Esfuerzo:** del orden de **30-50 persona-mes** con perfiles expertos en consenso (*estimación*).
+**Esfuerzo:** del orden de **30-50 personas-mes** con perfiles expertos en consenso (*estimación*).
 
 **Riesgo:** alto, porque toca el consenso. Se mitiga con el modo sombra, la testnet mixta y la adopción gradual.
 
-**Relación con Xi'an/hyperscale-rs:** es una red nueva, con otra máquina virtual, firmas BLS y fragmentación (sharding). No sustituye a Babylon a corto plazo y no tiene fecha de lanzamiento (sección 11). Migrar el nodo de Babylon a Rust sigue teniendo sentido. Se pueden reutilizar patrones de hyperscale-rs (red, almacenamiento RocksDB con memoria acotada, pruebas deterministas), pero no su protocolo.
+**Relación con Xi'an/hyperscale-rs:** es una red nueva, con otra máquina virtual, firmas BLS y fragmentación (sharding). No sustituye a Babylon a corto plazo y no tiene fecha de lanzamiento (sección [11](11-evolucion-hyperscale.md#s11)). Migrar el nodo de Babylon a Rust sigue teniendo sentido. Se pueden reutilizar patrones de hyperscale-rs (red, almacenamiento RocksDB con memoria acotada, pruebas deterministas), pero no su protocolo.
+
+<a id="s9-5"></a>
 
 ## 9.5 Presupuesto de memoria con 4 GB
 
 > [!NOTE]
-> **Referencia en otras redes:** ninguna de las redes analizadas funciona hoy con 4 GB en un nodo completo; la más cercana es Cardano, con ~5-5,8 GB tras llevar su ledger a disco. Radix parte con ventaja porque su estado ya está en disco, tiene unos 100 validadores y su carga es baja. Ver la sección 12.9.
+> **Referencia en otras redes:** ninguna de las redes analizadas funciona hoy con 4 GB en un nodo completo que haga consenso y ejecución; la más cercana es Cardano, con ~5-5,8 GB tras llevar su ledger a disco. Radix parte con ventaja porque su estado ya está en disco, tiene unos 100 validadores y su carga es baja. Ver la sección [12.9](12-referencias-otras-redes.md#s12-9).
 
 Las cifras son *estimaciones* que hay que validar con la prueba prolongada de R2.
 
-| Componente | Validador con Java (R1-R4) | Validador sin Java (tras R11) | Nodo de lectura con indexador ligero (sección 6) sin Java |
+| Componente | Validador con Java (R1-R4) | Validador sin Java (tras R11) | Nodo de lectura con indexador ligero (sección [6](06-solucion-recomendada.md#s6)) sin Java |
 |---|---|---|---|
 | Sistema operativo y otros | 0,4 GB | 0,4 GB | 0,4 GB |
 | JVM: heap + metaspace + hilos + memoria directa | 1,5 + 0,4 GB | — | — |
@@ -404,6 +418,8 @@ Las cifras son *estimaciones* que hay que validar con la prueba prolongada de R2
 - Con Java y los ajustes R1-R4, un validador **cabe en 4 GB, pero sin margen**.
 - Tras la migración a Rust cabe con margen suficiente, **incluso un nodo de lectura con indexador**.
 - Se recomiendan **4 GB de swap** como red de seguridad.
+
+<a id="s9-6"></a>
 
 ## 9.6 Presupuesto de disco con 500 GB
 
@@ -443,13 +459,15 @@ flowchart LR
 | Tipo de nodo | RAM (estimación) | Disco (estimación) | Qué guarda |
 |---|---|---|---|
 | **Validador ligero** | 4 GB | ≤ 500 GB (estimado: 50-250 GB según la poda) | Estado actual, N épocas, pruebas de época; sin índices de API (R1-R9) |
-| **Nodo de lectura** | 4 GB tras R11 (6-8 GB antes) | ≤ 500 GB con R4, R5 y R7 + índices ligeros | Historial de transacciones + índices del indexador ligero |
-| **Nodo de archivo** (unos pocos, en varias manos) | 8-16 GB | 1-2 TB | Todo el historial; sirve sincronización completa y genera los snapshots verificables de R9 |
+| **Nodo de lectura** | 4 GB tras R11; ~4,5 GB antes (suma de la columna Java de 9.5 más el indexador) | ≤ 500 GB con R4 y R5 + índices ligeros | Historial de transacciones + índices del indexador ligero |
+| **Nodo de archivo** (unos pocos, en varias manos) | 8-16 GB | 1-4 TB, según la compresión (ver [9.3](#s9-3)) | Todo el historial; sirve sincronización completa y genera los snapshots verificables de R9 |
+
+<a id="s9-7"></a>
 
 ## 9.7 Conclusión de este capítulo
 
 - **¿Es posible un nodo de 4 GB de RAM y 500 GB de disco?** **Sí.**
-  - Con **R1-R4** (semanas de trabajo, sin tocar el consenso), un validador baja a ~3,6 GB de RAM y deja de crecer en memoria con el ledger.
+  - Con **R1-R4** (semanas de trabajo, sin tocar el consenso), un validador bajaría a ~3,6 GB de RAM (estimación) y deja de crecer en memoria con el ledger.
   - Con **R5-R9** (meses), el disco queda muy por debajo de 500 GB, y los nodos nuevos arrancan en horas desde un snapshot verificado.
   - Con **R11** (más de un año) hay margen holgado, y también caben en 4 GB los nodos de lectura que sustituyen al Gateway.
 - **Lo más urgente:** medir el tamaño real por column family en un nodo de mainnet, y aplicar R1 y R2. Tienen un coste bajo y eliminan la causa principal de los 16 GB actuales.
@@ -466,4 +484,4 @@ flowchart LR
 
 ---
 
-[← Índice](../../README.es.md) · [Anterior: Sección 8: hoja de ruta](06-hoja-de-ruta.md) · [Siguiente: Sección 10: guía de implementación paso a paso](08-guia-de-implementacion.md)
+[← Índice](../../README.es.md) · [Anterior: Capítulo 8: hoja de ruta](08-hoja-de-ruta.md) · [Siguiente: Capítulo 10: guía de implementación paso a paso](10-guia-de-implementacion.md)

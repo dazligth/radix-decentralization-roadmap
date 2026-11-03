@@ -1,6 +1,31 @@
-[← Index](../../README.md) · [Previous: Section 12: references from other decentralized networks](10-references-other-networks.md)
+[← Index](../../README.md) · [Previous: Chapter 12: references from other decentralised networks](12-references-other-networks.md) · [Next: Glossary](glossary.md)
 
-# Sources
+# Sources and methodology
+
+## Methodology
+
+- **Code:** the repositories listed in the Scope were read, at the versions and dates cited. `file:line` references refer to those versions. In `babylon-node`, both the `develop` branch (last commit 12 Mar 2025) and the published release `v1.4.0.0` (Sep 2026) were reviewed; relevant changes between them are noted in the text.
+- **Mainnet measurements (3 Nov 2026):** queries to the Gateway's public API (`/status/gateway-status`, `/stream/transactions`, `/state/validators/list`).
+  - The state-version rate was computed from two points (14 Jun 2026 and 3 Nov 2026) and a sample of 100 consecutive versions.
+  - User transactions per day were estimated, for each date, from a sample of 100 consecutive user transactions, dividing 100 by the elapsed time. They are orders of magnitude, not daily averages.
+  - The total of ~10-15 million user transactions is a rough integration of those samples over periods of about four months (±50 % margin).
+  - Validators: 100 active out of 290 registered at epoch 355,142.
+  - Gateway queries described in section [1.3](01-02-current-situation.md#s1-3) (history, holders, headers).
+- **Estimates:** any figure marked "estimate" or "est." was computed from data schemas, code or published figures, and was not measured directly. Those that depend on an assumption say so.
+- **External sources:** consulted on 3 Nov 2026. Official documentation and each project's repositories were preferred. When a fact comes from a secondary source (for example radix.wiki), this is stated.
+
+## Open questions
+
+These could not be measured or verified and should be resolved with data ("Data or measurement" issue template):
+
+1. The real on-disk size of a mainnet node, per column family.
+2. The real RAM use (RSS) of a mainnet node with the default configuration and with R1-R2.
+3. The real size of the light indexer's indexes and its indexing speed from genesis.
+4. Exact compatibility of the indexer's responses with what wallets expect.
+5. Whether `last_updated_at_state_version` can be obtained from the state tree without a new index (N5b).
+6. Unverified data from other networks (section [12.9](12-references-other-networks.md#s12-9)).
+
+## Sources
 
 - Code: `babylon-node` (`develop` and release `v1.4.0.0`), `babylon-gateway` (`main`), `sargon` (`main`), `babylon-wallet-ios` (`main`), `rola`, `babylon-nodecli` (cloned 3 Nov 2026), and the local repositories. `file:line` references refer to those versions.
 - Measurements: public API `mainnet.radixdlt.com` (`/status/gateway-status`, `/stream/transactions`), 3 Nov 2026. Daily rates come from 100-transaction samples per date and are orders of magnitude.
@@ -8,8 +33,10 @@
 - [The Foundation Operational Stack: Mapping the 2026 Transition](https://www.radixdlt.com/blog/the-foundation-operational-stack-mapping-the-2026-transition)
 - [Foundation Update: Moving to Maintenance Mode (28 Apr 2026)](https://www.radixdlt.com/blog/foundation-update-moving-to-maintenance-mode)
 - [2026 Strategy: The Next Chapter of Radix](https://www.radixdlt.com/blog/2026-strategy-the-next-chapter-of-radix)
-- [Interim Hyperscale: Closing the Chapter](https://www.radixdlt.com/blog/interim-hyperscale-closing-the-chapter)
-- [RadixTalk — Foundation RFP: Babylon Gateway (posts 15, 22, 25, 26, 29, 38)](https://radixtalk.com/t/foundation-rfp-babylon-gateway/2202)
+- [Interim Hyperscale: Closing the Chapter](https://www.radixdlt.com/blog/interim-hyperscale-closing-the-chapter) and [Hyperscale code published by its author](https://github.com/DanoshiFusermoto/Hyperscale)
+- [RadixTalk — RFC: Xi'an, Delivering Hyperscale for Radix](https://radixtalk.com/t/rfc-xian-delivering-hyperscale-for-radix/2280)
+- [radix.wiki — Radix Accountability Council (secondary source)](https://radix.wiki/ecosystem/radix-accountability-council)
+- [RadixTalk — Foundation RFP: Babylon Gateway (posts 15, 22, 26 and 29)](https://radixtalk.com/t/foundation-rfp-babylon-gateway/2202)
 - [RadixTalk — Action on P3 Foundation Services](https://radixtalk.com/t/action-on-p3-foundation-services/2238)
 - [Radix docs — Node setup (node hardware requirements)](https://docs.radixdlt.com/docs/node-setup)
 - [Radix docs — Network Gateway](https://docs.radixdlt.com/docs/network-gateway)
@@ -43,4 +70,4 @@
 
 ---
 
-[← Index](../../README.md) · [Previous: Section 12: references from other decentralized networks](10-references-other-networks.md)
+[← Index](../../README.md) · [Previous: Chapter 12: references from other decentralised networks](12-references-other-networks.md) · [Next: Glossary](glossary.md)

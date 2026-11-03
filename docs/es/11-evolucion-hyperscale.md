@@ -1,11 +1,13 @@
-[← Índice](../../README.es.md) · [Anterior: Sección 10: guía de implementación paso a paso](08-guia-de-implementacion.md) · [Siguiente: Sección 12: referencias de otras redes descentralizadas](10-referencias-otras-redes.md)
+[← Índice](../../README.es.md) · [Anterior: Capítulo 10: guía de implementación paso a paso](10-guia-de-implementacion.md) · [Siguiente: Capítulo 12: referencias de otras redes descentralizadas](12-referencias-otras-redes.md)
+
+<a id="s11"></a>
 
 # 11. Evolución final: de Babylon a Hyperscale
 
 > [!IMPORTANT]
 > - **¿Es posible?** Sí, con condiciones: la red y los fondos pueden migrar; los contratos Scrypto y las dApps no, deben reescribirse. Con el código actual (en desarrollo) todavía no es posible en producción.
 > - **Dificultad:** Muy alta.
-> - **Esfuerzo y plazo:** ~110-210 persona-mes sin contar las dApps; 2-4 años (estimación).
+> - **Esfuerzo y plazo:** ~110-210 personas-mes sin contar las dApps; 2-4 años (estimación).
 
 **Objetivo de este capítulo.** Describir qué sería necesario para que Radix adopte Hyperscale como evolución final de la red, quién tendría que hacerlo y con qué dificultad.
 
@@ -25,7 +27,7 @@ Hyperscale es de código abierto y la Foundation está en modo de mantenimiento.
 | El historial de Babylon | **No dentro de Hyperscale** | Se conserva aparte, en nodos de archivo y almacenamiento distribuido verificable. |
 | El software actual (wallets, RDT, ROLA, exploradores) | **No sin adaptarlo** | Formato de transacción, direcciones y API distintos. Hyperscale tampoco tiene todavía API de lectura ni indexador. |
 
-En resumen: la **red y los fondos** pueden migrar a Hyperscale; las **aplicaciones** tienen que rehacerse. Con el código actual (versión en desarrollo, v0.0.6) **todavía no es posible hacerlo en producción**; hace falta el trabajo descrito en las secciones 11.5 y 11.6.
+En resumen: la **red y los fondos** pueden migrar a Hyperscale; las **aplicaciones** tienen que rehacerse. Con el código actual (versión en desarrollo, v0.0.6) **todavía no es posible hacerlo en producción**; hace falta el trabajo descrito en las secciones [11.5](#s11-5) y [11.6](#s11-6).
 
 ```mermaid
 flowchart LR
@@ -42,6 +44,8 @@ flowchart LR
     class BS,BV,H good
 ```
 
+<a id="s11-1"></a>
+
 ## 11.1 Qué es Hyperscale
 
 Hyperscale es un diseño de red **fragmentada** (*sharded*): el estado se reparte entre varios fragmentos, cada uno con su propio consenso, y la capacidad crece al añadir fragmentos. Su objetivo es escalar sin perder la **composición atómica**: una transacción que afecta a varios fragmentos se confirma en todos o en ninguno.
@@ -50,16 +54,16 @@ Hyperscale es un diseño de red **fragmentada** (*sharded*): el estado se repart
 |---|---|
 | Código | `github.com/hyperscalers/hyperscale-rs` y `github.com/hyperscalers/hyperscale-vm`, licencia MIT o Apache-2.0, en Rust |
 | Actividad | ~4 450 commits en hyperscale-rs, la gran mayoría de un único desarrollador; última versión publicada v0.0.6 (ene-2026); actividad hasta nov-2026 |
-| Estado | Ambos repositorios advierten: «Work in progress. Do not use.» |
+| Madurez | Ambos repositorios advierten: «Work in progress. Do not use.» |
 | Consenso | Tres capas: HotStuff-2 por fragmento, certificados de ejecución y una cadena *beacon* (un bloque por época de 5 minutos) que gestiona validadores y fragmentos |
 | Fragmentación | Dinámica: los fragmentos se dividen o se fusionan según la carga (desactivado por defecto) |
-| Estado | Un único árbol de Merkle (JMT binario, Blake3); cada cuenta y lo que posee viven en el mismo fragmento |
+| Modelo de estado | Un único árbol de Merkle (JMT binario, Blake3); cada cuenta y lo que posee viven en el mismo fragmento |
 | Ejecución | Máquina virtual WASM propia, con acceso al estado **declarado antes de ejecutar** |
 | Red | QUIC mediante iroh |
 | Firmas de validadores | BLS12-381, con agregación de firmas |
 | Firmas de usuarios | Ed25519, secp256k1 (las mismas que Babylon) y ML-DSA-65 (post-cuántica) |
 | Pruebas publicadas por la Foundation | 500 000 TPS sostenidas y picos de más de 800 000 en 128 fragmentos (feb-2026). Se hicieron con el código «Hyperscale» cuyo autor publicó parcialmente en `github.com/DanoshiFusermoto/Hyperscale`; el artículo no menciona `hyperscale-rs`, y este repositorio no publica cifras de rendimiento. |
-| Situación del proyecto (según radix.wiki, nov-2026) | `hyperscale-rs` fue propuesto como candidato de producción en un RFC de la comunidad (20-abr-2026); solo se financió el primero de seis hitos. El 3-sep-2026 su desarrollador dejó las propuestas, subvenciones y colaboraciones con Radix, pero siguió desarrollando el código, y considera a Radix una de varias redes candidatas, no la única. Ha indicado que existe una vía de actualización y que la guiaría. |
+| Situación del proyecto (según radix.wiki, fuente secundaria, nov-2026; RFC original en RadixTalk) | `hyperscale-rs` fue propuesto como candidato de producción en un RFC de la comunidad (20-abr-2026); solo se financió el primero de seis hitos. El 3-sep-2026 su desarrollador dejó las propuestas, subvenciones y colaboraciones con Radix, pero siguió desarrollando el código, y considera a Radix una de varias redes candidatas, no la única. Ha indicado que existe una vía de actualización y que la guiaría. |
 
 ```mermaid
 flowchart TB
@@ -79,6 +83,8 @@ flowchart TB
     CLIENT -- "envía a un nodo del fragmento<br/>de su cuenta" --> S1
 ```
 
+<a id="s11-2"></a>
+
 ## 11.2 Diferencias con Babylon que afectan a la migración
 
 | Aspecto | Babylon (hoy) | Hyperscale |
@@ -94,7 +100,9 @@ flowchart TB
 | API para clientes | Core API, Engine State API (y hoy el Gateway) | RPC mínimo: estado del nodo, envío, preview y estado de transacción. **Sin lecturas de estado, historial ni eventos.** |
 | Enrutamiento | Una sola cadena | Los clientes deben saber qué nodos alojan el fragmento de cada cuenta |
 
-**Conclusión de la comparación:** pasar a Hyperscale **no es una actualización de protocolo**, sino una **migración a una red nueva**, parecida a la de Olympia a Babylon en 2023 pero más profunda. Las aplicaciones no se trasladan: hay que reescribirlas. Según radix.wiki, en agosto de 2026 se confirmó que una máquina virtual propia (`hyperscale-vm`) sustituía al trabajo previo de adaptar el Radix Engine a una red fragmentada.
+**Conclusión de la comparación:** pasar a Hyperscale **no es una actualización de protocolo**, sino una **migración a una red nueva**, parecida a la de Olympia a Babylon en 2023 pero más profunda. Las aplicaciones no se trasladan: hay que reescribirlas. Según radix.wiki (fuente secundaria), en agosto de 2026 se confirmó que una máquina virtual propia (`hyperscale-vm`) sustituía al trabajo previo de adaptar el Radix Engine a una red fragmentada.
+
+<a id="s11-3"></a>
 
 ## 11.3 Estrategias de migración
 
@@ -103,12 +111,13 @@ flowchart TB
 > [!IMPORTANT]
 > - **¿Es posible?** Sí.
 > - **Dificultad:** Alta.
+> - **Esfuerzo y plazo:** incluido en los 15-30 personas-mes de la migración (sección [11.6](#s11-6), estimación).
 
 > [!NOTE]
-> **Referencia en otras redes:** Cosmos Hub migró su estado a una nueva génesis (`cosmoshub-3` → `cosmoshub-4`, 2021), y el contrato `MerkleDistributor` de Uniswap implementa reclamaciones con prueba de Merkle. Ver capítulo 12.
+> **Referencia en otras redes:** Cosmos Hub migró su estado a una nueva génesis (`cosmoshub-3` → `cosmoshub-4`, 2021), y el contrato `MerkleDistributor` de Uniswap implementa reclamaciones con prueba de Merkle. Ver capítulo [12](12-referencias-otras-redes.md#s12).
 
 1. **Congelar Babylon** en una época acordada. `v1.4.0.0` ya incluye un mecanismo de «moratoria» de transacciones de usuario que puede servir de base.
-2. **Publicar la raíz final del estado** de Babylon (`state_tree_hash` firmado por los validadores en la última época) y archivar el ledger en nodos de archivo y almacenamiento distribuido (capítulo 9, R9; sección 10.5).
+2. **Publicar la raíz final del estado** de Babylon (`state_tree_hash` firmado por los validadores en la última época) y archivar el ledger en nodos de archivo y almacenamiento distribuido (capítulo [9](09-nodos-ligeros.md#s9), R9; sección [10.5](10-guia-de-implementacion.md#s10-5)).
 3. **Génesis de Hyperscale** con los saldos de XRD que se puedan asignar directamente: cuentas cuya clave pública ya es conocida porque la cuenta ha firmado alguna vez.
 4. **Contrato de reclamación en Hyperscale** para todo lo demás. El usuario presenta:
    - una **prueba de Merkle** de su saldo contra la raíz final de Babylon;
@@ -168,7 +177,8 @@ sequenceDiagram
 
 > [!IMPORTANT]
 > - **¿Es posible?** Sí, como apoyo temporal.
-> - **Dificultad:** Alta, con riesgo de seguridad en el puente.
+> - **Dificultad:** Alta.
+> - **Esfuerzo y plazo:** incluido en los 15-30 personas-mes de la migración (sección [11.6](#s11-6), estimación). El puente añade un riesgo de seguridad.
 
 Babylon y Hyperscale funcionan a la vez, y un puente traslada XRD y otros activos.
 
@@ -185,19 +195,18 @@ Babylon y Hyperscale funcionan a la vez, y un puente traslada XRD y otros activo
 > [!IMPORTANT]
 > - **¿Es posible?** No con el diseño actual de Hyperscale; solo bifurcándolo.
 > - **Dificultad:** Muy alta. No recomendada.
+> - **Esfuerzo y plazo:** no estimado, porque no se recomienda.
 
-Ejecutar el Radix Engine dentro de Hyperscale, o traducir Scrypto a su SDK.
+Consiste en ejecutar el Radix Engine dentro de Hyperscale, o traducir Scrypto a su SDK. El análisis completo está en la sección [11.4](#s11-4).
 
-- **Dificultad: muy alta.**
-  - Hyperscale declara la compatibilidad con Scrypto y el uso de varios motores como no-objetivos.
-  - Scrypto descubre el estado durante la ejecución, mientras que Hyperscale exige declararlo antes.
-- **Viabilidad:** requeriría bifurcar Hyperscale y cambiar decisiones centrales de su diseño. No se recomienda, salvo quizá como herramienta de ayuda a la traducción de contratos sencillos.
+<a id="s11-4"></a>
 
 ## 11.4 ¿Se puede mantener Scrypto con Hyperscale?
 
 > [!IMPORTANT]
 > - **¿Es posible?** No con el diseño actual de Hyperscale. Solo bifurcándolo (estrategia M3), y aun así con limitaciones.
 > - **Dificultad:** Muy alta. No recomendada.
+> - **Esfuerzo y plazo:** la alternativa realista, reescribir los contratos, depende de cada proyecto.
 
 **Por qué no es posible directamente:**
 
@@ -219,20 +228,24 @@ Ejecutar el Radix Engine dentro de Hyperscale, o traducir Scrypto a su SDK.
 | Herramientas que ayuden a traducir contratos Scrypto sencillos al SDK de Hyperscale | Sí, en parte | Alta |
 | Bifurcar Hyperscale para ejecutar el Radix Engine (M3) | Solo con limitaciones: se perdería la composición entre fragmentos para esos contratos | Muy alta |
 
+<a id="s11-5"></a>
+
 ## 11.5 Qué tendría que modificar o construir la comunidad
 
 | Área | Trabajo necesario | Dificultad |
 |---|---|---|
 | **Hyperscale para mainnet** | Sustituir valores de desarrollo (p. ej. `SHARD_CAPACITY=4`, ratios de comisiones provisionales); auditorías de seguridad independientes; ampliar la verificación formal (hoy acotada); herramientas para operadores (equivalente a `babylon-nodecli`, despliegue de *vnodes*); decidir los parámetros económicos (emisión, comisiones, stake mínimo) y que el token de comisiones sea XRD | Muy alta |
 | **Génesis y reclamación** | Ampliar la génesis de Hyperscale (otros recursos, stakes) o escribir el contrato de reclamación de M1; herramienta de exportación del estado final de Babylon con pruebas | Alta |
-| **Babylon (lado de salida)** | Congelación ordenada (moratoria), publicación de la raíz final firmada, endpoint de pruebas de Merkle (sección 10.6), nodos de archivo | Media |
+| **Babylon (lado de salida)** | Congelación ordenada (moratoria), publicación de la raíz final firmada, endpoint de pruebas de Merkle (sección [10.6](10-guia-de-implementacion.md#s10-6)), nodos de archivo | Media |
 | **API de lectura e indexador de Hyperscale** | Hoy no existen. Hay que añadir lecturas de estado, eventos, recibos e historial, conscientes de la fragmentación. El diseño del indexador ligero, el descubrimiento en la cadena y el cliente ligero de este informe se pueden reutilizar. | Alta |
-| **Sargon y wallets iOS/Android** | Soporte de HBOR, nuevas direcciones y sobres de transacción, fragmentos; convivencia con Babylon durante la transición; flujo de reclamación; agenda que relacione direcciones antiguas y nuevas. Gracias a la interfaz `LedgerBackend` propuesta (sección 10.4), Hyperscale sería un backend más. | Muy alta |
-| **Monedero hardware (Ledger)** | Nueva app de firma para el formato de Hyperscale | Media |
+| **Sargon y wallets iOS/Android** | Soporte de HBOR, nuevas direcciones y sobres de transacción, fragmentos; convivencia con Babylon durante la transición; flujo de reclamación; agenda que relacione direcciones antiguas y nuevas. Gracias a la interfaz `LedgerBackend` propuesta (sección [10.4](10-guia-de-implementacion.md#s10-4)), Hyperscale sería un backend más. | Muy alta |
+| **Wallet de hardware (Ledger)** | Nueva app de firma para el formato de Hyperscale | Media |
 | **RDT, ROLA y Radix Connect** | Nuevos tipos de petición y verificación del inicio de sesión. Radix Connect (relé, WebRTC o iroh) se puede reutilizar como canal. | Media |
 | **dApps** | **Reescribir cada contrato** con el SDK de Hyperscale, rediseñando los patrones que consultan estado no declarado; sin royalties; migrar liquidez (DEX, préstamos) | Muy alta, por proyecto |
 | **Exploradores, exchanges, custodios, puentes (p. ej. Hyperlane)** | Integración con la nueva red | Media, por integración |
 | **Gobernanza** | Decidir si se adopta, el calendario, la financiación y los parámetros; comunicación a usuarios | Alta (organizativa) |
+
+<a id="s11-6"></a>
 
 ## 11.6 Esfuerzo y plazo
 
@@ -240,13 +253,15 @@ Son estimaciones de orden de magnitud, para planificar, no presupuestos:
 
 | Bloque | Esfuerzo estimado |
 |---|---|
-| Endurecer Hyperscale para mainnet (sin contar auditorías externas) | 40-80 persona-mes |
-| API de lectura, indexador y explorador para Hyperscale | 15-30 persona-mes |
-| Migración: congelación, exportación, génesis, reclamación y puente temporal | 15-30 persona-mes |
-| Sargon, wallets, Ledger, RDT y ROLA | 40-70 persona-mes |
-| **Total del núcleo (sin dApps de terceros)** | **~110-210 persona-mes**, del orden de **2-4 años** con un equipo pequeño |
+| Endurecer Hyperscale para mainnet (sin contar auditorías externas) | 40-80 personas-mes |
+| API de lectura, indexador y explorador para Hyperscale | 15-30 personas-mes |
+| Migración: congelación, exportación, génesis, reclamación y puente temporal | 15-30 personas-mes |
+| Sargon, wallets, Ledger, RDT y ROLA | 40-70 personas-mes |
+| **Total del núcleo (sin dApps de terceros)** | **~110-210 personas-mes**, del orden de **2-4 años** con un equipo pequeño |
 
 **Dificultad global de la migración a Hyperscale: muy alta.** Es el proyecto más grande de todo el informe.
+
+<a id="s11-7"></a>
 
 ## 11.7 Riesgos
 
@@ -258,9 +273,11 @@ Son estimaciones de orden de magnitud, para planificar, no presupuestos:
 - **Seguridad** del contrato de reclamación y de cualquier puente.
 - **Economía.** Cambian el modelo de comisiones, la emisión y las royalties, lo que afecta a validadores y desarrolladores.
 
+<a id="s11-8"></a>
+
 ## 11.8 Cómo encaja con el resto del informe
 
-1. **Babylon tiene que seguir funcionando durante años**, porque la migración llevaría de 2 a 4 años. El trabajo para eliminar el Gateway y aligerar los nodos (capítulos 6, 9 y 10) sigue siendo necesario.
+1. **Babylon tiene que seguir funcionando durante años**, porque la migración llevaría de 2 a 4 años. El trabajo para eliminar el Gateway y aligerar los nodos (capítulos [6](06-solucion-recomendada.md#s6), [9](09-nodos-ligeros.md#s9) y [10](10-guia-de-implementacion.md#s10)) sigue siendo necesario.
 2. **Muchas piezas se reutilizan:**
    - la interfaz `LedgerBackend` de los clientes;
    - el descubrimiento de nodos en la cadena;
@@ -269,10 +286,10 @@ Son estimaciones de orden de magnitud, para planificar, no presupuestos:
    - las pruebas de Merkle y el cliente ligero.
 
    Estas mismas piezas son las que necesitan Hyperscale y la reclamación de M1.
-3. **Decisión sobre R11 (migración del nodo de Babylon a Rust).** Conviene **aplicar R1-R9**, de coste moderado (R1-R4 en semanas; R5-R9 en meses), y **aplazar R11 hasta que la gobernanza decida sobre Hyperscale**, porque su esfuerzo (30-50 persona-mes) competiría con el de la migración. Si Hyperscale no se adopta o se retrasa, R11 vuelve a ser la vía para nodos de 4 GB con margen.
-4. **Alternativa que conviene comparar:** Cardano aumenta la capacidad de su capa 1 con Leios mediante una bifurcación de protocolo en la misma cadena, sin migrar a una red nueva (sección 12.2). Antes de decidir, la gobernanza debería comparar la migración a Hyperscale con la opción de seguir mejorando Babylon en su propia cadena.
+3. **Decisión sobre R11 (migración del nodo de Babylon a Rust).** Conviene **aplicar R1-R9**, de coste moderado (R1-R4 en semanas; R5-R9 en meses), y **aplazar R11 hasta que la gobernanza decida sobre Hyperscale**, porque su esfuerzo (30-50 personas-mes) competiría con el de la migración. Si Hyperscale no se adopta o se retrasa, R11 vuelve a ser la vía para nodos de 4 GB con margen.
+4. **Alternativa que conviene comparar:** Cardano aumenta la capacidad de su capa 1 con Leios mediante una bifurcación de protocolo en la misma cadena, sin migrar a una red nueva (sección [12.2](12-referencias-otras-redes.md#s12-2)). Antes de decidir, la gobernanza debería comparar la migración a Hyperscale con la opción de seguir mejorando Babylon en su propia cadena.
 5. **Recomendación:** que la gobernanza decida primero si adopta Hyperscale y con qué estrategia (M1, con M2 como apoyo temporal). Mientras tanto, mantener el plan a corto plazo de este informe, cuyo valor no depende de esa decisión.
 
 ---
 
-[← Índice](../../README.es.md) · [Anterior: Sección 10: guía de implementación paso a paso](08-guia-de-implementacion.md) · [Siguiente: Sección 12: referencias de otras redes descentralizadas](10-referencias-otras-redes.md)
+[← Índice](../../README.es.md) · [Anterior: Capítulo 10: guía de implementación paso a paso](10-guia-de-implementacion.md) · [Siguiente: Capítulo 12: referencias de otras redes descentralizadas](12-referencias-otras-redes.md)

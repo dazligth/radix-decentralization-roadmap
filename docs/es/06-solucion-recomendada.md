@@ -1,6 +1,13 @@
-[← Índice](../../README.es.md) · [Anterior: Secciones 4-5: las seis estrategias evaluadas y su comparativa con datos](03-estrategias.md) · [Siguiente: Sección 7: cambios concretos en cada repositorio](05-cambios-por-repositorio.md)
+[← Índice](../../README.es.md) · [Anterior: Capítulos 4-5: las seis estrategias evaluadas y su comparativa](04-05-estrategias.md) · [Siguiente: Capítulo 7: cambios concretos en cada repositorio](07-cambios-por-repositorio.md)
+
+<a id="s6"></a>
 
 # 6. Solución recomendada y por qué
+
+> [!IMPORTANT]
+> - **¿Es posible?** Sí. Es la solución recomendada a corto plazo.
+> - **Dificultad:** Media.
+> - **Esfuerzo y plazo:** 7-12 personas-mes la solución mínima viable; meses (estimación).
 
 ## Infraestructura a corto plazo: sin Gateway
 
@@ -10,7 +17,7 @@ flowchart TB
         W["Wallets iOS y Android"]
         EXT["Connector Extension"]
         DAPP["dApps con RDT"]
-        ROLA["Backends con login ROLA"]
+        ROLA["Backends con inicio de sesión ROLA"]
         EXP["Explorador de referencia<br/>web estática, código abierto"]
     end
     REG["Registro en la cadena<br/>metadatos api_endpoints"]
@@ -29,7 +36,7 @@ flowchart TB
     end
     ARCH[("Archivo verificable de Olympia<br/>IPFS, BitTorrent, Arweave")]
     APPS -- "1. leen la lista" --> REG
-    APPS -- "2. consultan con failover" --> READ
+    APPS -- "2. consultan con conmutación por error" --> READ
     READ --> VAL
     APPS -.-> SELF
     EXP -.-> ARCH
@@ -42,7 +49,7 @@ flowchart LR
     C["Wallets, dApps, ROLA y exploradores"]
     REG["Registro en la cadena<br/>metadatos api_endpoints<br/>de los validadores"]
     C -- "1. leen la lista de nodos de lectura" --> REG
-    C -- "2. consultan con failover" --> A
+    C -- "2. consultan con conmutación por error" --> A
     C --> B
     C --> Z
     subgraph A["Nodo de lectura A"]
@@ -69,10 +76,10 @@ flowchart TB
         CORE --- LEDGER
     end
     subgraph IDX["Indexador ligero (proceso aparte)"]
-        ING["Ingesta del stream<br/>desde la versión 1, génesis incluido"]
+        ING["Ingesta del stream<br/>desde la versión 1, génesis incluida"]
         IX[("Índices pequeños:<br/>historial por entidad, ubicación de NFT,<br/>titulares, subintents, reglas de rol,<br/>estadísticas, búsqueda")]
-        API["API de lectura pública<br/>CORS, rate limit, TLS"]
-        RES["Reenvío de transacciones<br/>pendientes con backoff"]
+        API["API de lectura pública<br/>CORS, límite de peticiones, TLS"]
+        RES["Reenvío de transacciones<br/>pendientes con espera exponencial"]
         ING --> IX
     end
     CORE -- "/stream/transactions" --> ING
@@ -100,22 +107,17 @@ sequenceDiagram
     loop mientras la época sea válida
         L->>N: /lts/transaction/status
         alt no confirmada
-            L->>N: reenvío con backoff
+            L->>N: reenvío con espera exponencial
         end
     end
     W->>L: ¿estado?
     L-->>W: CommittedSuccess
 ```
 
-> [!IMPORTANT]
-> - **¿Es posible?** Sí. Es la solución recomendada a corto plazo.
-> - **Dificultad:** Media.
-> - **Esfuerzo y plazo:** 6-10 persona-mes la solución mínima viable; meses (estimación).
-
 **Estrategia: E3 primero, E2 después y E6 como complemento.** Hay que añadir dos piezas transversales:
 
 - **(D) descubrimiento en la cadena:** que los validadores publiquen sus URLs de acceso en los metadatos de su componente, por ejemplo con la clave `api_endpoints`;
-- **(B) abstracción `LedgerBackend`** en los clientes.
+- **(L) abstracción `LedgerBackend`** en los clientes.
 
 **Por qué:**
 
@@ -124,7 +126,7 @@ sequenceDiagram
 3. **Descentralización real.** Si cada validador o nodo completo puede servir la API con coste casi nulo y anunciarse en la cadena, desaparece el «proveedor por defecto». Es la condición para que la red dé servicio a cualquier usuario sin depender de un proveedor concreto.
 4. **Camino de evolución.**
    - Los índices de E3 se integran luego en `babylon-node` (E2).
-   - La interfaz `LedgerBackend` de los clientes permite pasar después a la API nativa del nodo, al cliente ligero (E5) y, si se adopta, a Hyperscale (sección 11), sin rehacer la lógica de las aplicaciones.
+   - La interfaz `LedgerBackend` de los clientes permite pasar después a la API nativa del nodo, al cliente ligero (E5) y, si se adopta, a Hyperscale (sección [11](11-evolucion-hyperscale.md#s11)), sin rehacer la lógica de las aplicaciones.
 5. **Riesgo controlado.** No toca el consenso ni el núcleo del nodo. Es un proceso aparte que se puede detener o reiniciar sin afectar al nodo.
 
 **Lo que E3 no da, y cómo se cubre:**
@@ -133,6 +135,8 @@ sequenceDiagram
   - E6, con captura hacia delante en consultation;
   - o una opción de «nodo de archivo» en E2, con historia larga y `ByTimestamp`.
 - **Confianza en el nodo:** consultar a varios nodos descubiertos en la cadena y comparar `state_version` y el hash del acumulador (`/stream/proofs`). Con el tiempo, E5.
+
+<a id="s6-1"></a>
 
 ## 6.1 Impacto en el almacenamiento de los validadores
 
@@ -170,12 +174,14 @@ sequenceDiagram
    - El primer prototipo debe medir ambos antes de comprometer cifras.
 4. **Lo que sí aumentaría mucho:** el «nodo de archivo» con historia completa de substates (N5), que es en esencia lo que hace que el Gateway ocupe 2,5 TB. Por eso el informe **no** lo propone para validadores. Sería una opción solo para quien necesite estado histórico arbitrario. Para gobernanza se sustituye por la captura del snapshot al abrir la votación (E6).
 
+<a id="s6-2"></a>
+
 ## 6.2 La mejor solución con tiempo ilimitado: lecturas verificables desde cualquier nodo
 
 > [!IMPORTANT]
 > - **¿Es posible?** Sí, sin cambiar el consenso (los índices verificables sí requieren una actualización de protocolo).
 > - **Dificultad:** Muy alta.
-> - **Esfuerzo y plazo:** ~40-80 persona-mes adicionales; años (estimación).
+> - **Esfuerzo y plazo:** ~40-80 personas-mes adicionales; años (estimación).
 
 La solución a corto plazo (E3) elimina el Gateway, pero el cliente **sigue teniendo que confiar** en el nodo que le responde, igual que hoy confía en el Gateway. Con tiempo ilimitado, la solución ideal elimina también esa confianza: **cualquier nodo, incluso uno desconocido, puede servir datos, y el wallet comprueba por sí mismo que son correctos.**
 
@@ -251,18 +257,18 @@ sequenceDiagram
 | 5 | **Descubrimiento y transporte sin intermediarios** | Registro de nodos de lectura en la cadena (metadatos de validadores u otro componente) y conexión directa por QUIC/iroh entre wallet y nodo. Esto evita depender de DNS, de certificados TLS y de relés centrales; la misma tecnología ya se usa en Radix Connect. |
 | 6 | **Incentivos para servir lecturas** | Una parte de las emisiones o comisiones de la red, o micropagos en XRD por consulta, para quien opere nodos de lectura. Lo decide la gobernanza. Sin incentivos, el servicio depende del compromiso voluntario de los operadores. |
 | 7 | **Archivo histórico verificable** | La historia antigua (incluido Olympia) se guarda en almacenamiento distribuido (IPFS o Arweave). Su integridad se comprueba contra `transaction_tree_hash` y `receipt_tree_hash`. Ningún nodo necesita guardarla entera. |
-| 8 | **Preparado para Hyperscale** | Hyperscale ya usa multipruebas JMT. El cliente ligero y la API nativa se pueden adaptar a esa red. La migración completa a Hyperscale se analiza en la sección 11. |
+| 8 | **Preparado para Hyperscale** | Hyperscale ya usa multipruebas JMT. El cliente ligero y la API nativa se pueden adaptar a esa red. La migración completa a Hyperscale se analiza en la sección [11](11-evolucion-hyperscale.md#s11). |
 
 **Comparación con la solución a corto plazo:**
 
-| | Corto plazo (E3 → E2) | Ideal (6.2) |
+| | Corto plazo (E3 → E2) | Ideal ([6.2](#s6-2)) |
 |---|---|---|
 | Gateway | Eliminado | Eliminado |
 | ¿El cliente confía en el nodo? | Sí, aunque puede comparar varios | **No, verifica cada respuesta** |
 | ¿Quién puede servir datos? | Operadores de nodo conocidos | **Cualquier nodo, incluso anónimo** |
 | Cambios de protocolo | Ninguno | Solo para los índices verificables (punto 4) |
 | Plazo | Meses | **Años** |
-| Esfuerzo (est.) | 6-10 persona-mes el mínimo viable; 20-35 el completo | **~40-80 persona-mes** adicionales, con perfiles expertos en el protocolo |
+| Esfuerzo (est.) | 7-12 personas-mes el mínimo viable; 21-35 el completo | **~40-80 personas-mes** adicionales, con perfiles expertos en el protocolo |
 
 **Por qué es la mejor con tiempo ilimitado:** es la única opción en la que la red no depende de nadie, ni de un Gateway ni de la honestidad de un nodo. Es el mismo nivel de garantía que da la propia cadena, extendido hasta el wallet de cada usuario.
 
@@ -279,19 +285,21 @@ flowchart LR
 
 **Cómo encaja con el corto plazo:** no son alternativas, son etapas. E3 resuelve el problema de 2026. E2 elimina el proceso aparte. Los puntos 2-8 añaden la verificación sobre lo que E2 ya sirve. La interfaz `LedgerBackend` de los clientes es la que permite pasar de una etapa a otra sin rehacer las aplicaciones.
 
+<a id="s6-3"></a>
+
 ## 6.3 Riesgos de eliminar el Gateway y cómo mitigarlos
 
 | Riesgo | Consecuencia | Mitigación |
 |---|---|---|
-| **Un nodo devuelve datos incorrectos**, por error o de forma malintencionada | El usuario ve saldos o estados falsos | Consultar varios puntos de acceso y comparar `state_version` y el hash del acumulador (10.2); a largo plazo, lecturas verificables (6.2) |
-| **Pocos operadores** de nodos de lectura | Vuelve a haber una dependencia central | Coste casi nulo por operador (E3); descubrimiento en la cadena; incentivos decididos por la gobernanza (6.2, punto 6; capítulo 12) |
-| **Ataques de denegación de servicio** contra los nodos de lectura | Servicio lento o caído | Modo público con límites por IP y lista blanca de rutas (N6); varios operadores; validadores separados de los nodos de lectura (6.1) |
-| **El indexador no reproduce exactamente las respuestas** que esperan los wallets | Errores en las aplicaciones | Pruebas de conformidad contra el Gateway público **antes de que se apague** (10.1) |
+| **Un nodo devuelve datos incorrectos**, por error o de forma malintencionada | El usuario ve saldos o estados falsos | Consultar varios puntos de acceso y comparar `state_version` y el hash del acumulador ([10.2](10-guia-de-implementacion.md#s10-2)); a largo plazo, lecturas verificables ([6.2](#s6-2)) |
+| **Pocos operadores** de nodos de lectura | Vuelve a haber una dependencia central | Coste casi nulo por operador (E3); descubrimiento en la cadena; incentivos decididos por la gobernanza ([6.2](#s6-2), punto 6; capítulo [12](12-referencias-otras-redes.md#s12)) |
+| **Ataques de denegación de servicio** contra los nodos de lectura | Servicio lento o caído | Modo público con límites por IP y lista blanca de rutas (N6); varios operadores; validadores separados de los nodos de lectura ([6.1](#s6-1)) |
+| **El indexador no reproduce exactamente las respuestas** que esperan los wallets | Errores en las aplicaciones | Pruebas de conformidad contra el Gateway público **antes de que se apague** ([10.1](10-guia-de-implementacion.md#s10-1)) |
 | **Pocos nodos de archivo** | Los nodos nuevos no pueden obtener el historial ni snapshots | Varios nodos de archivo en distintas manos; snapshots verificables en almacenamiento distribuido (R9) |
-| **Se pierde una transacción** si el punto de acceso se reinicia | El usuario cree que envió algo que nunca se confirmó | Reenvío en el indexador y en los clientes (10.1, 10.4) |
-| **Falta de financiación o de desarrolladores** | El plan se retrasa más allá del 31-dic-2026 | Priorizar el mínimo viable (6-10 persona-mes); decisión temprana de la gobernanza |
-| **Errores en el software nuevo** (indexador, cambios en el nodo) | Fallos de servicio o, en el nodo, de consenso | Desplegar primero en Stokenet; opciones desactivadas por defecto; adopción gradual (10.7) |
+| **Se pierde una transacción** si el punto de acceso se reinicia | El usuario cree que envió algo que nunca se confirmó | Reenvío en el indexador y en los clientes ([10.1](10-guia-de-implementacion.md#s10-1), [10.4](10-guia-de-implementacion.md#s10-4)) |
+| **Falta de financiación o de desarrolladores** | El plan se retrasa más allá del 31-dic-2026 | Priorizar el mínimo viable (7-12 personas-mes); decisión temprana de la gobernanza |
+| **Errores en el software nuevo** (indexador, cambios en el nodo) | Fallos de servicio o, en el nodo, de consenso | Desplegar primero en Stokenet; opciones desactivadas por defecto; adopción gradual ([10.7](10-guia-de-implementacion.md#s10-7)) |
 
 ---
 
-[← Índice](../../README.es.md) · [Anterior: Secciones 4-5: las seis estrategias evaluadas y su comparativa con datos](03-estrategias.md) · [Siguiente: Sección 7: cambios concretos en cada repositorio](05-cambios-por-repositorio.md)
+[← Índice](../../README.es.md) · [Anterior: Capítulos 4-5: las seis estrategias evaluadas y su comparativa](04-05-estrategias.md) · [Siguiente: Capítulo 7: cambios concretos en cada repositorio](07-cambios-por-repositorio.md)

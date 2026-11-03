@@ -1,10 +1,14 @@
-[← Índice](../../README.es.md) · [Anterior: Sección 11: evolución final hacia Hyperscale y migración](09-evolucion-hyperscale.md) · [Siguiente: Fuentes y metodología](11-fuentes.md)
+[← Índice](../../README.es.md) · [Anterior: Capítulo 11: evolución final hacia Hyperscale](11-evolucion-hyperscale.md) · [Siguiente: Fuentes, metodología y preguntas abiertas](fuentes-y-metodologia.md)
+
+<a id="s12"></a>
 
 # 12. Referencias de otras redes descentralizadas
 
 Varias propuestas de este informe no tienen precedente en Radix, pero sí en otras redes que han publicado su diseño y su experiencia. Este capítulo recoge esos precedentes, con sus fuentes, consultadas el 3-nov-2026. **Un precedente no garantiza que la misma solución funcione igual en Radix**: cada una debe validarse aquí.
 
 Como el objetivo de Radix es resolverlo todo en la **capa 1**, cada referencia indica si es un mecanismo de capa 1 (protocolo o software del nodo), un servicio externo de lectura, o una solución de capa 2 o de cadena asociada, que se cita solo como contraste.
+
+<a id="s12-1"></a>
 
 ## 12.1 Resumen por propuesta
 
@@ -20,7 +24,9 @@ Como el objetivo de Radix es resolverlo todo en la **capa 1**, cada referencia i
 | **6.2, punto 6.** Incentivos para servir lecturas | **Pocket Network** y **The Graph** pagan a quien sirve lecturas o índices, con pruebas del trabajo hecho. | Son modelos útiles, pero funcionan como redes aparte. En Radix habría que implementarlos en la propia capa 1. |
 | **R11.** Reescritura del nodo en Rust | **Kaspa:** `rusty-kaspa` sustituyó al nodo en Go como «reemplazo directo», conviviendo en la red P2P, con adopción gradual y retirada posterior del nodo en Go. **Solana:** Frankendancer, cliente híbrido. **Cardano:** nuevos nodos (Amaru en Rust, Dingo en Go) que entran primero como relés y después producen bloques. **Ethereum:** diversidad de clientes. | Reescribir el nodo por fases, con convivencia en la red, es un camino ya recorrido. Kaspa es el precedente más cercano a R11. |
 | **M1.** Migración con reclamación | **Midnight (Glacier Drop):** foto de saldos de ocho redes; el usuario firma un mensaje con la clave de la dirección de la foto e indica una dirección de destino nueva, con un periodo posterior para quien no reclamó a tiempo. **Cosmos Hub:** migración del estado a una nueva génesis. **Uniswap:** contrato `MerkleDistributor`. | Las reclamaciones firmadas y la migración por génesis son técnicas probadas. |
-| **Capítulo 11.** Evolución de la capa 1 | **Cardano: Ouroboros Leios**, que aumenta la capacidad de la capa 1 mediante una bifurcación de protocolo **en la misma cadena**, con una red de pruebas dedicada de larga duración. | Muestra la alternativa a migrar a una red nueva. Ver 12.9. |
+| **Capítulo [11](11-evolucion-hyperscale.md#s11).** Evolución de la capa 1 | **Cardano: Ouroboros Leios**, que aumenta la capacidad de la capa 1 mediante una bifurcación de protocolo **en la misma cadena**, con una red de pruebas dedicada de larga duración. | Muestra la alternativa a migrar a una red nueva. Ver 12.9. |
+
+<a id="s12-2"></a>
 
 ## 12.2 Cardano
 
@@ -33,22 +39,28 @@ Como el objetivo de Radix es resolverlo todo en la **capa 1**, cada referencia i
 | **Amaru (Rust), Dingo (Go)** | Capa 1 | Nuevas implementaciones del nodo, que entran primero como relés | Amaru funciona como relé en mainnet; la fecha de producción de bloques no está verificada |
 | **Ouroboros Leios** | Capa 1 (bifurcación de protocolo) | Añade bloques de respaldo (*endorser blocks*) votados por un comité, para aumentar la capacidad sin cambiar la cadena principal (CIP-164, propuesta) | Red de pruebas desde el 23-jun-2026; código completo previsto para el T4-2026; fecha de mainnet sin fijar. Requiere más disco y más recursos en los relés de quien tenga mucho stake. |
 
+<a id="s12-3"></a>
+
 ## 12.3 Sui
 
 | Mecanismo | Tipo | Qué hace |
 |---|---|---|
 | **Poda configurable** | Capa 1 | Épocas a conservar de objetos y de checkpoints; sin poda, un nodo puede superar 7 TB |
 | **Snapshots formales** | Capa 1 | Estado vivo al final de cada época, verificado contra un compromiso firmado por los validadores; Mysten conserva los de las últimas 90 épocas |
-| **Cliente ligero** | Capa 1 | Sigue los checkpoints de fin de época, con firmas BLS agregadas de los validadores, desde el génesis |
+| **Cliente ligero** | Capa 1 | Sigue los checkpoints de fin de época, con firmas BLS agregadas de los validadores, desde la génesis |
 | **Indexador y GraphQL** | Servicio de lectura | Indexador en PostgreSQL y API GraphQL, que pueden alojar los propios usuarios o proveedores; JSON-RPC marcado como obsoleto |
 | **Hardware de un nodo completo** | — | 128 GB de RAM y 4 TB NVMe |
+
+<a id="s12-4"></a>
 
 ## 12.4 Aptos
 
 - **Sincronización rápida** (capa 1): omite el historial y se basa en las firmas de los validadores; suele completarse en pocas horas.
-- **Poda** (capa 1): por defecto conserva las últimas 150 millones de transacciones; los nodos de archivo están obsoletos en favor del indexador.
+- **Poda** (capa 1): por defecto conserva los últimos 150 millones de transacciones; los nodos de archivo están obsoletos en favor del indexador.
 - **Indexador** (servicio de lectura): flujo de transacciones por gRPC y API GraphQL, alojable por terceros.
 - **Hardware de un validador:** 128 GB de RAM y 3 TB NVMe (estimación oficial para 2024).
+
+<a id="s12-5"></a>
 
 ## 12.5 Solana
 
@@ -56,6 +68,8 @@ Como el objetivo de Radix es resolverlo todo en la **capa 1**, cada referencia i
 - **Snapshots** (capa 1): se recomienda descargarlos solo de validadores conocidos, para evitar estados maliciosos; la confianza es social, no criptográfica.
 - **Historial** (servicio externo): durante años solo estaba en Google Bigtable; el proyecto Old Faithful lo empaqueta en ficheros que se pueden alojar en IPFS o Filecoin.
 - **Hardware:** nodo RPC con 256 GB de RAM. Es un contraejemplo de nodo ligero.
+
+<a id="s12-6"></a>
 
 ## 12.6 NEAR y Polkadot
 
@@ -65,6 +79,8 @@ Como el objetivo de Radix es resolverlo todo en la **capa 1**, cada referencia i
   - *warp sync* (pruebas de finalidad + estado);
   - cliente ligero **smoldot** en el navegador, que la documentación describe como alternativa «de confianza mínima» frente a los servidores RPC públicos, «cómodos pero centralizados».
   - Validador: 32 GB de RAM y 2 TB NVMe.
+
+<a id="s12-7"></a>
 
 ## 12.7 Kaspa
 
@@ -76,6 +92,8 @@ Como el objetivo de Radix es resolverlo todo en la **capa 1**, cada referencia i
 | **Hardware** | — | Mínimo 16 GB de RAM y 256 GB SSD; preferible 32 GB y 512 GB |
 
 Kaspa es el precedente más directo de dos propuestas de este informe: **R11** (reescritura del nodo en Rust por fases) y **R8 + R9** (poda por defecto con arranque verificable).
+
+<a id="s12-8"></a>
 
 ## 12.8 Midnight: cómo implementa la privacidad (contraste)
 
@@ -102,22 +120,24 @@ Kaspa es el precedente más directo de dos propuestas de este informe: **R11** (
 
 Lo que **no** se trasladaría: la cadena separada, los operadores federados, la dependencia de Cardano y el puente entre redes.
 
+<a id="s12-9"></a>
+
 ## 12.9 Lecciones para Radix
 
 1. **El arranque desde un snapshot verificado (R9) es estándar** en Sui, Polkadot, Cosmos, Cardano, Kaspa y Ethereum. Refuerza su prioridad.
 2. **Podar por defecto y dejar el historial a nodos de archivo (R8)** es la práctica habitual.
 3. **Los 4 GB de RAM: Radix lo tiene más fácil que otras redes, pero hay que medirlo.**
-   - Ninguna de las redes analizadas funciona hoy con 4 GB en un nodo completo que haga consenso y ejecución. Los requisitos publicados van de 16 GB (Kaspa, Geth) a 128-256 GB (Sui, Aptos, Solana). El precedente más cercano es **Cardano**, con ~5,0-5,8 GB tras llevar el ledger a disco, en su versión beta.
+   - Ninguna de las redes analizadas funciona hoy con 4 GB en un nodo completo que haga consenso y ejecución. Los requisitos publicados van de 8 GB (Cardano con el ledger en disco, pendiente de confirmación) y 16 GB (Kaspa, Geth) a 128-256 GB (Sui, Aptos, Solana). El precedente más cercano es **Cardano**, con ~5,0-5,8 GB tras llevar el ledger a disco, en su versión beta.
    - Sin embargo, **Radix funciona de otra forma** en tres aspectos que reducen la memoria necesaria:
-     - **su estado ya está en disco** (RocksDB, column family `substates`). La gran reducción de Cardano consistió precisamente en llevar a disco un ledger que tenía en memoria; Radix no necesita ese cambio estructural, y su consumo actual se debe sobre todo a la configuración (12 GB reservados para Java, RocksDB sin límites y una mempool de 1,18 GB), que se puede ajustar (R1-R2);
+     - **su estado ya está en disco** (RocksDB, column family `substates`). La gran reducción de Cardano consistió precisamente en llevar a disco un ledger que tenía en memoria; Radix no necesita ese cambio estructural, y su consumo actual se debe sobre todo a la configuración (12 GB reservados para Java, RocksDB sin límites y una mempool de ~1,2 GB), que se puede ajustar (R1-R2);
      - **su conjunto de validadores es pequeño** (unos 100), así que el estado del consenso ocupa poco (el vertex store está limitado a 150 MB);
-     - **su carga actual es baja** (~4 400 transacciones de usuario al día, sección 1.2), muy lejos de redes como Solana o Sui, cuyos requisitos responden a volúmenes mucho mayores.
-   - **Valoración:** con R1-R4, un nodo de **8 GB como máximo parece alcanzable**, y **4 GB es plausible**, sobre todo tras la migración a Rust (R11). Ambas cifras son estimaciones que deben confirmarse midiendo un nodo real, también en periodos de carga alta como el pico de marzo de 2025 (~35 000 transacciones de usuario al día).
+     - **su carga actual es baja** (~4 400 transacciones de usuario al día, sección [1.2](01-02-situacion-actual.md#s1-2)), muy lejos de redes como Solana o Sui, cuyos requisitos responden a volúmenes mucho mayores.
+   - **Valoración:** con R1-R2, un nodo de **8 GB como máximo parece alcanzable**, y **4 GB es plausible**, sobre todo tras la migración a Rust (R11). Ambas cifras son estimaciones que deben confirmarse midiendo un nodo real, también en periodos de carga alta como el pico de marzo de 2025 (~35 000 transacciones de usuario al día).
 4. **La lectura integrada en el nodo (E2) y el indexador junto al nodo (E3)** tienen precedentes directos (Kaspa, Sui, Acropolis; Geyser, Aptos).
 5. **Las redes de lectura federadas existen** (Koios, nodos públicos de Kaspa), pero se coordinan fuera de la cadena. **Publicar los puntos de acceso en la propia capa 1**, como propone este informe, sería una aportación nueva de Radix.
 6. **Depender de un único servicio de lectura es un riesgo real:** NEAR Lake dejó de indexar en marzo de 2026.
 7. **La reescritura en Rust por fases (R11)** tiene un precedente muy similar en **Kaspa**, que pasó de Go a Rust conviviendo en la red, con adopción gradual.
-8. **Evolucionar la capa 1 sin cambiar de red es posible** cuando el nuevo diseño es compatible con el anterior, como hace Cardano con Leios. Hyperscale, en cambio, no es compatible con Babylon (sección 11.2). Por eso exige una migración, y por eso conviene que la comunidad compare también la opción de mejorar Babylon en su propia cadena antes de decidir.
+8. **Evolucionar la capa 1 sin cambiar de red es posible** cuando el nuevo diseño es compatible con el anterior, como hace Cardano con Leios. Hyperscale, en cambio, no es compatible con Babylon (sección [11.2](11-evolucion-hyperscale.md#s11-2)). Por eso exige una migración, y por eso conviene que la comunidad compare también la opción de mejorar Babylon en su propia cadena antes de decidir.
 9. **La privacidad** se puede plantear en la capa 1 con verificación de pruebas ZK en el motor y recursos protegidos. Es un trabajo de gran envergadura, que Midnight resuelve con una red aparte.
 
 **Qué no se ha podido verificar:**
@@ -136,4 +156,4 @@ Ninguno de estos puntos se usa como argumento en el informe.
 
 ---
 
-[← Índice](../../README.es.md) · [Anterior: Sección 11: evolución final hacia Hyperscale y migración](09-evolucion-hyperscale.md) · [Siguiente: Fuentes y metodología](11-fuentes.md)
+[← Índice](../../README.es.md) · [Anterior: Capítulo 11: evolución final hacia Hyperscale](11-evolucion-hyperscale.md) · [Siguiente: Fuentes, metodología y preguntas abiertas](fuentes-y-metodologia.md)

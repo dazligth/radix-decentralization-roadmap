@@ -1,10 +1,16 @@
-[← Index](../../README.md) · [Previous: Section 9: lighter nodes, 4 GB RAM and 500 GB disk, Java to Rust migration](07-lighter-nodes.md) · [Next: Section 11: final evolution towards Hyperscale and migration](09-hyperscale-evolution.md)
+[← Index](../../README.md) · [Previous: Chapter 9: lighter nodes (RAM and disk) and the Java to Rust migration](09-lighter-nodes.md) · [Next: Chapter 11: final evolution towards Hyperscale](11-hyperscale-evolution.md)
+
+<a id="s10"></a>
 
 # 10. Step-by-step implementation guide
 
 This chapter explains **how** to build the main pieces. Code snippets are **indicative**: they show the shape of the solution, not production-ready code, and must be adjusted to the exact version of each dependency.
 
+<a id="s10-1"></a>
+
 ## 10.1 `radix-lite-indexer`: the Gateway replacement
+
+The diagrams of how a read node works and how transactions are submitted are in chapter [6](06-recommended-solution.md#s6).
 
 ### Architecture
 
@@ -22,28 +28,6 @@ radix-lite-indexer/
 ```
 
 One important advantage: **Babylon has immediate finality** (BFT consensus), so a committed transaction is never reverted. The indexer **does not need to handle chain reorganisations**, which makes it much simpler than indexers for other networks.
-
-```mermaid
-flowchart TB
-    subgraph NODE["Full node (unchanged)"]
-        CORE["Core API and Engine State API<br/>127.0.0.1 only"]
-        LEDGER[("Full ledger:<br/>transactions, receipts, state")]
-        CORE --- LEDGER
-    end
-    subgraph IDX["Light indexer (separate process)"]
-        ING["Stream ingestion<br/>from version 1, genesis included"]
-        IX[("Small indexes:<br/>per-entity history, NFT location,<br/>holders, subintents, role rules,<br/>statistics, search")]
-        API["Public read API<br/>CORS, rate limiting, TLS"]
-        RES["Resubmission of pending<br/>transactions with backoff"]
-        ING --> IX
-    end
-    CORE -- "/stream/transactions" --> ING
-    APP["Wallet, dApp or explorer"] --> API
-    API -- "current state: balances, NFTs, metadata" --> CORE
-    API -- "history, holders, NFT location" --> IX
-    API -- "submit transaction" --> RES
-    RES --> CORE
-```
 
 ### Data model
 
@@ -149,40 +133,19 @@ every 5 s:
     status = Core /lts/transaction/status
     if CommittedSuccess/CommittedFailure/PermanentRejection -> close
     if current_epoch >= end_epoch                          -> close as expired
+    if attempts >= 5 or 5 min have passed since the first send -> stop resubmitting (status is still checked)
     if NotSeen or FateUncertain                            -> resubmit; attempts += 1;
-                                                              next_attempt = now + 10 s * 2^attempts (max 5 min)
+                                                              next_attempt = now + 10 s * 2^attempts
 ```
 
 These are the same parameters the Gateway uses today: 10 s base, ×2, up to 5 attempts, 5 minutes at most.
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant W as Wallet
-    participant L as Read node
-    participant N as Full node
-    W->>L: transaction preview
-    L->>N: /transaction/preview
-    N-->>W: result and fees
-    W->>W: user signs
-    W->>L: submit transaction
-    L->>N: /lts/transaction/submit
-    loop while the epoch window is valid
-        L->>N: /lts/transaction/status
-        alt not committed
-            L->>N: resubmit with backoff
-        end
-    end
-    W->>L: status?
-    L-->>W: CommittedSuccess
-```
 
 ### Conformance tests
 
 1. **Before the public Gateway is switched off:** record real requests and their responses, sampling the routes in the table above with varied addresses (old Olympia accounts, accounts with NFTs, validators, pools).
 2. **Compare** with what the indexer returns, field by field, ignoring fields that change over time (`ledger_state`).
 3. **Continuous integration:** every indexer change must pass these tests.
-4. **Test with real apps:** Android/iOS wallets on Stokenet and mainnet pointed at the indexer via Settings → Gateways. Walk through balances, NFTs, staking, history, submission and pre-authorizations.
+4. **Test with real apps:** Android/iOS wallets on Stokenet and mainnet pointed at the indexer via Settings → Gateways. Walk through balances, NFTs, staking, history, submission and pre-authorisations.
 
 ### Deployment next to the node
 
@@ -208,7 +171,14 @@ services:
     ports: [ "443:443" ]
 ```
 
+<a id="s10-2"></a>
+
 ## 10.2 On-ledger discovery of read nodes
+
+> [!IMPORTANT]
+> - **Is it possible?** Yes.
+> - **Difficulty:** Medium.
+> - **Effort and timeline:** ~3-5 person-months in clients (estimate, including failover and resubmission).
 
 **Proposed format.** An `api_endpoints` metadata entry on the validator component, which the owner can write with a normal transaction. Its value is a JSON string:
 
@@ -233,6 +203,8 @@ services:
    - its latency.
 4. **Use.** Pick the best 2-3 and spread requests. If one fails, move to the next. Optionally, compare `state_version` and the accumulator hash between two to detect a node that returns incorrect data.
 5. **Cache.** Store the list and refresh it every few hours.
+
+<a id="s10-3"></a>
 
 ## 10.3 `babylon-node` changes to serve reads (N1, N5b, N6)
 
@@ -268,9 +240,11 @@ It also needs:
   - a route allow-list: reads, preview, submit and status, **never** `/mempool/*` or unbounded routes;
   - force `enable_unbounded_endpoints=false`.
 
+<a id="s10-4"></a>
+
 ## 10.4 Client changes
 
-**Sargon: `LedgerBackend` interface and resubmission.**
+**Sargon: `LedgerBackend` interface and resubmission** (what to change: section [7.5](07-per-repository-changes.md#s7-5)).
 
 1. Define the trait in a new crate, `crates/gateway/backend`, with the high-level methods used in `methods/state_methods.rs` and `methods/transaction_methods.rs`.
 2. Implement it for the current `GatewayClient`, without changing its behaviour.
@@ -279,7 +253,7 @@ It also needs:
    - `SavedGateways` uses `current` + `other` as a list with failover;
    - add the discovery from 10.2 behind an option.
 5. **Resubmission:**
-   - store the notarized payload in the host's secure storage (the driver already exists) until it is committed or its epoch expires;
+   - store the notarised payload in the host's secure storage (the driver already exists) until it is committed or its epoch expires;
    - the loop in `sargon_os_transaction_status.rs:38-105` resubmits when the status is `NotSeen` or `FateUncertain`.
 6. **Tests:** a mock of the trait for unit tests, and integration tests against an indexer on Stokenet.
 
@@ -312,7 +286,14 @@ const rola = Rola({
 })
 ```
 
+<a id="s10-5"></a>
+
 ## 10.5 Verifiable Olympia archive
+
+> [!IMPORTANT]
+> - **Is it possible?** Yes, if a copy of the Olympia database is obtained or while its Gateway is still running.
+> - **Difficulty:** Low.
+> - **Effort and timeline:** weeks (estimate). Urgent.
 
 1. **Get the data.** Ask the Foundation, or any operator that still has one, for a copy of the database of an Olympia node or of its Gateway (`olympia-gateway.radixdlt.com`, version 337,759,839). Alternatively, walk its per-account transaction endpoints for every account while it is still running.
 2. **Export.**
@@ -324,6 +305,8 @@ const rola = Rola({
    - Have **several independent people** sign the root and publish it, for example on RadixTalk and in a Babylon transaction with a message.
 4. **Publish** on IPFS (with several independent pinning services), BitTorrent and, if possible, Arweave.
 5. **Integrate** into the reference explorer and `olympia-wallet`: read the static index and download only the chunks needed.
+
+<a id="s10-6"></a>
 
 ## 10.6 Verifiable reads: the long-term solution
 
@@ -342,9 +325,11 @@ The state tree window already keeps recent versions (`state_hash_tree.*`). For t
 3. **It verifies every read:**
    - the ledger proof is signed by more than 2/3 of the epoch's stake;
    - the Merkle multiproof matches `state_tree_hash`.
-4. If anything fails, it drops the node and asks another (10.2).
+4. If anything fails, it drops the node and asks another ([10.2](#s10-2)).
 
 **Verifiable indexes (protocol update).** For history and holder lists to be provably complete too, the engine would have to keep a per-entity root in state (for example, an accumulator of the transactions that affect it). This needs a protocol update and should be designed together with R10.
+
+<a id="s10-7"></a>
 
 ## 10.7 How to test and roll out each phase without downtime
 
@@ -358,4 +343,4 @@ The state tree window already keeps recent versions (`state_hash_tree.*`). For t
 
 ---
 
-[← Index](../../README.md) · [Previous: Section 9: lighter nodes, 4 GB RAM and 500 GB disk, Java to Rust migration](07-lighter-nodes.md) · [Next: Section 11: final evolution towards Hyperscale and migration](09-hyperscale-evolution.md)
+[← Index](../../README.md) · [Previous: Chapter 9: lighter nodes (RAM and disk) and the Java to Rust migration](09-lighter-nodes.md) · [Next: Chapter 11: final evolution towards Hyperscale](11-hyperscale-evolution.md)

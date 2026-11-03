@@ -1,6 +1,13 @@
-[← Index](../../README.md) · [Previous: Sections 4-5: the six strategies evaluated and their data-driven comparison](03-strategies.md) · [Next: Section 7: concrete changes in each repository](05-per-repository-changes.md)
+[← Index](../../README.md) · [Previous: Chapters 4-5: the six strategies evaluated and their comparison](04-05-strategies.md) · [Next: Chapter 7: concrete changes in each repository](07-per-repository-changes.md)
+
+<a id="s6"></a>
 
 # 6. Recommended solution and why
+
+> [!IMPORTANT]
+> - **Is it possible?** Yes. It is the recommended short-term solution.
+> - **Difficulty:** Medium.
+> - **Effort and timeline:** 7-12 person-months for the minimum viable solution; months (estimate).
 
 ## Short-term infrastructure: no Gateway
 
@@ -107,24 +114,19 @@ sequenceDiagram
     L-->>W: CommittedSuccess
 ```
 
-> [!IMPORTANT]
-> - **Is it possible?** Yes. It is the recommended short-term solution.
-> - **Difficulty:** Medium.
-> - **Effort and timeline:** 6-10 person-months for the minimum viable solution; months (estimate).
-
 **Strategy: E3 first, then E2, with E6 as a complement.** Two cross-cutting pieces are added:
 
 - **(D) on-ledger discovery:** validators publish their access URLs in their component metadata, for example under the key `api_endpoints`;
-- **(B) a `LedgerBackend` abstraction** in clients.
+- **(L) a `LedgerBackend` abstraction** in clients.
 
 **Why:**
 
 1. **Time.** The Gateway is funded only until 31 Dec 2026. E3 is the only option that can **serve today's wallets without new releases**, because they already accept a custom Gateway URL.
-2. **Cost.** It goes from the ~2.5 TB and ~€300-400/month the Gateway requires to ~10-50 GB (estimate) added to a node that already exists. The measured data explains why: ~97-98 % of state versions are round changes that do not need indexing.
+2. **Cost.** It goes from the ~2.5 TB and ~€300-400/month the Gateway requires to ~10-50 GB (estimate) added to a node that already exists. The measured data explains why: ~97-98 % of state versions are round updates that do not need indexing.
 3. **Real decentralisation.** If every validator or full node can serve the API at near-zero cost and announce itself on ledger, the "default provider" disappears. That is the condition for the network to serve any user without depending on a particular provider.
 4. **Upgrade path.**
    - E3's indexes later move into `babylon-node` (E2).
-   - The clients' `LedgerBackend` interface lets them switch to the node's native API later, to the light client (E5) and, if adopted, to Hyperscale (section 11), without rewriting application logic.
+   - The clients' `LedgerBackend` interface lets them switch to the node's native API later, to the light client (E5) and, if adopted, to Hyperscale (section [11](11-hyperscale-evolution.md#s11)), without rewriting application logic.
 5. **Contained risk.** It does not touch consensus or the node core. It is a separate process that can be stopped or restarted without affecting the node.
 
 **What E3 does not provide, and how it is covered:**
@@ -133,6 +135,8 @@ sequenceDiagram
   - E6, with forward capture in consultation;
   - or an "archive node" option in E2, with long history and `ByTimestamp`.
 - **Trust in the node:** query several nodes discovered on ledger and compare `state_version` and the accumulator hash (`/stream/proofs`). Eventually, E5.
+
+<a id="s6-1"></a>
 
 ## 6.1 Impact on validator storage
 
@@ -148,27 +152,29 @@ sequenceDiagram
    | Item | Size |
    |---|---|
    | Recommended node disk (official docs, "initially") | 500 GB |
-   | Lightweight indexer (E3), estimated | ~10-50 GB |
+   | Light indexer (E3), estimated | ~10-50 GB |
    | Relative increase | **~2-10 %** of the recommended disk |
    | Indexer growth | ~0.1-0.3 GB/month at today's rate (~4,400 user transactions/day × 0.5-1 KB, plus auxiliary indexes); ~1 GB/month at the March 2025 peak (~35,000/day) |
    | For comparison: today's Gateway | ~2.5 TB, **+60 GB/month** |
 
    **Comparison per public access point** (what someone serving wallets, dApps and explorers needs):
 
-   | | Today, with the Gateway | With the lightweight indexer |
+   | | Today, with the Gateway | With the light indexer |
    |---|---|---|
    | Full node (complete ledger: transactions, receipts and state; both models need it) | Yes, one or more: the DataAggregator reads from full nodes | Yes, one |
    | Plus | ~2.5 TB PostgreSQL database (+60 GB/month) | ~10-50 GB of indexes (estimated) |
    | Total extra on top of the node | **~2.5 TB** | **~10-50 GB** |
 
-   In other words: a full node **already stores all network data today**, because it needs it to sync and validate, and that does not change. The lightweight indexer **only adds its indexes on top of the node's data**: slightly more than a bare node (~2-10 %) and far less than a node plus Gateway (50 to 250 times less; estimate).
+   In other words: a full node **already stores all network data today**, because it needs it to sync and validate, and that does not change. The light indexer **only adds its indexes on top of the node's data**: slightly more than a bare node (~2-10 %) and far less than a node plus Gateway (50 to 250 times less; estimate).
 
-   The indexer stays small because it **does not duplicate state or transactions**, which already live in the node. It only stores pointers (entity → `state_version`) and a few small tables, and it skips round changes, which are ~97-98 % of versions.
+   The indexer stays small because it **does not duplicate state or transactions**, which already live in the node. It only stores pointers (entity → `state_version`) and a few small tables, and it skips round updates, which are ~97-98 % of versions.
 3. **Margin of error.**
    - Only the **compressed** size of the community snapshot is known (274 GiB, Sep 2026); the on-disk size of a mainnet node has not been published, and the docs only give the 500 GB "initial" figure.
    - The 10-50 GB for the indexer is an **estimate** based on the user-transaction measurements. The resource-holder index (h) and the NFT-location index (b) depend on the number of resource-holder pairs and existing NFTs, which were not measured.
    - The first prototype must measure both before committing to figures.
 4. **What would grow a lot:** an "archive node" with full substate history (N5), which is essentially what makes the Gateway 2.5 TB. That is why this report does **not** propose it for validators. It would be an option only for those who need arbitrary historical state. For governance it is replaced by capturing the snapshot when the vote opens (E6).
+
+<a id="s6-2"></a>
 
 ## 6.2 The best solution with unlimited time: verifiable reads from any node
 
@@ -251,18 +257,18 @@ sequenceDiagram
 | 5 | **Discovery and transport without intermediaries** | An on-ledger registry of read nodes (validator metadata or another component), and a direct QUIC/iroh connection between wallet and node. This avoids depending on DNS, TLS certificates and central relays; the same technology is already used in Radix Connect. |
 | 6 | **Incentives to serve reads** | A share of network emissions or fees, or per-query XRD micropayments, for those who run read nodes. Governance decides. Without incentives, the service depends on operators' voluntary commitment. |
 | 7 | **Verifiable historical archive** | Old history (Olympia included) lives in distributed storage (IPFS or Arweave). Its integrity is checked against `transaction_tree_hash` and `receipt_tree_hash`. No node has to keep all of it. |
-| 8 | **Ready for Hyperscale** | Hyperscale already uses JMT multiproofs. The light client and the native API can be adapted to that network. The full migration to Hyperscale is analysed in section 11. |
+| 8 | **Ready for Hyperscale** | Hyperscale already uses JMT multiproofs. The light client and the native API can be adapted to that network. The full migration to Hyperscale is analysed in section [11](11-hyperscale-evolution.md#s11). |
 
 **Comparison with the short-term solution:**
 
-| | Short term (E3 → E2) | Ideal (6.2) |
+| | Short term (E3 → E2) | Ideal ([6.2](#s6-2)) |
 |---|---|---|
 | Gateway | Removed | Removed |
 | Does the client trust the node? | Yes, though it can compare several | **No, it verifies every response** |
 | Who can serve data? | Known node operators | **Any node, even anonymous** |
 | Protocol changes | None | Only for verifiable indexes (item 4) |
 | Lead time | Months | **Years** |
-| Effort (est.) | 6-10 person-months minimum viable; 20-35 full | **~40-80 person-months** more, with protocol experts |
+| Effort (est.) | 7-12 person-months minimum viable; 21-35 full | **~40-80 person-months** more, with protocol experts |
 
 **Why it is the best with unlimited time:** it is the only option in which the network depends on no one, neither a Gateway nor the honesty of a node. It gives the same level of guarantee as the chain itself, extended to every user's wallet.
 
@@ -279,19 +285,21 @@ flowchart LR
 
 **How it fits with the short term:** these are stages, not alternatives. E3 solves the 2026 problem. E2 removes the separate process. Items 2-8 add verification on top of what E2 already serves. The clients' `LedgerBackend` interface is what lets them move from one stage to the next without rewriting applications.
 
+<a id="s6-3"></a>
+
 ## 6.3 Risks of removing the Gateway and how to mitigate them
 
 | Risk | Consequence | Mitigation |
 |---|---|---|
-| **A node returns incorrect data**, by mistake or maliciously | The user sees false balances or state | Query several access points and compare `state_version` and the accumulator hash (10.2); in the long term, verifiable reads (6.2) |
-| **Few read-node operators** | A central dependency reappears | Near-zero cost per operator (E3); on-ledger discovery; incentives decided by governance (6.2, item 6; chapter 12) |
-| **Denial-of-service attacks** on read nodes | Slow or unavailable service | Public mode with per-IP limits and a route allow-list (N6); several operators; validators kept separate from read nodes (6.1) |
-| **The indexer does not exactly reproduce the responses** wallets expect | Application errors | Conformance tests against the public Gateway **before it is switched off** (10.1) |
+| **A node returns incorrect data**, by mistake or maliciously | The user sees false balances or state | Query several access points and compare `state_version` and the accumulator hash ([10.2](10-implementation-guide.md#s10-2)); in the long term, verifiable reads ([6.2](#s6-2)) |
+| **Few read-node operators** | A central dependency reappears | Near-zero cost per operator (E3); on-ledger discovery; incentives decided by governance ([6.2](#s6-2), item 6; chapter [12](12-references-other-networks.md#s12)) |
+| **Denial-of-service attacks** on read nodes | Slow or unavailable service | Public mode with per-IP limits and a route allow-list (N6); several operators; validators kept separate from read nodes ([6.1](#s6-1)) |
+| **The indexer does not exactly reproduce the responses** wallets expect | Application errors | Conformance tests against the public Gateway **before it is switched off** ([10.1](10-implementation-guide.md#s10-1)) |
 | **Few archive nodes** | New nodes cannot obtain history or snapshots | Several archive nodes in different hands; verifiable snapshots on distributed storage (R9) |
-| **A transaction is lost** if the access point restarts | The user believes something was sent that never committed | Resubmission in the indexer and in clients (10.1, 10.4) |
-| **Lack of funding or developers** | The plan slips beyond 31 Dec 2026 | Prioritise the minimum viable solution (6-10 person-months); an early governance decision |
-| **Bugs in new software** (indexer, node changes) | Service failures or, in the node, consensus failures | Deploy on Stokenet first; options off by default; gradual adoption (10.7) |
+| **A transaction is lost** if the access point restarts | The user believes something was sent that never committed | Resubmission in the indexer and in clients ([10.1](10-implementation-guide.md#s10-1), [10.4](10-implementation-guide.md#s10-4)) |
+| **Lack of funding or developers** | The plan slips beyond 31 Dec 2026 | Prioritise the minimum viable solution (7-12 person-months); an early governance decision |
+| **Bugs in new software** (indexer, node changes) | Service failures or, in the node, consensus failures | Deploy on Stokenet first; options off by default; gradual adoption ([10.7](10-implementation-guide.md#s10-7)) |
 
 ---
 
-[← Index](../../README.md) · [Previous: Sections 4-5: the six strategies evaluated and their data-driven comparison](03-strategies.md) · [Next: Section 7: concrete changes in each repository](05-per-repository-changes.md)
+[← Index](../../README.md) · [Previous: Chapters 4-5: the six strategies evaluated and their comparison](04-05-strategies.md) · [Next: Chapter 7: concrete changes in each repository](07-per-repository-changes.md)
