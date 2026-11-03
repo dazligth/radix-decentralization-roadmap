@@ -335,14 +335,25 @@ flowchart TB
 ### Stages towards the ideal solution
 
 ```mermaid
-flowchart LR
-    H["Today<br/>central Gateway"] --> S1["Stage 1, months<br/>E3: light indexer<br/>next to each node"]
-    S1 --> S2["Stage 2<br/>E2: indexes inside<br/>babylon-node"]
-    S2 --> S3["Stage 3, years<br/>Verifiable reads<br/>and light client"]
-    classDef bad fill:#ffd6d6,stroke:#c00,color:#000
-    classDef good fill:#d9f7d9,stroke:#080,color:#000
-    class H bad
-    class S3 good
+flowchart TB
+    S0["<b>TODAY</b><br/>Babylon with a central Gateway<br/>16 GB RAM nodes"]
+    S1["<b>STAGE 1 · months</b><br/>Light indexer next to each node (E3)<br/>the Gateway disappears · tuning R1-R4"]
+    S2["<b>STAGE 2 · 2027</b><br/>Indexes inside babylon-node (E2)<br/>4-8 GB nodes · verified bootstrap (R9)"]
+    S3["<b>STAGE 3 · years</b><br/>Verifiable reads and light client<br/>no node needs to be trusted"]
+    D{"<b>Governance decision</b><br/>adopt Hyperscale?"}
+    FA["<b>FINAL STAGE A</b><br/>Keep improving Babylon on its own chain<br/>node migration to Rust (R11)"]
+    FB["<b>FINAL STAGE B</b><br/>Radix on Hyperscale<br/>sharded network on Layer 1 (chapter 11)"]
+    S0 --> S1 --> S2 --> S3 --> D
+    D -->|No, or later| FA
+    D -->|Yes| FB
+    classDef today fill:#ffd6d6,stroke:#c00,color:#000
+    classDef step fill:#dbe9ff,stroke:#2b5fb4,color:#000
+    classDef decision fill:#fff3c4,stroke:#b58900,color:#000
+    classDef final fill:#d9f7d9,stroke:#080,color:#000
+    class S0 today
+    class S1,S2,S3 step
+    class D decision
+    class FA,FB final
 ```
 
 ### Evolution of Radix
@@ -360,6 +371,42 @@ flowchart LR
     class O old
     class B bad
     class BS,BV,H good
+```
+
+### Final stage: what would move from Babylon to Hyperscale
+
+**Is it possible?** Yes, with conditions: the network and funds can migrate with strategy M1 (genesis and verifiable claims), although with the current Hyperscale code, still in development, it is not yet possible in production. **Difficulty:** very high. **Scrypto is not compatible:** contracts and dApps would have to be rewritten. Green: moves directly; yellow: moves with changes; red: does not move.
+
+```mermaid
+flowchart LR
+    subgraph BAB["Babylon today"]
+        B1["Network: consensus and validators"]
+        B2["XRD balances"]
+        B3["User accounts and keys"]
+        B4["Other tokens and NFTs"]
+        B5["Scrypto contracts and dApps"]
+        B6["Ledger history"]
+    end
+    subgraph HS["Radix on Hyperscale"]
+        H1["New sharded network<br/>validators with new BLS keys"]
+        H2["XRD in genesis<br/>and verifiable claims"]
+        H3["Same keys<br/>new account_hs… addresses"]
+        H4["Reissued by each project<br/>with the same balance proof"]
+        H5["Contracts rewritten<br/>with the Hyperscale SDK"]
+        H6[("Verifiable archive<br/>outside the network")]
+    end
+    B1 -->|Yes| H1
+    B2 -->|Yes| H2
+    B3 -->|Yes, with a new address| H3
+    B4 -->|Yes, if the project decides to| H4
+    B5 -.->|Not compatible: they must be rewritten| H5
+    B6 -.->|Does not enter Hyperscale| H6
+    classDef yes fill:#d9f7d9,stroke:#080,color:#000
+    classDef partial fill:#fff3c4,stroke:#b58900,color:#000
+    classDef no fill:#ffd6d6,stroke:#c00,color:#000
+    class B1,B2,H1,H2 yes
+    class B3,B4,H3,H4 partial
+    class B5,B6,H5,H6 no
 ```
 
 ## Final reflection

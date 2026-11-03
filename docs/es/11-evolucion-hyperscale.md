@@ -44,6 +44,42 @@ flowchart LR
     class BS,BV,H good
 ```
 
+### Etapa final: qué pasaría de Babylon a Hyperscale
+
+**¿Es posible?** Sí, con condiciones: la red y los fondos pueden migrar con la estrategia M1 (génesis y reclamación verificable), aunque con el código actual de Hyperscale, todavía en desarrollo, no es posible en producción. **Dificultad:** muy alta. **Scrypto no es compatible:** los contratos y las dApps tendrían que reescribirse. En verde, lo que pasa directamente; en amarillo, lo que pasa con cambios; en rojo, lo que no pasa.
+
+```mermaid
+flowchart LR
+    subgraph BAB["Babylon hoy"]
+        B1["Red: consenso y validadores"]
+        B2["Saldos de XRD"]
+        B3["Cuentas y claves de los usuarios"]
+        B4["Otros tokens y NFT"]
+        B5["Contratos Scrypto y dApps"]
+        B6["Historial del ledger"]
+    end
+    subgraph HS["Radix en Hyperscale"]
+        H1["Nueva red fragmentada<br/>validadores con claves BLS nuevas"]
+        H2["XRD en la génesis<br/>y reclamación verificable"]
+        H3["Mismas claves<br/>direcciones nuevas account_hs…"]
+        H4["Reemitidos por cada proyecto<br/>con la misma prueba de saldo"]
+        H5["Contratos reescritos<br/>con el SDK de Hyperscale"]
+        H6[("Archivo verificable<br/>fuera de la red")]
+    end
+    B1 -->|Sí| H1
+    B2 -->|Sí| H2
+    B3 -->|Sí, con dirección nueva| H3
+    B4 -->|Sí, si el proyecto lo decide| H4
+    B5 -.->|No compatible: hay que reescribirlos| H5
+    B6 -.->|No entra en Hyperscale| H6
+    classDef yes fill:#d9f7d9,stroke:#080,color:#000
+    classDef partial fill:#fff3c4,stroke:#b58900,color:#000
+    classDef no fill:#ffd6d6,stroke:#c00,color:#000
+    class B1,B2,H1,H2 yes
+    class B3,B4,H3,H4 partial
+    class B5,B6,H5,H6 no
+```
+
 <a id="s11-1"></a>
 
 ## 11.1 Qué es Hyperscale
