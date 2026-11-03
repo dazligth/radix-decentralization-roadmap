@@ -3,7 +3,7 @@
 # 7. Cambios por repositorio
 
 Prioridad: **P0** imprescindible · **P1** necesario para todos los casos de uso · **P2** mejora.
-Esfuerzo: **S** días · **M** 1-3 semanas · **L** más de un mes.
+Esfuerzo: **S** días · **M** 1-3 semanas · **L** más de un mes · **XL** varios meses o más.
 
 ## 7.1 Nuevo repositorio: `radix-lite-indexer` (estrategia E3)
 
@@ -72,7 +72,7 @@ Esfuerzo: **S** días · **M** 1-3 semanas · **L** más de un mes.
 | N8-N9 | Toques de lockers y emisiones de validadores | P2 / S |
 | D | Convención de metadatos del validador `api_endpoints` (lista de URLs con capacidades) y documentación para operadores | P0 / S |
 
-Los cambios para **reducir la RAM y el disco del nodo** (R1-R11: ajustes de RocksDB, poda, arranque desde un snapshot verificado, actualización de protocolo de la estadística de propuestas y migración de Java a Rust) están en la **sección 9**, con su guía en la sección 10.
+Los cambios para **reducir la RAM y el disco del nodo** (R1-R11: ajustes de RocksDB, poda, arranque desde un snapshot verificado, actualización de protocolo de la estadística de propuestas y migración de Java a Rust) están en la **sección 9**, con el detalle de cada uno en la sección 9.4.
 
 Todos los índices deben ser **flags opcionales**, como los que ya existen, para no penalizar a los validadores que no quieran servir lecturas.
 
@@ -114,7 +114,7 @@ Todos los índices deben ser **flags opcionales**, como los que ya existen, para
 
 ## 7.6 `babylon-wallet-android` (y los forks `-iroh`, `wallet-pr-*`)
 
-- **P0/S.** `BaseUrlInterceptor` (`di/HttpModule.kt:128-144`) solo reescribe el esquema y el host, y **pierde el puerto y la ruta**. Un punto de acceso como `https://nodo:8443/gw` deja de funcionar al cambiar de Gateway.
+- **P0/S.** `BaseUrlInterceptor` (`di/HttpModule.kt:128-144`) solo reescribe el esquema y el host, y **pierde el puerto y la ruta**. Un punto de acceso como `https://nodo:8443/gw` deja de funcionar al cambiar de punto de acceso.
 - **P0/S.** `HomeCardsManager` usa `Gateway.mainnet` fijo (`di/ApplicationModule.kt:74-87`); debe usar el punto de acceso actual.
 - **P0/S.** En Ajustes → Gateways (`GatewaysViewModel.kt:105-133`), mostrar la lista descubierta en la cadena y probar varios puntos de acceso.
 - **P1/M.** Cuando Sargon tenga `LedgerBackend`, crear la implementación de nodo de los repositorios de `di/DataModule.kt:48-137`:
@@ -158,12 +158,12 @@ Es simétrico al de Android. Los clientes de DI (`DependencyKey`) permiten susti
 - **P1/S.** El relé de Radix Connect está fijo en `modules/wallet-request/wallet-request.ts:159`; hay que añadir la opción `relayUrl`.
 - **P2/S.** Enlaces fijos (`connect-button.module.ts:305,307`, `packages/connect-button/src/config.ts:3`).
 
-## 7.9 `radixdlt/rola` (login de todas las dApps)
+## 7.9 `radixdlt/rola` (inicio de sesión en todas las dApps)
 
 - **P0/S.** `GatewayService` (`typescript/src/gateway.ts:14-38`) usa por defecto `RadixNetworkConfigById[networkId].gatewayUrl`. Hay que:
   - aceptar una lista o descubrimiento;
   - añadir la opción `ownerKeysReader` para leer `owner_keys` con la Engine State API (`/object/attached-modules/metadata/entry`).
-- **P0/S.** Igual en el paquete `python/`.
+- **P1/S.** El paquete `python/` ya recibe el proveedor de metadatos como parámetro (`rola/core.py:14`); basta con añadir un proveedor que lea `owner_keys` del nodo o del indexador.
 - **P1/S.** Si no se puede consultar el ledger y la cuenta es virtual (sin `owner_keys`), la derivación de la dirección ya basta (`rola.ts:85`). Hay que documentar que ese caso no necesita red.
 
 ## 7.10 `connector-extension` y `connector-extension-iroh`
@@ -182,7 +182,7 @@ No usan el Gateway, pero son infraestructura P1 que también depende de un únic
 
 ## 7.12 `radixdlt-rust-sdk`
 
-- **P0/M.** Crear un crate ligero `ledger-api` con el trait `LedgerBackend` y dos implementaciones: API del Gateway y API del nodo.
+- **P0/M.** Crear un crate ligero `ledger-api` con el trait `LedgerBackend` y dos implementaciones: el formato de API actual (servido por el indexador ligero) y la API nativa del nodo.
 - **P0/S.** Varios cambios en `gateway-tx`:
   - `Gateway` (`crates/gateway-tx/src/lib.rs:145`) implementa el trait.
   - **Fallo:** `fungible_balance` (`:213-228`) solo lee la primera página, así que un saldo en la página 2 aparece como 0.
@@ -201,7 +201,7 @@ No usan el Gateway, pero son infraestructura P1 que también depende de un únic
 - **P0/M.** **Recuento sin historia arbitraria (E6):**
   - Manejar `TemperatureCheckCreatedEvent` y `ProposalCreatedEvent`, que hoy se ignoran (`governanceEvents.ts:66-69`).
   - En ese momento, guardar en la base de datos el snapshot completo: saldos de XRD, LSU, LSULP y pool units de los participantes, tasas de canje y estado de los pools.
-  - Para los fungibles también vale el «delta inverso»: saldo actual menos `fungible_entity_balance_changes` de `/lts/stream/account-transaction-outcomes`.
+  - Para los fungibles también sirve el «delta inverso»: saldo actual menos `fungible_entity_balance_changes` de `/lts/stream/account-transaction-outcomes`.
   - Hoy `voteCalculation.ts:178-216` y `scripts/tally.ts` dependen de `at_ledger_state` antiguo.
 - **P1/S, fallo actual.** `accountBalanceState.ts:110-124` lee los validadores en el estado actual, no en el del snapshot.
 - **P1/M.** Si se usa la API nativa del nodo, `poll.ts:30-45` pierde `affected_global_entities_filter`: hay que leer todo el stream y filtrar por emisor.
@@ -224,7 +224,7 @@ No usan el Gateway, pero son infraestructura P1 que también depende de un únic
 ## 7.16 Exploradores de transacciones: Radix Dashboard, exploradores comunitarios y un nuevo explorador de referencia
 
 - **Radix Dashboard (código no público).** Usa la API del Gateway, así que funciona con E3 si se configura su URL de API y E3 incluye los índices (h), (i) y (j). Hay que confirmarlo con quien lo opere. **P0:** pedir que se publique su código o que haya un despliegue comunitario.
-- **Exploradores comunitarios.** No he podido verificar su backend. Si usan la API del Gateway, les sirve E3 cambiando la URL. Si tienen su propio indexador, ya no dependen del Gateway.
+- **Exploradores comunitarios.** No se ha podido verificar su backend. Si usan la API del Gateway, les sirve E3 cambiando la URL. Si tienen su propio indexador, ya no dependen del Gateway.
 - **P0/L — Nuevo repositorio `radix-explorer` (explorador de referencia, código abierto, sitio estático).** Así ninguna entidad controla el único explorador.
   - **Fuente de datos:** la API de lectura de `radix-lite-indexer` y de los nodos, con la lista de puntos de acceso descubierta en la cadena (metadatos `api_endpoints` de los validadores) y failover.
   - **Páginas mínimas:**

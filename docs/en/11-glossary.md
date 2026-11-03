@@ -19,7 +19,7 @@ Terms used in the report, briefly explained.
 | **Core API, LTS, Engine State API** | APIs offered by the node itself. LTS is the part of the Core API with long-term compatibility. The Engine State API reads the internal state of any entity. |
 | **Ledger** | The complete record of committed transactions on the network. |
 | **State version** | The sequence number of each transaction in the ledger. Mainnet is past 567 million. |
-| **Round update** | A system transaction generated every consensus round. Over 99 % of state versions are round updates. |
+| **Round update** | A system transaction generated every consensus round. About 97-98 % of all state versions are round updates. |
 | **Epoch** | A period (~5 minutes) after which the validator set may change. |
 | **Receipt** | The result of executing a transaction: state changes, events and fees. |
 | **Subintent / pre-authorization** | Part of a transaction signed in advance by one user and completed later by another party. |

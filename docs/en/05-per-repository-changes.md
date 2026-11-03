@@ -3,7 +3,7 @@
 # 7. Per-repository changes
 
 Priority: **P0** essential · **P1** needed for every use case · **P2** improvement.
-Effort: **S** days · **M** 1-3 weeks · **L** more than a month.
+Effort: **S** days · **M** 1-3 weeks · **L** more than a month · **XL** several months or more.
 
 ## 7.1 New repository: `radix-lite-indexer` (strategy E3)
 
@@ -72,7 +72,7 @@ Effort: **S** days · **M** 1-3 weeks · **L** more than a month.
 | N8-N9 | Locker touches; validator emissions | P2 / S |
 | D | Validator metadata convention `api_endpoints` (list of URLs with capabilities), and operator documentation | P0 / S |
 
-The changes that **reduce node RAM and disk** (R1-R11: RocksDB tuning, pruning, verified snapshot bootstrap, the proposal-statistics protocol update and the Java-to-Rust migration) are in **section 9**, with their guide in section 10.
+The changes that **reduce node RAM and disk** (R1-R11: RocksDB tuning, pruning, verified snapshot bootstrap, the proposal-statistics protocol update and the Java-to-Rust migration) are in **section 9**, with each one detailed in section 9.4.
 
 Every index should be an **optional flag**, like the existing ones, so validators who do not want to serve reads are not penalised.
 
@@ -114,7 +114,7 @@ Every index should be an **optional flag**, like the existing ones, so validator
 
 ## 7.6 `babylon-wallet-android` (and the forks `-iroh`, `wallet-pr-*`)
 
-- **P0/S.** `BaseUrlInterceptor` (`di/HttpModule.kt:128-144`) rewrites only the scheme and host, so it **drops the port and path**. An access point like `https://node:8443/gw` breaks after switching gateways.
+- **P0/S.** `BaseUrlInterceptor` (`di/HttpModule.kt:128-144`) rewrites only the scheme and host, so it **drops the port and path**. An access point like `https://node:8443/gw` breaks after switching access points.
 - **P0/S.** `HomeCardsManager` is hard-coded to `Gateway.mainnet` (`di/ApplicationModule.kt:74-87`); it should use the current access point.
 - **P0/S.** In Settings → Gateways (`GatewaysViewModel.kt:105-133`), show the list discovered on ledger and probe several access points.
 - **P1/M.** Once Sargon has `LedgerBackend`, write the node implementation of the repositories bound in `di/DataModule.kt:48-137`:
@@ -163,7 +163,7 @@ Symmetric to Android. The DI clients (`DependencyKey`) allow the `liveValue` to 
 - **P0/S.** `GatewayService` (`typescript/src/gateway.ts:14-38`) defaults to `RadixNetworkConfigById[networkId].gatewayUrl`. It should:
   - accept a list or discovery;
   - add an `ownerKeysReader` option that reads `owner_keys` via the Engine State API (`/object/attached-modules/metadata/entry`).
-- **P0/S.** Same change in the `python/` package.
+- **P1/S.** The `python/` package already takes the metadata provider as a parameter (`rola/core.py:14`); it only needs a provider that reads `owner_keys` from the node or the indexer.
 - **P1/S.** If the ledger cannot be queried and the account is virtual (no `owner_keys`), address derivation alone is enough (`rola.ts:85`). Document that this case needs no network.
 
 ## 7.10 `connector-extension` and `connector-extension-iroh`
@@ -182,7 +182,7 @@ They do not use the Gateway, but they are P1 infrastructure that also depends on
 
 ## 7.12 `radixdlt-rust-sdk`
 
-- **P0/M.** Create a lightweight `ledger-api` crate with a `LedgerBackend` trait and two implementations: Gateway API and node API.
+- **P0/M.** Create a lightweight `ledger-api` crate with a `LedgerBackend` trait and two implementations: the current API format (served by the light indexer) and the node's native API.
 - **P0/S.** Several changes in `gateway-tx`:
   - `Gateway` (`crates/gateway-tx/src/lib.rs:145`) implements the trait.
   - **Bug:** `fungible_balance` (`:213-228`) reads only the first page, so a balance on page 2 shows as 0.
@@ -201,7 +201,7 @@ They do not use the Gateway, but they are P1 infrastructure that also depends on
 - **P0/M.** **Tally without arbitrary history (E6):**
   - Handle `TemperatureCheckCreatedEvent` and `ProposalCreatedEvent`, which are ignored today (`governanceEvents.ts:66-69`).
   - At that moment, store the full snapshot in the database: XRD, LSU, LSULP and pool-unit balances of participants, redemption rates and pool state.
-  - For fungibles, the "reverse delta" also works: current balance minus the `fungible_entity_balance_changes` from `/lts/stream/account-transaction-outcomes`.
+  - For fungibles, the "reverse delta" also serves: current balance minus the `fungible_entity_balance_changes` from `/lts/stream/account-transaction-outcomes`.
   - Today `voteCalculation.ts:178-216` and `scripts/tally.ts` depend on old `at_ledger_state`.
 - **P1/S, existing bug.** `accountBalanceState.ts:110-124` reads the validator list at current state, not at the snapshot.
 - **P1/M.** With the node's native API, `poll.ts:30-45` loses `affected_global_entities_filter`: it must read the whole stream and filter by emitter.
@@ -224,7 +224,7 @@ They do not use the Gateway, but they are P1 infrastructure that also depends on
 ## 7.16 Transaction explorers: Radix Dashboard, community explorers, and a new reference explorer
 
 - **Radix Dashboard (closed source).** It uses the Gateway API, so it works with E3 if its API URL is configured and E3 includes indexes (h), (i) and (j). This must be confirmed with whoever operates it. **P0:** ask for its source to be published, or for a community deployment.
-- **Community explorers.** I could not verify their backends. If they use the Gateway API, E3 serves them by changing the URL. If they run their own indexer, they no longer depend on the Gateway.
+- **Community explorers.** Their backends could not be verified. If they use the Gateway API, E3 serves them by changing the URL. If they run their own indexer, they no longer depend on the Gateway.
 - **P0/L — New repository `radix-explorer` (open-source reference explorer, static site).** No single entity then controls the only explorer.
   - **Data source:** the read API of `radix-lite-indexer` and of nodes, with the access-point list discovered on ledger (validator `api_endpoints` metadata) and failover.
   - **Minimum pages:**

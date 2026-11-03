@@ -19,7 +19,7 @@ Términos usados en el informe, explicados de forma breve.
 | **Core API, LTS, Engine State API** | APIs que ofrece el propio nodo. La LTS es la parte de la Core API con compatibilidad a largo plazo. La Engine State API permite leer el estado interno de cualquier entidad. |
 | **Ledger** | El registro completo de transacciones confirmadas de la red. |
 | **Versión de estado (*state version*)** | Número de orden de cada transacción en el ledger. Mainnet supera los 567 millones. |
-| **Cambio de ronda (*round update*)** | Transacción de sistema que se genera en cada ronda de consenso. Son más del 99 % de las versiones de estado. |
+| **Cambio de ronda (*round update*)** | Transacción de sistema que se genera en cada ronda de consenso. Son ~97-98 % de las versiones de estado en todo el historial. |
 | **Época** | Periodo (~5 minutos) tras el cual puede cambiar el conjunto de validadores. |
 | **Recibo (*receipt*)** | Resultado de ejecutar una transacción: cambios de estado, eventos y comisiones. |
 | **Subintent / pre-autorización** | Parte de una transacción firmada por adelantado por un usuario, que otra parte completa después. |

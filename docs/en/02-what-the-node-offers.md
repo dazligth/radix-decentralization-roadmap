@@ -35,25 +35,25 @@
 
 | Capability | With today's node |
 |---|---|
-| Epoch, network, transaction construction | ✅ `/status/network-status`, `/lts/transaction/construction` |
-| Preview v1/v2 (the Gateway only forwards it) | ✅ `/transaction/preview`, `/transaction/preview-v2` |
-| Submit and status | ✅ `/lts/transaction/{submit, status}`, with status mapping. LTS statuses are `CommittedSuccess`, `CommittedFailure`, `PermanentRejection`, `InMempool`, `NotSeen`, `FateUncertain` and `FateUncertainButLikelyRejection`. |
-| Fungible balances | ✅ `/lts/state/account-all-fungible-resource-balances` |
-| An account's NFTs and their data | ✅ in 2-3 calls: the account's `resource_vaults` collection, then vault contents, then `/state/non-fungible` |
-| Component state, KV stores, metadata, roles | ✅ Engine State API |
-| Validators, LSUs, pools | ✅ `/state/validator`, `/state/consensus-manager`, `/state/component`. The client computes redemption values. |
-| Deposit pre-validation | ✅ `/lts/state/account-deposit-behaviour` |
-| Transaction result | ✅ `/transaction/receipt` |
-| **N1** Subintent status | ❌ No endpoint, but the node **already indexes it**: column family `finalized_subintent_hashes` (`state-manager/src/store/column_families.rs:154-162`, `rocks_db.rs:705-708`) |
-| **N2** NFT location (which vault or account holds id X) | ❌ |
-| **N3** History filtered by entity, with NFT changes, manifest class and events | ⚠️ Only `/lts/stream/account-transaction-outcomes`, which gives fungible changes for accounts |
-| **N4** Entities that use a badge in their rules | ❌ |
-| **N5** Historical state of any age | ⚠️ Only ≈ 4-5 h, behind a flag that is off by default |
-| `last_updated_at_state_version` for metadata | ❌ Used by account recovery |
-| Batch reads (20 entities per call) | ❌ One call per entity |
-| Validator uptime, resource holders, locker `touched-at` | ❌ |
-| **N6** Safe public access (CORS, read-only, rate limiting, TLS) | ❌ |
-| Resubmission of pending transactions | ❌ The Gateway does it. With a node, it becomes the client's job: keep the payload and resubmit with backoff while the epoch window is valid. |
+| Epoch, network, transaction construction | Yes: `/status/network-status`, `/lts/transaction/construction` |
+| Preview v1/v2 (the Gateway only forwards it) | Yes: `/transaction/preview`, `/transaction/preview-v2` |
+| Submit and status | Yes: `/lts/transaction/{submit, status}`, with status mapping. LTS statuses are `CommittedSuccess`, `CommittedFailure`, `PermanentRejection`, `InMempool`, `NotSeen`, `FateUncertain` and `FateUncertainButLikelyRejection`. |
+| Fungible balances | Yes: `/lts/state/account-all-fungible-resource-balances` |
+| An account's NFTs and their data | Yes: in 2-3 calls: the account's `resource_vaults` collection, then vault contents, then `/state/non-fungible` |
+| Component state, KV stores, metadata, roles | Yes: Engine State API |
+| Validators, LSUs, pools | Yes: `/state/validator`, `/state/consensus-manager`, `/state/component`. The client computes redemption values. |
+| Deposit pre-validation | Yes: `/lts/state/account-deposit-behaviour` |
+| Transaction result | Yes: `/transaction/receipt` |
+| **N1** Subintent status | No: No endpoint, but the node **already indexes it**: column family `finalized_subintent_hashes` (`state-manager/src/store/column_families.rs:154-162`, `rocks_db.rs:705-708`) |
+| **N2** NFT location (which vault or account holds id X) | No: |
+| **N3** History filtered by entity, with NFT changes, manifest class and events | Partly: Only `/lts/stream/account-transaction-outcomes`, which gives fungible changes for accounts |
+| **N4** Entities that use a badge in their rules | No: |
+| **N5** Historical state of any age | Partly: Only ≈ 4-5 h, behind a flag that is off by default |
+| `last_updated_at_state_version` for metadata | No: Used by account recovery |
+| Batch reads (20 entities per call) | No: One call per entity |
+| Validator uptime, resource holders, locker `touched-at` | No: |
+| **N6** Safe public access (CORS, read-only, rate limiting, TLS) | No: |
+| Resubmission of pending transactions | No: The Gateway does it. With a node, it becomes the client's responsibility: keep the payload and resubmit with backoff while the epoch window is valid. |
 
 ---
 

@@ -51,7 +51,7 @@ Todas las claves van en orden de bytes, para recorrerlas por rangos.
 
 | Tabla | Clave | Valor | Escribe | Sirve a |
 |---|---|---|---|---|
-| `entity_tx` | `entity_address ‖ state_version (BE)` | bits: clase de manifiesto, ¿cambió saldo?, ¿emitió evento?, ¿depósito/retiro? | cada transacción de usuario y el génesis | historial filtrado |
+| `entity_tx` | `entity_address ‖ state_version (BE)` | bits: clase de manifiesto, ¿cambió saldo?, ¿emitió evento?, ¿depósito/retiro? | cada transacción de usuario y la génesis | historial filtrado |
 | `entity_tx_by_resource` | `entity ‖ resource ‖ state_version` | delta (fungible) o ids añadidos/quitados (NFT) | idem | historial por recurso, `balance_changes` |
 | `nf_location` | `resource ‖ local_id` | `vault ‖ global_owner ‖ state_version` | cambios de vaults NFT | `state/non-fungible/location`, exploradores |
 | `holders` | `resource ‖ owner ‖ (saldo invertido para ordenar)` | saldo | cambios de vaults | `extensions/resource-holders`, exploradores |
@@ -231,7 +231,7 @@ services:
    - que la red coincide (`status/network-configuration`);
    - que la `state_version` está cerca de la mayoría (no va retrasado);
    - la latencia.
-4. **Uso.** Elegir los 2-3 mejores y repartir peticiones. Si uno falla, pasar al siguiente. Opcionalmente, comparar `state_version` y el hash del acumulador entre dos para detectar un nodo que miente.
+4. **Uso.** Elegir los 2-3 mejores y repartir peticiones. Si uno falla, pasar al siguiente. Opcionalmente, comparar `state_version` y el hash del acumulador entre dos para detectar un nodo que devuelve datos incorrectos.
 5. **Caché.** Guardar la lista y refrescarla cada pocas horas.
 
 ## 10.3 Cambios en `babylon-node` para servir lecturas (N1, N5b, N6)
@@ -257,7 +257,7 @@ Además hay que:
 - añadir el esquema en `core-api-schema.yaml` y regenerar los modelos;
 - escribir pruebas.
 
-**N5b. `last_updated_at_state_version` en los metadatos.** Para no añadir un índice, se puede devolver la versión del último cambio de la entrada leyendo el nodo hoja del árbol de estado: cada hoja guarda la versión en que se escribió.
+**N5b. `last_updated_at_state_version` en los metadatos.** Para no añadir un índice, se puede estudiar obtener la versión del último cambio de la entrada a partir del nodo hoja del árbol de estado, cuyas claves en la base de datos incluyen la versión en que se escribió (a confirmar en el código de `radix-substate-store-impls`). Si no fuera viable, se añade un índice pequeño.
 
 **N6. Modo de lectura pública.**
 
@@ -314,7 +314,7 @@ const rola = Rola({
 
 ## 10.5 Archivo verificable de Olympia
 
-1. **Obtener los datos.** Pedir a la Foundation, o a cualquier operador que la conserve, una copia de la base de datos de un nodo de Olympia o de su Gateway (`olympia-gateway.radixdlt.com`, versión 337 759 839). Como alternativa, recorrer sus endpoints de transacciones por cuenta para todas las cuentas mientras siga activa.
+1. **Obtener los datos.** Pedir a la Foundation, o a cualquier operador que la conserve, una copia de la base de datos de un nodo de Olympia o de su Gateway (`olympia-gateway.radixdlt.com`, versión 337 759 839). Como alternativa, recorrer sus endpoints de transacciones por cuenta para todas las cuentas mientras siga activo.
 2. **Exportar.**
    - Transacciones en orden, en ficheros JSON Lines o Parquet por bloques de versiones.
    - Un **índice estático por dirección**: `rdx1…` → lista de bloques y posiciones.
@@ -322,7 +322,7 @@ const rola = Rola({
 3. **Sellar.**
    - Calcular un árbol de Merkle sobre los ficheros y publicar la raíz.
    - Que **varias personas independientes** firmen la raíz y la publiquen, por ejemplo en RadixTalk y en una transacción de Babylon con un mensaje.
-4. **Publicar** en IPFS (con varios *pinning* independientes), BitTorrent y, si es posible, Arweave.
+4. **Publicar** en IPFS (con varios servicios de *pinning* independientes), BitTorrent y, si es posible, Arweave.
 5. **Integrar** en el explorador de referencia y en `olympia-wallet`: leer el índice estático y descargar solo los bloques necesarios.
 
 ## 10.6 Lecturas verificables: la solución a largo plazo
@@ -348,12 +348,12 @@ La ventana del árbol de estado ya conserva las versiones recientes (`state_hash
 
 ## 10.7 Cómo probar y desplegar cada fase sin cortes
 
-1. **Stokenet primero.** Cada cambio se despliega antes en Stokenet, que hoy gestiona la comunidad, con nodos de distintos operadores.
+1. **Stokenet primero.** Cada cambio se despliega antes en Stokenet, que gestiona la comunidad desde junio de 2026 según radix.wiki, con nodos de distintos operadores.
 2. **Métricas.** Las métricas de tamaño por column family (`raw_db_size`), el RSS del proceso, las rondas perdidas por validador, la latencia de la API y el retraso del indexador se publican en un panel compartido.
 3. **Opciones desactivadas por defecto.** Los cambios de almacenamiento entran como opciones. Se activan primero en nodos completos y después en validadores.
 4. **Vuelta atrás.**
    - Para el indexador, basta con apuntar las apps a otro punto de acceso.
-   - Para las opciones del nodo, conservar una copia (checkpoint) antes de activar las que borran datos (R3, R5, R7, R8).
+   - Para las opciones del nodo, conservar una copia (checkpoint) antes de activar las que borran datos (R3, R4, R5, R7, R8).
 5. **Actualizaciones de protocolo** (R10, índices verificables): siguen el proceso habitual de señal de preparación de los validadores.
 
 ---

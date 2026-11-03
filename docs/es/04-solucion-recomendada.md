@@ -107,6 +107,11 @@ sequenceDiagram
     L-->>W: CommittedSuccess
 ```
 
+> [!IMPORTANT]
+> - **¿Es posible?** Sí. Es la solución recomendada a corto plazo.
+> - **Dificultad:** Media.
+> - **Esfuerzo y plazo:** 6-10 persona-mes la solución mínima viable; meses (estimación).
+
 **Estrategia: E3 primero, E2 después y E6 como complemento.** Hay que añadir dos piezas transversales:
 
 - **(D) descubrimiento en la cadena:** que los validadores publiquen sus URLs de acceso en los metadatos de su componente, por ejemplo con la clave `api_endpoints`;
@@ -115,16 +120,16 @@ sequenceDiagram
 **Por qué:**
 
 1. **Tiempo.** El Gateway está financiado solo hasta el 31-dic-2026. E3 es la única opción que puede **dar servicio a los wallets actuales sin publicar versiones nuevas**, porque ya permiten configurar la URL del Gateway.
-2. **Coste.** Pasa de ~2,5 TB y ~300-500 €/mes por operador a ~10-50 GB añadidos a un nodo que ya existe. Los datos medidos lo explican: más del 99 % de las versiones de estado son cambios de ronda que no hace falta indexar.
+2. **Coste.** Pasa de los ~2,5 TB y ~300-400 €/mes que requiere el Gateway a ~10-50 GB (estimación) añadidos a un nodo que ya existe. Los datos medidos lo explican: ~97-98 % de las versiones de estado son cambios de ronda que no hace falta indexar.
 3. **Descentralización real.** Si cada validador o nodo completo puede servir la API con coste casi nulo y anunciarse en la cadena, desaparece el «proveedor por defecto». Es la condición para que la red dé servicio a cualquier usuario sin depender de un proveedor concreto.
 4. **Camino de evolución.**
    - Los índices de E3 se integran luego en `babylon-node` (E2).
-   - La interfaz `LedgerBackend` de los clientes permite pasar después a la API nativa del nodo, y en el futuro a Hyperscale (E5), sin rehacer las aplicaciones.
+   - La interfaz `LedgerBackend` de los clientes permite pasar después a la API nativa del nodo, al cliente ligero (E5) y, si se adopta, a Hyperscale (sección 11), sin rehacer la lógica de las aplicaciones.
 5. **Riesgo controlado.** No toca el consenso ni el núcleo del nodo. Es un proceso aparte que se puede detener o reiniciar sin afectar al nodo.
 
 **Lo que E3 no da, y cómo se cubre:**
 
-- **Estado histórico arbitraria** (`at_ledger_state` antiguo):
+- **Estado histórico arbitrario** (`at_ledger_state` antiguo):
   - E6, con captura hacia delante en consultation;
   - o una opción de «nodo de archivo» en E2, con historia larga y `ByTimestamp`.
 - **Confianza en el nodo:** consultar a varios nodos descubiertos en la cadena y comparar `state_version` y el hash del acumulador (`/stream/proofs`). Con el tiempo, E5.
@@ -135,7 +140,7 @@ sequenceDiagram
 
 1. **Es opcional y separado del validador.**
    - El indexador lo ejecuta solo quien quiera servir lecturas al público.
-   - La práctica recomendada es que un validador **no** atienda tráfico público, para no exponerlo a ataques ni a carga que afecte al consenso. Las lecturas las sirven nodos completos (no validadores) operados por la comunidad, proveedores de wallets, dApps o los propios operadores de validadores en una máquina aparte.
+   - Es aconsejable que un validador **no** atienda tráfico público, para no exponerlo a ataques ni a carga que afecte al consenso. Las lecturas las sirven nodos completos (no validadores) operados por la comunidad, proveedores de wallets, dApps o los propios operadores de validadores en una máquina aparte.
    - Un validador que no lo ejecute **no ve ningún cambio** en su almacenamiento.
    - En E2, los índices dentro del nodo serían flags **desactivados por defecto**.
 2. **Si un operador lo ejecuta en la misma máquina que su nodo:**
@@ -156,16 +161,21 @@ sequenceDiagram
    | Además | Base de datos PostgreSQL de ~2,5 TB (+60 GB/mes) | Índices de ~10-50 GB (estimado) |
    | Total adicional sobre el nodo | **~2,5 TB** | **~10-50 GB** |
 
-   Es decir: un nodo completo **ya guarda hoy todos los datos de la red**, porque lo necesita para sincronizarse y validar, y eso no cambia. El indexador ligero **solo añade sus índices encima**: un poco más que un nodo solo (~2-10 %) y mucho menos que un nodo con Gateway (~50 veces menos).
+   Es decir: un nodo completo **ya guarda hoy todos los datos de la red**, porque lo necesita para sincronizarse y validar, y eso no cambia. El indexador ligero **solo añade sus índices sobre los datos del nodo**: un poco más que un nodo solo (~2-10 %) y mucho menos que un nodo con Gateway (entre 50 y 250 veces menos; estimación).
 
-   El indexador ocupa poco porque **no duplica el estado ni las transacciones**, que ya están en el nodo. Solo guarda punteros (entidad → `state_version`) y pocas tablas pequeñas, y descarta los cambios de ronda, que son más del 99 % de las versiones.
+   El indexador ocupa poco porque **no duplica el estado ni las transacciones**, que ya están en el nodo. Solo guarda punteros (entidad → `state_version`) y pocas tablas pequeñas, y descarta los cambios de ronda, que son ~97-98 % de las versiones.
 3. **Margen de error.**
-   - No he encontrado una cifra pública actual del tamaño real del ledger de un nodo de mainnet; la documentación solo da los 500 GB «iniciales».
-   - Los 10-50 GB del indexador son una **estimación** a partir de las mediciones de transacciones de usuario. El índice de titulares de recursos (h) y el de ubicación de NFT (b) dependen del número de pares recurso-titular y de NFT existentes, que no he medido.
+   - Solo se conoce el tamaño **comprimido** del snapshot comunitario (274 GiB, sep-2026); no se ha publicado el tamaño en disco de un nodo de mainnet, y la documentación solo da los 500 GB «iniciales».
+   - Los 10-50 GB del indexador son una **estimación** a partir de las mediciones de transacciones de usuario. El índice de titulares de recursos (h) y el de ubicación de NFT (b) dependen del número de pares recurso-titular y de NFT existentes, que no se ha medido.
    - El primer prototipo debe medir ambos antes de comprometer cifras.
 4. **Lo que sí aumentaría mucho:** el «nodo de archivo» con historia completa de substates (N5), que es en esencia lo que hace que el Gateway ocupe 2,5 TB. Por eso el informe **no** lo propone para validadores. Sería una opción solo para quien necesite estado histórico arbitrario. Para gobernanza se sustituye por la captura del snapshot al abrir la votación (E6).
 
 ## 6.2 La mejor solución con tiempo ilimitado: lecturas verificables desde cualquier nodo
+
+> [!IMPORTANT]
+> - **¿Es posible?** Sí, sin cambiar el consenso (los índices verificables sí requieren una actualización de protocolo).
+> - **Dificultad:** Muy alta.
+> - **Esfuerzo y plazo:** ~40-80 persona-mes adicionales; años (estimación).
 
 La solución a corto plazo (E3) elimina el Gateway, pero el cliente **sigue teniendo que confiar** en el nodo que le responde, igual que hoy confía en el Gateway. Con tiempo ilimitado, la solución ideal elimina también esa confianza: **cualquier nodo, incluso uno desconocido, puede servir datos, y el wallet comprueba por sí mismo que son correctos.**
 
@@ -252,7 +262,7 @@ sequenceDiagram
 | ¿Quién puede servir datos? | Operadores de nodo conocidos | **Cualquier nodo, incluso anónimo** |
 | Cambios de protocolo | Ninguno | Solo para los índices verificables (punto 4) |
 | Plazo | Meses | **Años** |
-| Esfuerzo (est.) | 7-10 persona-mes el mínimo viable; 18-30 el completo | **~40-80 persona-mes** adicionales, con perfiles expertos en el protocolo |
+| Esfuerzo (est.) | 6-10 persona-mes el mínimo viable; 20-35 el completo | **~40-80 persona-mes** adicionales, con perfiles expertos en el protocolo |
 
 **Por qué es la mejor con tiempo ilimitado:** es la única opción en la que la red no depende de nadie, ni de un Gateway ni de la honestidad de un nodo. Es el mismo nivel de garantía que da la propia cadena, extendido hasta el wallet de cada usuario.
 

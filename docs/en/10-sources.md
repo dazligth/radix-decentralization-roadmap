@@ -2,7 +2,7 @@
 
 # Sources
 
-- Code: `babylon-node` (`develop`), `babylon-gateway` (`main`), `sargon` (`main`), `babylon-wallet-ios` (`main`), `rola`, `babylon-nodecli` (cloned 3 Nov 2026), and the local repositories. `file:line` references refer to those versions.
+- Code: `babylon-node` (`develop` and release `v1.4.0.0`), `babylon-gateway` (`main`), `sargon` (`main`), `babylon-wallet-ios` (`main`), `rola`, `babylon-nodecli` (cloned 3 Nov 2026), and the local repositories. `file:line` references refer to those versions.
 - Measurements: public API `mainnet.radixdlt.com` (`/status/gateway-status`, `/stream/transactions`), 3 Nov 2026. Daily rates come from 100-transaction samples per date and are orders of magnitude.
 - [RFPs for Gateway and Relay Services (3 Feb 2026)](https://www.radixdlt.com/blog/the-next-phase-of-decentralization-rfps-for-gateway-and-relay-services)
 - [The Foundation Operational Stack: Mapping the 2026 Transition](https://www.radixdlt.com/blog/the-foundation-operational-stack-mapping-the-2026-transition)

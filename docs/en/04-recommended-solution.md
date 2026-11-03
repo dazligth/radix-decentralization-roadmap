@@ -107,6 +107,11 @@ sequenceDiagram
     L-->>W: CommittedSuccess
 ```
 
+> [!IMPORTANT]
+> - **Is it possible?** Yes. It is the recommended short-term solution.
+> - **Difficulty:** Medium.
+> - **Effort and timeline:** 6-10 person-months for the minimum viable solution; months (estimate).
+
 **Strategy: E3 first, then E2, with E6 as a complement.** Two cross-cutting pieces are added:
 
 - **(D) on-ledger discovery:** validators publish their access URLs in their component metadata, for example under the key `api_endpoints`;
@@ -115,11 +120,11 @@ sequenceDiagram
 **Why:**
 
 1. **Time.** The Gateway is funded only until 31 Dec 2026. E3 is the only option that can **serve today's wallets without new releases**, because they already accept a custom Gateway URL.
-2. **Cost.** It goes from ~2.5 TB and ~€300-500/month per operator to ~10-50 GB added to a node that already exists. The measured data explains why: over 99 % of state versions are round changes that do not need indexing.
+2. **Cost.** It goes from the ~2.5 TB and ~€300-400/month the Gateway requires to ~10-50 GB (estimate) added to a node that already exists. The measured data explains why: ~97-98 % of state versions are round changes that do not need indexing.
 3. **Real decentralisation.** If every validator or full node can serve the API at near-zero cost and announce itself on ledger, the "default provider" disappears. That is the condition for the network to serve any user without depending on a particular provider.
 4. **Upgrade path.**
    - E3's indexes later move into `babylon-node` (E2).
-   - The clients' `LedgerBackend` interface lets them switch to the node's native API later, and in future to Hyperscale (E5), without rewriting applications.
+   - The clients' `LedgerBackend` interface lets them switch to the node's native API later, to the light client (E5) and, if adopted, to Hyperscale (section 11), without rewriting application logic.
 5. **Contained risk.** It does not touch consensus or the node core. It is a separate process that can be stopped or restarted without affecting the node.
 
 **What E3 does not provide, and how it is covered:**
@@ -135,7 +140,7 @@ sequenceDiagram
 
 1. **It is optional and separate from the validator.**
    - Only those who want to serve public reads run the indexer.
-   - Recommended practice is that a validator does **not** serve public traffic, so it is not exposed to attacks or to load that affects consensus. Reads are served by full nodes (not validators) run by the community, wallet providers, dApps, or validator operators on a separate machine.
+   - It is advisable that a validator does **not** serve public traffic, so it is not exposed to attacks or to load that affects consensus. Reads are served by full nodes (not validators) run by the community, wallet providers, dApps, or validator operators on a separate machine.
    - A validator that does not run it sees **no change** in storage.
    - In E2, the in-node indexes would be flags that are **off by default**.
 2. **If an operator runs it on the same machine as their node:**
@@ -156,16 +161,21 @@ sequenceDiagram
    | Plus | ~2.5 TB PostgreSQL database (+60 GB/month) | ~10-50 GB of indexes (estimated) |
    | Total extra on top of the node | **~2.5 TB** | **~10-50 GB** |
 
-   In other words: a full node **already stores all network data today**, because it needs it to sync and validate, and that does not change. The lightweight indexer **only adds its indexes on top**: slightly more than a bare node (~2-10 %) and far less than a node plus Gateway (~50 times less).
+   In other words: a full node **already stores all network data today**, because it needs it to sync and validate, and that does not change. The lightweight indexer **only adds its indexes on top of the node's data**: slightly more than a bare node (~2-10 %) and far less than a node plus Gateway (50 to 250 times less; estimate).
 
-   The indexer stays small because it **does not duplicate state or transactions**, which already live in the node. It only stores pointers (entity → `state_version`) and a few small tables, and it skips round changes, which are over 99 % of versions.
+   The indexer stays small because it **does not duplicate state or transactions**, which already live in the node. It only stores pointers (entity → `state_version`) and a few small tables, and it skips round changes, which are ~97-98 % of versions.
 3. **Margin of error.**
-   - I found no current public figure for the real ledger size of a mainnet node; the docs only give the 500 GB "initial" figure.
-   - The 10-50 GB for the indexer is an **estimate** based on the user-transaction measurements. The resource-holder index (h) and the NFT-location index (b) depend on the number of resource-holder pairs and existing NFTs, which I did not measure.
+   - Only the **compressed** size of the community snapshot is known (274 GiB, Sep 2026); the on-disk size of a mainnet node has not been published, and the docs only give the 500 GB "initial" figure.
+   - The 10-50 GB for the indexer is an **estimate** based on the user-transaction measurements. The resource-holder index (h) and the NFT-location index (b) depend on the number of resource-holder pairs and existing NFTs, which were not measured.
    - The first prototype must measure both before committing to figures.
 4. **What would grow a lot:** an "archive node" with full substate history (N5), which is essentially what makes the Gateway 2.5 TB. That is why this report does **not** propose it for validators. It would be an option only for those who need arbitrary historical state. For governance it is replaced by capturing the snapshot when the vote opens (E6).
 
 ## 6.2 The best solution with unlimited time: verifiable reads from any node
+
+> [!IMPORTANT]
+> - **Is it possible?** Yes, without changing consensus (verifiable indexes do need a protocol update).
+> - **Difficulty:** Very high.
+> - **Effort and timeline:** ~40-80 more person-months; years (estimate).
 
 The short-term solution (E3) removes the Gateway, but the client **still has to trust** the node that answers it, just as it trusts the Gateway today. With unlimited time, the ideal solution removes that trust too: **any node, even an unknown one, can serve data, and the wallet checks for itself that the data is correct.**
 
@@ -252,7 +262,7 @@ sequenceDiagram
 | Who can serve data? | Known node operators | **Any node, even anonymous** |
 | Protocol changes | None | Only for verifiable indexes (item 4) |
 | Lead time | Months | **Years** |
-| Effort (est.) | 7-10 person-months minimum viable; 18-30 full | **~40-80 person-months** more, with protocol experts |
+| Effort (est.) | 6-10 person-months minimum viable; 20-35 full | **~40-80 person-months** more, with protocol experts |
 
 **Why it is the best with unlimited time:** it is the only option in which the network depends on no one, neither a Gateway nor the honesty of a node. It gives the same level of guarantee as the chain itself, extended to every user's wallet.
 

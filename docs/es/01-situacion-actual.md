@@ -6,7 +6,7 @@
 
 - wallets;
 - dApps;
-- login con ROLA;
+- inicio de sesión con ROLA;
 - exploradores;
 - gobernanza;
 - agentes;
@@ -118,10 +118,10 @@ En rojo, los servicios que dependen de un solo operador.
 | Ritmo de versiones de estado | **~3,6/s de media** desde junio de 2026; 4,4/s en la muestra de hoy. Cada ronda de consenso es una versión. |
 | Transacciones de usuario/día (muestra de 100 transacciones en cada fecha) | nov-23: 1,5k · mar-24: 5,5k · jul-24: 11,6k · nov-24: 20,7k · **mar-25: 34,7k (pico)** · jul-25: 8,4k · nov-25: 5,9k · mar-26: 3,4k · jul-26: 2,2k · oct-26: 4,4k |
 | Total estimado de transacciones de usuario desde la génesis | **~10-15 millones** (integración aproximada, ±50 %) |
-| Peso de las transacciones de usuario | **<1 % de las versiones de estado.** Más del 99 % son cambios de ronda y época. |
+| Peso de las transacciones de usuario | **~2-3 % de las versiones de estado** en todo el historial (~10-15 millones de ~567 millones); hoy, menos del 1 %. El resto (~97-98 %) son cambios de ronda y de época. |
 | Ventana histórica del nodo | `state_version_history_length = 60 000` versiones por defecto, **≈ 4-5 horas** al ritmo actual |
 
-**Consecuencia clave.** Casi todo el volumen del Gateway viene de guardar la historia completa de cada substate, incluidos los ~560 millones de cambios de ronda. Un índice que solo registre lo que necesitan los clientes trabaja con ~10-15 millones de transacciones de usuario. Es un problema **dos órdenes de magnitud más pequeño**.
+**Consecuencia clave.** Casi todo el volumen del Gateway viene de guardar la historia completa de cada substate, incluidos los ~555 millones de cambios de ronda. Un índice que solo registre lo que necesitan los clientes trabaja con ~10-15 millones de transacciones de usuario. Es un problema **unas 40-50 veces más pequeño**.
 
 # 2. Quién depende del Gateway y para qué
 
@@ -133,8 +133,8 @@ En rojo, los servicios que dependen de un solo operador.
 | **Radix dApp Toolkit** | `transaction/status`, `transaction/subintent-status`, `state/entity/page/metadata` | Seguir la transacción que envía el wallet; nombre de la dApp en el botón |
 | **ROLA** (`radixdlt/rola`) | `state/entity/details` (metadato `owner_keys`) | **Login de cualquier dApp.** Se consulta en cada inicio de sesión (`typescript/src/rola.ts:49-87`, `gateway.ts:14-38`). Por defecto usa la URL pública. |
 | **Connector Extension** | `transaction/status` (a través del `GatewayModule` de la RDT) | Notificación de transacción confirmada |
-| **Exploradores de transacciones** (Radix Dashboard, código no público; exploradores comunitarios) | Prácticamente toda la API, incluidas las extensiones de **titulares de recursos**, ubicación de NFT, historial filtrado de **cualquier** entidad, uptime de validadores, KV-stores, paquetes, esquemas y `at_ledger_state` | Ver la sección 2.1 |
-| **Developer Console** (código no público) | Preview, envío, estado, detalles de entidad | Despliegue de paquetes, manifiestos |
+| **Exploradores de transacciones** (Radix Dashboard, código no público; exploradores comunitarios) | No verificable en el Dashboard; por sus funciones, prácticamente toda la API, incluidas las extensiones de **titulares de recursos**, ubicación de NFT, historial filtrado de **cualquier** entidad, uptime de validadores, KV-stores, paquetes, esquemas y `at_ledger_state` | Ver la sección 2.1 |
+| **Developer Console** (código no público) | No verificable; por sus funciones, al menos preview, envío, estado y detalles de entidad | Despliegue de paquetes, manifiestos |
 | **Consultation** (gobernanza) | `state/entity/details`, `state/key-value-store/{keys, data}`, `stream/transactions`, `transaction/committed-details`, `status/gateway-status`, saldos y NFT **con `at_ledger_state` histórico** | Propuestas, votos, recuento con snapshot |
 | **radixdlt-rust-sdk** | `status/gateway-status`, `state/entity/page/fungibles`, `transaction/{status, committed-details, submit, construction, preview}`, `state/entity/details` | SDK genérico para firmar y enviar |
 | **wallet-agent-ai** | ~25 llamadas: detalles de entidad, preview, envío, estado, stream, validadores, uptime | Agente con wallet propia |
@@ -142,23 +142,28 @@ En rojo, los servicios que dependen de un solo operador.
 
 ## 2.1 Exploradores de transacciones: requisito explícito
 
+> [!IMPORTANT]
+> - **¿Es posible?** Sí. Los exploradores pueden funcionar sin el Gateway.
+> - **Dificultad:** Media.
+> - **Esfuerzo y plazo:** ~1-2 persona-mes de índices + ~2-3 de explorador de referencia (estimación).
+
 Un explorador es el cliente **más exigente**: necesita índices globales que ni el nodo ni los wallets necesitan. Cada función de un explorador tiene una fuente distinta en el nodo:
 
 | Función del explorador | Cómo se sirve sin el Gateway |
 |---|---|
-| Buscar una transacción por su hash (intent hash) y ver su recibo, eventos, cambios de estado y comisiones | ✅ Nodo: `/core/transaction/receipt` (por `intent_hash`) y `/core/lts/transaction/status`. Las balance changes se calculan desde el recibo. |
-| Últimas transacciones y transacciones por época o ronda | ✅ Nodo: `/core/stream/transactions` (orden ascendente). El orden descendente o desde una fecha necesita el índice `timestamp → state_version`. |
-| Página de una cuenta, componente o recurso (estado actual, saldos, NFT, metadatos, roles, royalties) | ✅ Nodo: Core y Engine State API |
-| Paquetes: blueprints, código, esquemas | ✅ Nodo: `/core/state/package`, `/blueprint/info`, `/entity/schema/entry` |
-| KV-stores de un componente | ✅ Nodo: `/kv-store/iterator` |
-| **Historial de transacciones de cualquier entidad**, con filtros por tipo, recurso o evento | ❌ Índice (a) de E3, o N3 |
-| **Titulares de un recurso**, ordenados por saldo | ❌ Índice nuevo (h): `resource → (entidad, saldo)` |
-| **Dónde está un NFT** | ❌ Índice (b) de E3, o N2 |
-| Validadores: uptime, historial de stake, APY | ❌ Índice (g) de E3, o N9. El stake actual sale del nodo. |
-| Estado de la cuenta o del recurso en una fecha pasada | ❌ Nodo de archivo (N5), o índice de cambios de saldo (a) + (h) |
-| Estadísticas: TPS, transacciones/día, cuentas activas, comisiones quemadas | ❌ Índice nuevo (i): agregados por hora y día |
-| Buscar por nombre o símbolo (metadatos) | ❌ Índice nuevo (j): texto `name`, `symbol`, `tags` → entidad |
-| Buscar por dirección | ✅ La dirección indica su tipo; basta con `/entity/info` |
+| Buscar una transacción por su hash (intent hash) y ver su recibo, eventos, cambios de estado y comisiones | Sí: Nodo: `/core/transaction/receipt` (por `intent_hash`) y `/core/lts/transaction/status`. Los cambios de saldo se calculan a partir del recibo. |
+| Últimas transacciones y transacciones por época o ronda | Sí: Nodo: `/core/stream/transactions` (orden ascendente). El orden descendente o desde una fecha necesita el índice `timestamp → state_version`. |
+| Página de una cuenta, componente o recurso (estado actual, saldos, NFT, metadatos, roles, royalties) | Sí: Nodo: Core y Engine State API |
+| Paquetes: blueprints, código, esquemas | Sí: Nodo: `/core/state/package`, `/blueprint/info`, `/entity/schema/entry` |
+| KV-stores de un componente | Sí: Nodo: `/kv-store/iterator` |
+| **Historial de transacciones de cualquier entidad**, con filtros por tipo, recurso o evento | No: Índice (a) de E3, o N3 |
+| **Titulares de un recurso**, ordenados por saldo | No: Índice nuevo (h): `resource → (entidad, saldo)` |
+| **Dónde está un NFT** | No: Índice (b) de E3, o N2 |
+| Validadores: uptime, historial de stake, APY | No: Índice (g) de E3, o N9. El stake actual sale del nodo. |
+| Estado de la cuenta o del recurso en una fecha pasada | No: Nodo de archivo (N5), o índice de cambios de saldo (a) + (h) |
+| Estadísticas: TPS, transacciones/día, cuentas activas, comisiones quemadas | No: Índice nuevo (i): agregados por hora y día |
+| Buscar por nombre o símbolo (metadatos) | No: Índice nuevo (j): texto `name`, `symbol`, `tags` → entidad |
+| Buscar por dirección | Sí: La dirección indica su tipo; basta con `/entity/info` |
 
 **Consecuencias para la estrategia:**
 
@@ -183,23 +188,27 @@ flowchart LR
     class AR good
 ```
 
-Radix tuvo una red anterior, **Olympia**, que se migró a Babylon el 28-sep-2023. Lo he comprobado en el ledger real y en el código: **no impide la solución**, pero añade cuatro requisitos.
+> [!IMPORTANT]
+> - **¿Es posible?** Sí. Olympia no impide eliminar el Gateway. Archivar su historial también es posible.
+> - **Dificultad:** Baja, pero urgente (antes de que se apague el Gateway de Olympia).
 
-1. **El estado de Olympia está dentro del génesis de Babylon.**
+Radix tuvo una red anterior, **Olympia**, que se migró a Babylon el 28-sep-2023. Se ha comprobado en el ledger real y en el código: **no impide la solución**, pero añade cuatro consideraciones, dos de las cuales requieren trabajo (puntos 1 y 3).
+
+1. **El estado de Olympia está dentro dla génesis de Babylon.**
    - Las versiones de estado 1 a ~669 de mainnet son las transacciones de génesis. La primera transacción de usuario es la versión 670 (2023-09-28 07:26 UTC).
    - Esas transacciones cargan, en bloques (`GenesisDataChunk`: `Validators`, `Stakes`, `Resources`, `ResourceBalances`, `XrdBalances`; `radix-engine/.../genesis_helper/src/lib.rs:34-46`), los validadores, stakes, tokens y saldos que había en Olympia. Las cuentas se crean a partir de las claves secp256k1 de Olympia.
    - **Consecuencia para el indexador (E3/E2):**
-     - la primera sincronización tiene que empezar en la versión 1 y procesar el génesis, que tiene recibos muy grandes;
+     - la primera sincronización tiene que empezar en la versión 1 y procesar la génesis, que tiene recibos muy grandes;
      - si no lo hace, faltarían en los índices todas las cuentas migradas que no se han movido desde 2023: titulares de XRD, primer movimiento de la cuenta, stakes migrados.
    - Es un trabajo de una sola vez y se puede incluir en los snapshots firmados.
 2. **Las cuentas de Olympia siguen funcionando sin el Gateway.**
    - Importar cuentas de Olympia al wallet de Babylon se hace **sin red**: exportación con `olympia-wallet` y `MigrateOlympiaAccountsUseCase` en el wallet Android.
    - ROLA verifica las cuentas secp256k1 por derivación, sin consultar el ledger.
-   - El **escaneo de recuperación** con frase semilla de Olympia (ruta BIP44, `ResolveDerivationPathsForRecoveryScanUseCase.kt:42-79`) usa las mismas consultas al ledger que el resto. Con el nodo funciona: las cuentas creadas en el génesis existen y se detectan con `/entity/info`, aunque no exista `last_updated_at_state_version`.
+   - El **escaneo de recuperación** con frase semilla de Olympia (ruta BIP44, `ResolveDerivationPathsForRecoveryScanUseCase.kt:42-79`) usa las mismas consultas al ledger que el resto. Con el nodo funciona: las cuentas creadas en la génesis existen y se detectan con `/entity/info`, aunque no exista `last_updated_at_state_version`.
 3. **El historial de transacciones de Olympia (antes del 28-sep-2023) NO está en el ledger de Babylon.**
    - Solo lo sirve el **Gateway de Olympia**, `olympia-gateway.radixdlt.com`. Sigue activo hoy, con Gateway API 1.1.14, congelado en la versión 337 759 839 del 2023-09-28T06:33:34Z.
    - Lo usan `olympia-wallet` (`src/helpers/network.ts:14-39`) y el explorador de Olympia (`radixdlt/explorer`).
-   - Es **otro servicio central**, y no aparece en las listas de servicios de la transición que he revisado.
+   - Es **otro servicio central**, y no aparece en las listas de servicios de la transición publicadas por la Foundation que se han revisado.
    - Si se apaga, el historial público de Olympia (auditorías, impuestos, investigación) **se pierde**, salvo que alguien conserve una copia de la base de datos de un nodo o del Gateway de Olympia.
    - **Ventaja:** está congelado y ya no cambia, así que no necesita indexador. Basta un **archivo único y verificable**:
      - exportar el ledger de Olympia (base de datos del nodo o volcado del Gateway de Olympia);

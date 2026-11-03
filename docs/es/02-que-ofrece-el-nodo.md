@@ -35,25 +35,25 @@
 
 | Capacidad | Con el nodo actual |
 |---|---|
-| Época, red, construcción de transacciones | ✅ `/status/network-status`, `/lts/transaction/construction` |
-| Preview v1/v2 (el Gateway solo lo reenvía) | ✅ `/transaction/preview`, `/transaction/preview-v2` |
-| Envío y estado | ✅ `/lts/transaction/{submit, status}`, con traducción de estados. Los estados LTS son `CommittedSuccess`, `CommittedFailure`, `PermanentRejection`, `InMempool`, `NotSeen`, `FateUncertain` y `FateUncertainButLikelyRejection`. |
-| Saldos fungibles | ✅ `/lts/state/account-all-fungible-resource-balances` |
-| NFT de una cuenta y sus datos | ✅ con 2-3 llamadas: colección `resource_vaults` de la cuenta, contenido del vault y `/state/non-fungible` |
-| Estado de componentes, KV-stores, metadatos, roles | ✅ Engine State API |
-| Validadores, LSU, pools | ✅ `/state/validator`, `/state/consensus-manager`, `/state/component`. El valor de canje se calcula en el cliente. |
-| Prevalidación de depósito | ✅ `/lts/state/account-deposit-behaviour` |
-| Resultado de una transacción | ✅ `/transaction/receipt` |
-| **N1** Estado de un subintent | ❌ No hay endpoint, pero el nodo **ya lo indexa**: column family `finalized_subintent_hashes`, en `state-manager/src/store/column_families.rs:154-162` y `rocks_db.rs:705-708` |
-| **N2** Ubicación de un NFT (qué vault o cuenta tiene el id X) | ❌ |
-| **N3** Historial filtrado por entidad, con cambios de NFT, clase de manifiesto y eventos | ⚠️ Solo `/lts/stream/account-transaction-outcomes`, que da cambios fungibles de cuentas |
-| **N4** Entidades que usan un badge en sus reglas | ❌ |
-| **N5** Estado histórico de cualquier antigüedad | ⚠️ Solo ≈ 4-5 h, y con un flag desactivado por defecto |
-| `last_updated_at_state_version` de los metadatos | ❌ Lo usa la recuperación de cuentas |
-| Lecturas por lotes (20 entidades por llamada) | ❌ Hay que hacer una llamada por entidad |
-| Uptime de validadores, titulares de un recurso, `touched-at` de lockers | ❌ |
-| **N6** Acceso público seguro (CORS, solo lectura, rate limit, TLS) | ❌ |
-| Reenvío de transacciones pendientes | ❌ Lo hace el Gateway. Con el nodo pasa a ser cosa del cliente: guardar el payload y reenviar con backoff mientras la época sea válida. |
+| Época, red, construcción de transacciones | Sí: `/status/network-status`, `/lts/transaction/construction` |
+| Preview v1/v2 (el Gateway solo lo reenvía) | Sí: `/transaction/preview`, `/transaction/preview-v2` |
+| Envío y estado | Sí: `/lts/transaction/{submit, status}`, con traducción de estados. Los estados LTS son `CommittedSuccess`, `CommittedFailure`, `PermanentRejection`, `InMempool`, `NotSeen`, `FateUncertain` y `FateUncertainButLikelyRejection`. |
+| Saldos fungibles | Sí: `/lts/state/account-all-fungible-resource-balances` |
+| NFT de una cuenta y sus datos | Sí: con 2-3 llamadas: colección `resource_vaults` de la cuenta, contenido del vault y `/state/non-fungible` |
+| Estado de componentes, KV-stores, metadatos, roles | Sí: Engine State API |
+| Validadores, LSU, pools | Sí: `/state/validator`, `/state/consensus-manager`, `/state/component`. El valor de canje se calcula en el cliente. |
+| Prevalidación de depósito | Sí: `/lts/state/account-deposit-behaviour` |
+| Resultado de una transacción | Sí: `/transaction/receipt` |
+| **N1** Estado de un subintent | No: No hay endpoint, pero el nodo **ya lo indexa**: column family `finalized_subintent_hashes`, en `state-manager/src/store/column_families.rs:154-162` y `rocks_db.rs:705-708` |
+| **N2** Ubicación de un NFT (qué vault o cuenta tiene el id X) | No: |
+| **N3** Historial filtrado por entidad, con cambios de NFT, clase de manifiesto y eventos | En parte: Solo `/lts/stream/account-transaction-outcomes`, que da cambios fungibles de cuentas |
+| **N4** Entidades que usan un badge en sus reglas | No: |
+| **N5** Estado histórico de cualquier antigüedad | En parte: Solo ≈ 4-5 h, y con un flag desactivado por defecto |
+| `last_updated_at_state_version` de los metadatos | No: Lo usa la recuperación de cuentas |
+| Lecturas por lotes (20 entidades por llamada) | No: Hay que hacer una llamada por entidad |
+| Uptime de validadores, titulares de un recurso, `touched-at` de lockers | No: |
+| **N6** Acceso público seguro (CORS, solo lectura, rate limit, TLS) | No: |
+| Reenvío de transacciones pendientes | No: Lo hace el Gateway. Con el nodo pasa a ser responsabilidad del cliente: guardar el payload y reenviar con backoff mientras la época sea válida. |
 
 ---
 

@@ -231,7 +231,7 @@ services:
    - that the network matches (`status/network-configuration`);
    - that its `state_version` is close to the majority (not lagging);
    - its latency.
-4. **Use.** Pick the best 2-3 and spread requests. If one fails, move to the next. Optionally, compare `state_version` and the accumulator hash between two to detect a lying node.
+4. **Use.** Pick the best 2-3 and spread requests. If one fails, move to the next. Optionally, compare `state_version` and the accumulator hash between two to detect a node that returns incorrect data.
 5. **Cache.** Store the list and refresh it every few hours.
 
 ## 10.3 `babylon-node` changes to serve reads (N1, N5b, N6)
@@ -257,7 +257,7 @@ It also needs:
 - the schema in `core-api-schema.yaml`, and regenerated models;
 - tests.
 
-**N5b. `last_updated_at_state_version` for metadata.** To avoid a new index, return the version of the entry's last change by reading the state tree's leaf node: each leaf records the version at which it was written.
+**N5b. `last_updated_at_state_version` for metadata.** To avoid a new index, it is worth studying whether the version of the entry's last change can be obtained from the state tree's leaf node, whose database keys include the version at which it was written (to be confirmed in the `radix-substate-store-impls` code). If that is not viable, a small index is added.
 
 **N6. Public read mode.**
 
@@ -314,7 +314,7 @@ const rola = Rola({
 
 ## 10.5 Verifiable Olympia archive
 
-1. **Get the data.** Ask the Foundation, or any operator that still has one, for a copy of the database of an Olympia node or of its Gateway (`olympia-gateway.radixdlt.com`, version 337,759,839). Alternatively, walk its per-account transaction endpoints for every account while it is still live.
+1. **Get the data.** Ask the Foundation, or any operator that still has one, for a copy of the database of an Olympia node or of its Gateway (`olympia-gateway.radixdlt.com`, version 337,759,839). Alternatively, walk its per-account transaction endpoints for every account while it is still running.
 2. **Export.**
    - Transactions in order, in JSON Lines or Parquet files chunked by version range.
    - A **static index by address**: `rdx1…` → list of chunks and positions.
@@ -348,12 +348,12 @@ The state tree window already keeps recent versions (`state_hash_tree.*`). For t
 
 ## 10.7 How to test and roll out each phase without downtime
 
-1. **Stokenet first.** Every change goes to Stokenet first, which the community runs today, with nodes from different operators.
+1. **Stokenet first.** Every change goes to Stokenet first, which the community has run since June 2026 according to radix.wiki, with nodes from different operators.
 2. **Metrics.** Per-column-family size metrics (`raw_db_size`), process RSS, missed rounds per validator, API latency and indexer lag are published on a shared dashboard.
 3. **Options off by default.** Storage changes ship as options. They are enabled on full nodes first, then validators.
 4. **Rollback.**
    - For the indexer, point apps at another access point.
-   - For node options, take a checkpoint before enabling those that delete data (R3, R5, R7, R8).
+   - For node options, take a checkpoint before enabling those that delete data (R3, R4, R5, R7, R8).
 5. **Protocol updates** (R10, verifiable indexes) follow the usual validator readiness-signalling process.
 
 ---

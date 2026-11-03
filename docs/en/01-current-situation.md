@@ -118,10 +118,10 @@ In red, services that depend on a single operator.
 | State-version rate | **~3.6/s on average** since June 2026 (4.4/s in today's sample). Each consensus round is one version. |
 | User transactions per day (100-transaction sample at each date) | Nov 23: 1.5k · Mar 24: 5.5k · Jul 24: 11.6k · Nov 24: 20.7k · **Mar 25: 34.7k (peak)** · Jul 25: 8.4k · Nov 25: 5.9k · Mar 26: 3.4k · Jul 26: 2.2k · Oct 26: 4.4k |
 | Estimated user transactions since genesis | **~10-15 million** (rough integration, ±50 %) |
-| Share of user transactions | **<1 % of state versions.** Over 99 % are round and epoch changes. |
+| Share of user transactions | **~2-3 % of state versions** over the whole history (~10-15 million of ~567 million); today, under 1 %. The rest (~97-98 %) are round and epoch changes. |
 | Node historical window | `state_version_history_length = 60,000` versions by default, **≈ 4-5 hours** at the current rate |
 
-**Key consequence.** Most of the Gateway's volume comes from storing the full history of every substate, including ~560 million round changes. An index that records only what clients need deals with ~10-15 million user transactions. That is a problem **two orders of magnitude smaller**.
+**Key consequence.** Most of the Gateway's volume comes from storing the full history of every substate, including ~555 million round changes. An index that records only what clients need deals with ~10-15 million user transactions. That is a problem **about 40-50 times smaller**.
 
 # 2. Who depends on the Gateway, and for what
 
@@ -133,8 +133,8 @@ In red, services that depend on a single operator.
 | **Radix dApp Toolkit** | `transaction/status`, `transaction/subintent-status`, `state/entity/page/metadata` | Track the transaction the wallet submits; dApp name on the connect button |
 | **ROLA** (`radixdlt/rola`) | `state/entity/details` (`owner_keys` metadata) | **Login for every dApp.** It is queried on every sign-in (`typescript/src/rola.ts:49-87`, `gateway.ts:14-38`) and uses the public URL by default. |
 | **Connector Extension** | `transaction/status` (via the RDT's `GatewayModule`) | "Transaction committed" notification |
-| **Transaction explorers** (Radix Dashboard, closed source; community explorers) | Practically the whole API, including the **resource holders** extension, NFT location, filtered history of **any** entity, validator uptime, KV stores, packages, schemas and `at_ledger_state` | See section 2.1 |
-| **Developer Console** (closed source) | Preview, submit, status, entity details | Package deployment, manifests |
+| **Transaction explorers** (Radix Dashboard, closed source; community explorers) | Cannot be verified for the Dashboard; from its features, practically the whole API, including the **resource holders** extension, NFT location, filtered history of **any** entity, validator uptime, KV stores, packages, schemas and `at_ledger_state` | See section 2.1 |
+| **Developer Console** (closed source) | Cannot be verified; from its features, at least preview, submit, status and entity details | Package deployment, manifests |
 | **Consultation** (governance) | `state/entity/details`, `state/key-value-store/{keys, data}`, `stream/transactions`, `transaction/committed-details`, `status/gateway-status`, balances and NFTs **with historical `at_ledger_state`** | Proposals, votes, snapshot tally |
 | **radixdlt-rust-sdk** | `status/gateway-status`, `state/entity/page/fungibles`, `transaction/{status, committed-details, submit, construction, preview}`, `state/entity/details` | Generic signing and submission SDK |
 | **wallet-agent-ai** | ~25 calls: entity details, preview, submit, status, stream, validators, uptime | Agent with its own wallet |
@@ -142,23 +142,28 @@ In red, services that depend on a single operator.
 
 ## 2.1 Transaction explorers: an explicit requirement
 
+> [!IMPORTANT]
+> - **Is it possible?** Yes. Explorers can work without the Gateway.
+> - **Difficulty:** Medium.
+> - **Effort and timeline:** ~1-2 person-months of indexes + ~2-3 for the reference explorer (estimate).
+
 An explorer is the **most demanding** client: it needs global indexes that neither the node nor the wallets need. Each explorer feature has a different source on the node:
 
 | Explorer feature | How it is served without the Gateway |
 |---|---|
-| Look up a transaction by intent hash: receipt, events, state changes, fees | ✅ Node: `/core/transaction/receipt` (by `intent_hash`) and `/core/lts/transaction/status`. Balance changes are derived from the receipt. |
-| Latest transactions; transactions by epoch or round | ✅ Node: `/core/stream/transactions` (ascending). Descending order or "from a date" needs a `timestamp → state_version` index. |
-| Account, component or resource page: current state, balances, NFTs, metadata, roles, royalties | ✅ Node: Core and Engine State APIs |
-| Packages: blueprints, code, schemas | ✅ Node: `/core/state/package`, `/blueprint/info`, `/entity/schema/entry` |
-| Component KV stores | ✅ Node: `/kv-store/iterator` |
-| **Transaction history of any entity**, filtered by type, resource or event | ❌ E3 index (a), or N3 |
-| **Holders of a resource**, ranked by balance | ❌ New index (h): `resource → (entity, balance)` |
-| **Where an NFT is** | ❌ E3 index (b), or N2 |
-| Validators: uptime, stake history, APY | ❌ E3 index (g), or N9. Current stake comes from the node. |
-| Account or resource state at a past date | ❌ Archive node (N5), or balance-change index (a) + (h) |
-| Statistics: TPS, transactions per day, active accounts, fees burned | ❌ New index (i): hourly and daily aggregates |
-| Search by name or symbol (metadata) | ❌ New index (j): text of `name`, `symbol`, `tags` → entity |
-| Search by address | ✅ The address encodes its type; `/entity/info` is enough |
+| Look up a transaction by intent hash: receipt, events, state changes, fees | Yes: Node: `/core/transaction/receipt` (by `intent_hash`) and `/core/lts/transaction/status`. Balance changes are computed from the receipt. |
+| Latest transactions; transactions by epoch or round | Yes: Node: `/core/stream/transactions` (ascending). Descending order or "from a date" needs a `timestamp → state_version` index. |
+| Account, component or resource page: current state, balances, NFTs, metadata, roles, royalties | Yes: Node: Core and Engine State APIs |
+| Packages: blueprints, code, schemas | Yes: Node: `/core/state/package`, `/blueprint/info`, `/entity/schema/entry` |
+| Component KV stores | Yes: Node: `/kv-store/iterator` |
+| **Transaction history of any entity**, filtered by type, resource or event | No: E3 index (a), or N3 |
+| **Holders of a resource**, ranked by balance | No: New index (h): `resource → (entity, balance)` |
+| **Where an NFT is** | No: E3 index (b), or N2 |
+| Validators: uptime, stake history, APY | No: E3 index (g), or N9. Current stake comes from the node. |
+| Account or resource state at a past date | No: Archive node (N5), or balance-change index (a) + (h) |
+| Statistics: TPS, transactions per day, active accounts, fees burned | No: New index (i): hourly and daily aggregates |
+| Search by name or symbol (metadata) | No: New index (j): text of `name`, `symbol`, `tags` → entity |
+| Search by address | Yes: The address encodes its type; `/entity/info` is enough |
 
 **Consequences for the strategy:**
 
@@ -183,7 +188,11 @@ flowchart LR
     class AR good
 ```
 
-Radix had an earlier network, **Olympia**, which was migrated to Babylon on 28 Sep 2023. I checked this against the live ledger and the code: it **does not block the solution**, but it adds four requirements.
+> [!IMPORTANT]
+> - **Is it possible?** Yes. Olympia does not prevent removing the Gateway. Archiving its history is also possible.
+> - **Difficulty:** Low, but urgent (before the Olympia Gateway is switched off).
+
+Radix had an earlier network, **Olympia**, which was migrated to Babylon on 28 Sep 2023. This was checked against the live ledger and the code: it **does not block the solution**, but it adds four considerations, two of which require work (items 1 and 3).
 
 1. **Olympia's state is inside the Babylon genesis.**
    - Mainnet state versions 1 to ~669 are genesis transactions. The first user transaction is version 670 (2023-09-28 07:26 UTC).
@@ -199,7 +208,7 @@ Radix had an earlier network, **Olympia**, which was migrated to Babylon on 28 S
 3. **Olympia transaction history (before 28 Sep 2023) is NOT in the Babylon ledger.**
    - It is served only by the **Olympia Gateway**, `olympia-gateway.radixdlt.com`. It is still live today, running Gateway API 1.1.14, frozen at version 337,759,839 from 2023-09-28T06:33:34Z.
    - It is used by `olympia-wallet` (`src/helpers/network.ts:14-39`) and the Olympia explorer (`radixdlt/explorer`).
-   - It is **another central service**, and it does not appear in the transition service lists I reviewed.
+   - It is **another central service**, and it does not appear in the transition service lists published by the Foundation that were reviewed.
    - If it is switched off, Olympia's public history (audits, taxes, research) **is lost**, unless someone keeps a copy of an Olympia node or Gateway database.
    - **Advantage:** it is frozen and no longer changes, so it needs no indexer. A **single, verifiable archive** is enough:
      - export the Olympia ledger (node database or a dump of the Olympia Gateway);

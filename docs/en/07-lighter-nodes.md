@@ -2,12 +2,17 @@
 
 # 9. Lighter nodes: target of 4 GB RAM and 500 GB disk
 
+> [!IMPORTANT]
+> - **Is it possible?** Yes. A validator or full node can run with 4 GB of RAM and under 500 GB of disk.
+> - **Difficulty:** Medium while on Java (R1-R9); very high for comfortable headroom (R11, migration to Rust).
+> - **Effort and timeline:** 8-14 person-months (R1-R9); 30-50 person-months (R11) (estimates).
+
 **Goal.** A mainnet validator or full node should run on **4 GB of RAM and 500 GB of disk**, and the network should keep working without the Gateway.
 
 **Code reviewed:**
 
-- `babylon-node`, branch `develop` (12919a01, 12 Mar 2025);
-- the **latest published release, `v1.4.0.0` "Eagle Ray"** (7400951e, 8/10 Sep 2026);
+- `babylon-node`, branch `develop` (12919a01, last commit 12 Mar 2025; recent releases do not come from this branch);
+- the **latest published release, `v1.4.0.0` "Eagle Ray"** (7400951e; commit of 8 Sep 2026, published 10 Sep 2026);
 - `babylon-nodecli`.
 
 `file:line` paths refer to `develop` unless stated otherwise. Differences in `v1.4.0.0` that matter here are called out explicitly.
@@ -27,12 +32,12 @@
 | Bootstrapping from a verified snapshot | **Does not exist.** A new node replays ~567 million transactions from genesis, or downloads a third-party snapshot with no cryptographic verification. | code; `babylon-nodecli/.../ledger_snapshot/__init__.py:26-80` |
 | RocksDB tuning | **None**: `Options::default()` for the database and all 26 column families, also in `v1.4.0.0` | `core-rust/state-manager/src/store/rocks_db.rs:164-170` |
 | Mempool | 512 MiB of transactions × factor 2.3 ≈ **1.18 GB** by default | `core-rust/node-common/src/config/mod.rs:74-75`, `RadixNodeModule.java:281-304` |
-| Java code remaining | ~55,500 hand-written lines in `core` + ~35,000 in `common` + ~14,000 of JNI bridge | `wc -l` count |
-| Official "all-Rust" node | Xi'an / hyperscale-rs is a **different network** (not Babylon). No date since its lead developer withdrew (3 Sep 2026). | radixdlt.com (roadmap 30 Nov 2024), radix.wiki |
+| Java code remaining | ~55,500 hand-written lines in `core` + ~35,000 in `common` + ~14,000 of Java-Rust bridge classes (plus ~4,000 of JNI layer in Rust) | `wc -l` count |
+| Official "all-Rust" node | Xi'an / hyperscale-rs is a **different network** (not Babylon) with no launch date. According to radix.wiki, on 3 Sep 2026 its lead developer stopped proposals, grants and engagements with Radix, while continuing to develop the code (section 11.1). | radixdlt.com (roadmap 30 Nov 2024), radix.wiki |
 
 **Starting point:** with what is shipped today, a mainnet node **does not fit in 4 GB of RAM**.
 
-- **Disk:** the compressed ledger is already 274 GiB. Uncompressed it is noticeably larger; the exact figure has not been published. So **500 GB of disk is already tight, or soon will be**.
+- **Disk:** the compressed ledger is already 274 GiB. Uncompressed it is noticeably larger; the exact figure has not been published. So **500 GB of disk may already be insufficient, or soon will be**.
 
 ## 9.2 Where the memory goes
 
@@ -73,7 +78,7 @@ flowchart LR
 | Direct memory (Netty) | up to 2 GB | Network buffers | 256 MB; **0** after moving to Rust |
 | RocksDB: index and filter blocks of every SST file | **Unbounded**; grows with the ledger | `max_open_files=-1` and `cache_index_and_filter_blocks=false` (defaults) keep the indexes of **all** open files in memory, ~0.5-1.5 % of database size (*estimate*) | Counted inside a shared **512 MB** cache |
 | RocksDB: memtables | 64 MB × 2 per column family with no global cap; ~0.6-1.3 GB in practice (*estimate*) | Defaults | **256 MB** in total with `WriteBufferManager` |
-| RocksDB: block cache | one per column family (up to ~26 × 32 MB) | Defaults | A single shared cache (the one above) |
+| RocksDB: block cache | a separate one per column family (26), at RocksDB's default size | Defaults | A single shared cache (the one above) |
 | Mempool | ~1.18 GB | 512 MiB default | **64-128 MB** on small validators |
 | Vertex store (consensus, Java) | up to 150 MB, fully re-serialized on every change | `VertexStoreJavaImpl.java:223-238` | Same, without re-serialization, once it moves to Rust |
 | Result and execution caches (Rust) | 3 LRUs of 10,000 entries and the staging cache | `state_manager.rs:257-264` | Configurable size |
@@ -82,7 +87,7 @@ flowchart LR
 
 ## 9.3 Where the disk goes
 
-Over 99 % of the ledger's ~567 million versions are **round updates**: system transactions, one per consensus round. Each one **permanently** writes:
+About 555 of the ledger's ~567 million versions (~97-98 %) are **round updates**: system transactions, one per consensus round. Each one **permanently** writes:
 
 | Data stored per round update | Uncompressed bytes (estimated from the schemas) | Pruned? | What needs it? |
 |---|---|---|---|
@@ -95,7 +100,7 @@ Over 99 % of the ledger's ~567 million versions are **round updates**: system tr
 | Ledger proofs | ~5-8 KB | Yes, after 12 epochs ~1 in 1,000 remain | Sync |
 | State tree (JMT) nodes | ~3-6 KB | Yes, 60,000-version window | Consensus (state root) |
 
-- **Estimated permanent cost per round update:** ~2.5-4 KB on disk with local executions enabled (after default Snappy compression). Over ~560 million rounds, **in the order of 1-2 TB uncompressed**.
+- **Estimated permanent cost per round update:** the table adds up to ~6-7.5 KB **uncompressed** with local executions enabled. Over ~555 million rounds that is **in the order of 3-4 TB uncompressed**. These are **upper-bound** figures: much of this data (receipts that are nearly identical from one round to the next) compresses very well, and the full compressed snapshot is 274 GiB. The real on-disk size can only be known by measuring it.
 - **Order of importance:** receipts > accumulator slices > local executions > identifiers. Raw round-update transactions only add up to ~25-30 GB.
 - **How to confirm:** the node already publishes per-column-family sizes (`raw_db_size` metrics, `SM/metrics.rs:590-640`). The **first step** of the plan is to publish those figures from a mainnet node.
 - **Root cause:** the ConsensusManager's `CurrentProposalStatistic` field, ~1.9 KB, is rewritten in full every round. Its previous value is stored in the receipt and its path is rewritten in the state tree.
@@ -212,7 +217,7 @@ let cf_opts = |cf: &str| {
 ### R6. Do not index round-update hashes (P2, S)
 
 - **Where:** `rocks_db.rs:676-690`.
-- **How:** skip the `put` and the duplicate check when the transaction is a `RoundUpdate`. The engine already rejects non-increasing rounds.
+- **How:** omit the `put` and the duplicate check when the transaction is a `RoundUpdate`. The engine already rejects non-increasing rounds.
 - **Savings:** ~20-30 GB and some index RAM.
 
 ### R7. Optional round-update receipts (P1, S-M)
@@ -220,7 +225,7 @@ let cf_opts = |cf: &str| {
 - **What:** an option `db.round_update_receipts=epoch_only` that keeps only epoch-change receipts, the only ones the core reads (`protocol_state.rs:599-616`).
 - **Why it is safe:** the receipt root stays in the identifiers and in the signed proofs, so consensus is unchanged. Any receipt can be recomputed by replaying the transaction.
 - **Savings:** the **largest remaining component** after R4.
-- **Risk:** receipt APIs for old rounds, and the rebuild of entity indexes (`rocks_db.rs:1541`), would have to replay. That is why it is optional and aimed at validators.
+- **Risk:** receipt APIs for old rounds, and the rebuild of entity indexes (`rocks_db.rs:1541`), would have to replay the transaction. That is why it is optional and aimed at validators.
 
 ### R8. "Pruned node" mode (P1, M-L)
 
@@ -229,7 +234,7 @@ let cf_opts = |cf: &str| {
   - epoch-change receipts;
   - the `intent_hashes` index and the identifiers of user transactions within the validity window, which `validation.rs:74-81` needs.
 - **Code changes:**
-  1. **Gap guard** in `get_syncable_txns_and_proof` (`rocks_db.rs:1011-1066`): today it does not check that the first transaction returned is at the requested version, so it could assemble an inconsistent response.
+  1. **Gap guard** in `get_syncable_txns_and_proof` (`rocks_db.rs:1011-1066`): today it does not check that the first transaction returned is at the requested version, so it could build an inconsistent response.
   2. **Advertise the oldest servable version** in sync status messages (`RemoteSyncService.java:128-166`), so peers do not ask for what is gone.
   3. Review `max_state_version` and `get_first_proof` (`rocks_db.rs:990-995, 1134-1138`).
 - **Savings:** almost all of the history. A validator would hold state plus N epochs (**tens of GB up to ~200 GB**, depending on N; *estimate*).
@@ -237,7 +242,7 @@ let cf_opts = |cf: &str| {
 
 ### R9. Bootstrap from a verified state snapshot: "fast sync" (P0 for the goal, L)
 
-A new node starts **in hours, without replaying 567 million transactions and without trusting whoever provides the snapshot**.
+A new node starts **in hours (estimate), without replaying 567 million transactions and without trusting whoever provides the snapshot**.
 
 - **Export** (on any node, at a version V that ends an epoch):
   - the `substates` and `substate_node_ancestry_records` column families;
@@ -286,10 +291,10 @@ sequenceDiagram
 - **Where:**
   - the ConsensusManager blueprint in `radix-engine`;
   - a new protocol update in `babylon-node` (`protocol/protocol_updates/definitions/`), like Bottlenose, Cuttlefish or Eagle Ray.
-- **Savings:** round receipts and state-tree rewrites drop by an order of magnitude **for everything written after the update**.
+- **Savings:** round receipts and state-tree rewrites drop roughly tenfold (estimate) **for everything written after the update**.
 - **Risk:** it is a protocol update; it needs testing and validator readiness signalling.
 
-### R11. Migrate the node core from Java to Rust (P1 for 4 GB with headroom, L-XL)
+### R11. Migrate the node core from Java to Rust (P1 for 4 GB with headroom, XL)
 
 **What remains in Java** (`develop`):
 
@@ -363,7 +368,7 @@ flowchart LR
 
 **Risk:** high, because it touches consensus. Mitigated by shadow mode, a mixed testnet and gradual adoption.
 
-**Relationship with Xi'an/hyperscale-rs:** it is a new network, with another virtual machine, BLS signatures and sharding. It does not replace Babylon in the short term and, since September 2026, has no date. Migrating the Babylon node to Rust still makes sense. Patterns from hyperscale-rs (networking, memory-bounded RocksDB storage, deterministic testing) can be reused, but not its protocol.
+**Relationship with Xi'an/hyperscale-rs:** it is a new network, with another virtual machine, BLS signatures and sharding. It does not replace Babylon in the short term and has no launch date (section 11). Migrating the Babylon node to Rust still makes sense. Patterns from hyperscale-rs (networking, memory-bounded RocksDB storage, deterministic testing) can be reused, but not its protocol.
 
 ## 9.5 Memory budget with 4 GB
 
@@ -420,7 +425,7 @@ flowchart LR
     A -- "full sync" --> R
 ```
 
-| Node type | RAM | Disk | What it stores |
+| Node type | RAM (estimate) | Disk (estimate) | What it stores |
 |---|---|---|---|
 | **Light validator** | 4 GB | ≤ 500 GB (estimated 50-250 GB depending on pruning) | Current state, N epochs, epoch proofs; no API indexes (R1-R9) |
 | **Read node** | 4 GB after R11 (6-8 GB before) | ≤ 500 GB with R4, R5 and R7 + light indexes | Transaction history + light-indexer indexes |
