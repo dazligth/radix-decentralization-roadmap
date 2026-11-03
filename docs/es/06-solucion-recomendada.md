@@ -258,7 +258,7 @@ sequenceDiagram
 **Por qué es la mejor con tiempo ilimitado:** es la única opción en la que la red no depende de nadie, ni de un Gateway ni de la honestidad de un nodo. Es el mismo nivel de garantía que da la propia cadena, extendido hasta el wallet de cada usuario.
 
 ```mermaid
-%%{init: {"flowchart": {"rankSpacing": 80, "nodeSpacing": 30}}}%%
+%%{init: {"flowchart": {"rankSpacing": 80, "nodeSpacing": 30, "subGraphTitleMargin": {"top": 12, "bottom": 12}}}}%%
 flowchart TB
     subgraph ROW1[" "]
         direction LR

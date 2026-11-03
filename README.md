@@ -297,7 +297,7 @@ flowchart TB
 ### Stages towards the ideal solution
 
 ```mermaid
-%%{init: {"flowchart": {"rankSpacing": 80, "nodeSpacing": 30}}}%%
+%%{init: {"flowchart": {"rankSpacing": 80, "nodeSpacing": 30, "subGraphTitleMargin": {"top": 12, "bottom": 12}}}}%%
 flowchart TB
     subgraph ROW1[" "]
         direction LR
