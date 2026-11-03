@@ -1,6 +1,6 @@
 [← Index](../../README.md) · [Previous: Sections 1-2: current situation, who depends on the Gateway, explorers and Olympia](01-current-situation.md) · [Next: Sections 4-5: the six strategies evaluated and their data-driven comparison](03-strategies.md)
 
-# 3. What the node offers today (verified in `babylon-node/develop`)
+# 3. What the node offers today (verified in `babylon-node`: branch `develop` and release `v1.4.0.0`)
 
 ## 3.1 The node's APIs
 
@@ -19,7 +19,7 @@
   - `/kv-store/{iterator, entry}`
   - `/object/attached-modules/{metadata/iterator, metadata/entry, role-assignment, royalty}`
   - `/extra/entity-search` (filters `Blueprint`, `SystemType`, `EntityType`)
-- **Mesh API (Rosetta):** off by default. It serves exchanges, not dApps.
+- **Mesh API (Rosetta):** it was off by default, and **release `v1.4.0.0` (Sep 2026) removes it**. It served exchanges, not dApps.
 - **Exposure:** all of them bind to `127.0.0.1` with no CORS (`RadixNodeModule.java:127-131`).
 - **Flags:**
 

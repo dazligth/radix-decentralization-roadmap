@@ -2,6 +2,41 @@
 
 # 6. Recommended solution and why
 
+## Short-term infrastructure: no Gateway
+
+```mermaid
+flowchart TB
+    subgraph APPS["Users and applications (current versions; only the URL changes)"]
+        W["iOS and Android wallets"]
+        EXT["Connector Extension"]
+        DAPP["dApps with RDT"]
+        ROLA["Backends with ROLA login"]
+        EXP["Reference explorer<br/>static site, open source"]
+    end
+    REG["On-ledger registry<br/>api_endpoints metadata"]
+    subgraph READ["Read nodes: many independent operators"]
+        R1["Operator A<br/>full node + light indexer"]
+        R2["Operator B<br/>full node + light indexer"]
+        R3["Operator C<br/>full node + light indexer"]
+    end
+    subgraph NET["Radix network"]
+        VAL[("Validators<br/>small profile: R1-R4")]
+    end
+    subgraph SELF["Auxiliary services anyone can host"]
+        SIG["Own signalling and TURN"]
+        RELAY["Own Radix Connect<br/>and iroh relays"]
+        PRICE["Configurable<br/>price services"]
+    end
+    ARCH[("Verifiable Olympia archive<br/>IPFS, BitTorrent, Arweave")]
+    APPS -- "1. read the list" --> REG
+    APPS -- "2. query with failover" --> READ
+    READ --> VAL
+    APPS -.-> SELF
+    EXP -.-> ARCH
+    classDef good fill:#d9f7d9,stroke:#080,color:#000
+    class READ,REG,ARCH,SELF good
+```
+
 ```mermaid
 flowchart LR
     C["Wallets, dApps, ROLA and explorers"]
@@ -143,6 +178,37 @@ The short-term solution (E3) removes the Gateway, but the client **still has to 
 - The node maintains the state tree (`state_hash_tree.*`).
 - `/stream/proofs` already delivers the signed proofs, including epoch changes, which say which validators sign the next epoch.
 - **What is missing** is an endpoint that returns the **Merkle proof** for a specific piece of data, and a client that verifies it.
+
+## Long-term infrastructure: the ideal solution
+
+```mermaid
+flowchart TB
+    subgraph APPS["Users and applications with a light client"]
+        W["Wallets<br/>verify every response"]
+        DAPP["dApps, ROLA and explorers<br/>light client in WebAssembly"]
+    end
+    subgraph NET["Radix network: a single Rust binary"]
+        V[("Validators<br/>4 GB RAM, pruned node")]
+        N1[("Node with native read API<br/>indexes + Merkle proofs")]
+        N2[("Any other node<br/>even anonymous")]
+        A[("Archive nodes<br/>full history")]
+    end
+    SNAP[("Verifiable state snapshots<br/>IPFS, BitTorrent")]
+    HIST[("Verifiable old history<br/>Babylon and Olympia")]
+    INC["Incentives for serving reads<br/>decided by governance"]
+    W -- "direct QUIC + proofs" --> N1
+    W -- "if one fails, another" --> N2
+    DAPP -- "QUIC or HTTPS + proofs" --> N1
+    N1 --- V
+    N2 --- V
+    A -- "produces" --> SNAP
+    SNAP -- "bootstrap in hours" --> N2
+    A -- "publishes" --> HIST
+    INC -.-> N1
+    INC -.-> N2
+    classDef good fill:#d9f7d9,stroke:#080,color:#000
+    class W,DAPP,V,N1,N2,A,SNAP,HIST good
+```
 
 ### How the wallet verifies a response
 

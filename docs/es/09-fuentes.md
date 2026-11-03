@@ -1,4 +1,4 @@
-[← Índice](../../README.es.md) · [Anterior: Sección 8: hoja de ruta](06-hoja-de-ruta.md)
+[← Índice](../../README.es.md) · [Anterior: Sección 10: guía de implementación paso a paso](08-guia-de-implementacion.md)
 
 # Fuentes
 
@@ -13,7 +13,14 @@
 - [RadixTalk — Action on P3 Foundation Services](https://radixtalk.com/t/action-on-p3-foundation-services/2238)
 - [Radix docs — Node setup (requisitos de hardware del nodo)](https://docs.radixdlt.com/docs/node-setup)
 - [Radix docs — Network Gateway](https://docs.radixdlt.com/docs/network-gateway)
+- [Radix docs — Optimizing Performance](https://docs.radixdlt.com/docs/node-optimizing-performance)
+- [Snapshots comunitarios del ledger (radix.live), histórico de tamaños](https://snapshots.radix.live/Validators-Latest/)
+- [PublicNode — snapshots](https://www.publicnode.com/snapshots)
+- [Radix Labs Roadmap — to Hyperscale and beyond (30-nov-2024)](https://www.radixdlt.com/blog/radix-labs-roadmap---to-hyperscale-and-beyond)
+- [radix.wiki — Xi'an](https://radix.wiki/contents/tech/releases/radix-mainnet-xian)
+- [RadixTalk — Babylon node betatesting (mediciones de RAM en betanet, 2023)](https://radixtalk.com/t/babylon-node-betatesting-first-impressions/1792)
+- Código del nodo: `radixdlt/babylon-node` rama `develop` (12919a01) y etiqueta `v1.4.0.0` (7400951e); `radixdlt/babylon-nodecli`.
 
 ---
 
-[← Índice](../../README.es.md) · [Anterior: Sección 8: hoja de ruta](06-hoja-de-ruta.md)
+[← Índice](../../README.es.md) · [Anterior: Sección 10: guía de implementación paso a paso](08-guia-de-implementacion.md)

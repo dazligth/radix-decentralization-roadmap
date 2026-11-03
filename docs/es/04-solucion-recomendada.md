@@ -2,6 +2,41 @@
 
 # 6. Solución recomendada y por qué
 
+## Infraestructura a corto plazo: sin Gateway
+
+```mermaid
+flowchart TB
+    subgraph APPS["Usuarios y aplicaciones (versiones actuales; solo cambia la URL)"]
+        W["Wallets iOS y Android"]
+        EXT["Connector Extension"]
+        DAPP["dApps con RDT"]
+        ROLA["Backends con login ROLA"]
+        EXP["Explorador de referencia<br/>web estática, código abierto"]
+    end
+    REG["Registro en la cadena<br/>metadatos api_endpoints"]
+    subgraph READ["Nodos de lectura: muchos operadores independientes"]
+        R1["Operador A<br/>nodo completo + indexador ligero"]
+        R2["Operador B<br/>nodo completo + indexador ligero"]
+        R3["Operador C<br/>nodo completo + indexador ligero"]
+    end
+    subgraph NET["Red Radix"]
+        VAL[("Validadores<br/>perfil pequeño: R1-R4")]
+    end
+    subgraph SELF["Servicios auxiliares alojables por cualquiera"]
+        SIG["Señalización y TURN propios"]
+        RELAY["Relés de Radix Connect<br/>e iroh propios"]
+        PRICE["Servicios de precios<br/>configurables"]
+    end
+    ARCH[("Archivo verificable de Olympia<br/>IPFS, BitTorrent, Arweave")]
+    APPS -- "1. leen la lista" --> REG
+    APPS -- "2. consultan con failover" --> READ
+    READ --> VAL
+    APPS -.-> SELF
+    EXP -.-> ARCH
+    classDef good fill:#d9f7d9,stroke:#080,color:#000
+    class READ,REG,ARCH,SELF good
+```
+
 ```mermaid
 flowchart LR
     C["Wallets, dApps, ROLA y exploradores"]
@@ -143,6 +178,37 @@ La solución a corto plazo (E3) elimina el Gateway, pero el cliente **sigue teni
 - El nodo mantiene el árbol de estado (`state_hash_tree.*`).
 - `/stream/proofs` ya entrega las pruebas firmadas, incluidos los cambios de época, que dicen qué validadores firman la época siguiente.
 - **Lo que falta** es un endpoint que devuelva la **prueba de Merkle** de un dato concreto, y un cliente que la verifique.
+
+## Infraestructura a largo plazo: solución ideal
+
+```mermaid
+flowchart TB
+    subgraph APPS["Usuarios y aplicaciones con cliente ligero"]
+        W["Wallets<br/>verifican cada respuesta"]
+        DAPP["dApps, ROLA y exploradores<br/>cliente ligero en WebAssembly"]
+    end
+    subgraph NET["Red Radix: un solo binario en Rust"]
+        V[("Validadores<br/>4 GB RAM, nodo podado")]
+        N1[("Nodo con API de lectura nativa<br/>índices + pruebas de Merkle")]
+        N2[("Otro nodo cualquiera<br/>incluso anónimo")]
+        A[("Nodos de archivo<br/>historial completo")]
+    end
+    SNAP[("Snapshots de estado verificables<br/>IPFS, BitTorrent")]
+    HIST[("Historial antiguo verificable<br/>Babylon y Olympia")]
+    INC["Incentivos por servir lecturas<br/>decididos por gobernanza"]
+    W -- "QUIC directo + pruebas" --> N1
+    W -- "si uno falla, otro" --> N2
+    DAPP -- "QUIC o HTTPS + pruebas" --> N1
+    N1 --- V
+    N2 --- V
+    A -- "genera" --> SNAP
+    SNAP -- "arranque en horas" --> N2
+    A -- "publica" --> HIST
+    INC -.-> N1
+    INC -.-> N2
+    classDef good fill:#d9f7d9,stroke:#080,color:#000
+    class W,DAPP,V,N1,N2,A,SNAP,HIST good
+```
 
 ### Cómo verifica el wallet una respuesta
 

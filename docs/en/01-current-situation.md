@@ -37,18 +37,61 @@
   - `radixdlt/explorer`, the Olympia explorer (see 2.2).
 - **Not public:** the source of the Radix Dashboard and the Developer Console is not in the `radixdlt` GitHub organisation. They are treated as black-box clients.
 
-# The situation today
+# Current infrastructure
 
 ```mermaid
-flowchart LR
-    W["iOS and Android wallets"] --> G
-    D["dApps, RDT and ROLA login"] --> G
-    X["Explorers"] --> G
-    G["Gateway<br/>~2.5 TB PostgreSQL<br/>single operator<br/>funded until Dec 2026"] --> N[("Full nodes")]
-    N --> R(("Radix network"))
-    classDef spof fill:#ffd6d6,stroke:#c00,color:#000
-    class G spof
+flowchart TB
+    subgraph APPS["Users and applications"]
+        W["iOS and Android wallets<br/>(Sargon)"]
+        EXT["Connector Extension"]
+        DAPP["dApps with RDT"]
+        ROLA["Backends with ROLA login"]
+        EXP["Radix Dashboard and explorers"]
+        DEV["Developer Console"]
+        OLYW["olympia-wallet"]
+    end
+    subgraph CENTRAL["Central services: a single operator"]
+        GW["Gateway API"]
+        AGG["DataAggregator<br/>single instance"]
+        PG[("PostgreSQL<br/>~2.5 TB, +60 GB/month")]
+        SIG["WebRTC signalling"]
+        TURN["TURN servers"]
+        RELAY["Radix Connect Relay"]
+        PRICE["Token and NFT prices"]
+        IMG["Image service"]
+        DIR["dApp directory"]
+        OGW["Olympia Gateway<br/>2021-2023 history"]
+    end
+    subgraph NET["Radix network"]
+        FN[("Full nodes<br/>Java + Rust, 16 GB RAM")]
+        VAL[("~100 validators<br/>Java + Rust, 16 GB RAM")]
+    end
+    W --> GW
+    EXT --> GW
+    DAPP --> GW
+    ROLA --> GW
+    EXP --> GW
+    DEV --> GW
+    GW --> PG
+    AGG --> PG
+    AGG -- "transaction stream" --> FN
+    GW -- "preview and submit" --> FN
+    FN --- VAL
+    W -.-> SIG
+    EXT -.-> SIG
+    W -.-> TURN
+    EXT -.-> TURN
+    W -.-> RELAY
+    DAPP -.-> RELAY
+    W -.-> PRICE
+    W -.-> IMG
+    W -.-> DIR
+    OLYW --> OGW
+    classDef central fill:#ffd6d6,stroke:#c00,color:#000
+    class GW,AGG,PG,SIG,TURN,RELAY,PRICE,IMG,DIR,OGW central
 ```
+
+In red, services that depend on a single operator.
 
 # 1. Current situation: data
 

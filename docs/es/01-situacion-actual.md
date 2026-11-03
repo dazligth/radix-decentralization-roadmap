@@ -37,18 +37,61 @@
   - `radixdlt/explorer`, el explorador de Olympia (ver 2.2).
 - **No públicos:** el código del Radix Dashboard y de la Developer Console no está en la organización `radixdlt` de GitHub. Se tratan como clientes de caja negra.
 
-# Situación de hoy
+# Infraestructura actual
 
 ```mermaid
-flowchart LR
-    W["Wallets iOS y Android"] --> G
-    D["dApps, RDT y login ROLA"] --> G
-    X["Exploradores"] --> G
-    G["Gateway<br/>~2,5 TB PostgreSQL<br/>un solo operador<br/>financiado hasta dic-2026"] --> N[("Nodos completos")]
-    N --> R(("Red Radix"))
-    classDef spof fill:#ffd6d6,stroke:#c00,color:#000
-    class G spof
+flowchart TB
+    subgraph APPS["Usuarios y aplicaciones"]
+        W["Wallets iOS y Android<br/>(Sargon)"]
+        EXT["Connector Extension"]
+        DAPP["dApps con RDT"]
+        ROLA["Backends con login ROLA"]
+        EXP["Radix Dashboard y exploradores"]
+        DEV["Developer Console"]
+        OLYW["olympia-wallet"]
+    end
+    subgraph CENTRAL["Servicios centrales: un solo operador"]
+        GW["Gateway API"]
+        AGG["DataAggregator<br/>una sola instancia"]
+        PG[("PostgreSQL<br/>~2,5 TB, +60 GB/mes")]
+        SIG["Señalización WebRTC"]
+        TURN["Servidores TURN"]
+        RELAY["Radix Connect Relay"]
+        PRICE["Precios de tokens y NFT"]
+        IMG["Servicio de imágenes"]
+        DIR["Directorio de dApps"]
+        OGW["Gateway de Olympia<br/>historial 2021-2023"]
+    end
+    subgraph NET["Red Radix"]
+        FN[("Nodos completos<br/>Java + Rust, 16 GB RAM")]
+        VAL[("~100 validadores<br/>Java + Rust, 16 GB RAM")]
+    end
+    W --> GW
+    EXT --> GW
+    DAPP --> GW
+    ROLA --> GW
+    EXP --> GW
+    DEV --> GW
+    GW --> PG
+    AGG --> PG
+    AGG -- "stream de transacciones" --> FN
+    GW -- "preview y envío" --> FN
+    FN --- VAL
+    W -.-> SIG
+    EXT -.-> SIG
+    W -.-> TURN
+    EXT -.-> TURN
+    W -.-> RELAY
+    DAPP -.-> RELAY
+    W -.-> PRICE
+    W -.-> IMG
+    W -.-> DIR
+    OLYW --> OGW
+    classDef central fill:#ffd6d6,stroke:#c00,color:#000
+    class GW,AGG,PG,SIG,TURN,RELAY,PRICE,IMG,DIR,OGW central
 ```
+
+En rojo, los servicios que dependen de un solo operador.
 
 # 1. Situación actual: datos
 

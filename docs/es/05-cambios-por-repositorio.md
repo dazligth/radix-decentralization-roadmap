@@ -72,6 +72,8 @@ Esfuerzo: **S** días · **M** 1-3 semanas · **L** más de un mes.
 | N8-N9 | Toques de lockers y emisiones de validadores | P2 / S |
 | D | Convención de metadatos del validador `api_endpoints` (lista de URLs con capacidades) y documentación para operadores | P0 / S |
 
+Los cambios para **reducir la RAM y el disco del nodo** (R1-R11: ajustes de RocksDB, poda, arranque desde un snapshot verificado, actualización de protocolo de la estadística de propuestas y migración de Java a Rust) están en la **sección 9**, con su guía en la sección 10.
+
 Todos los índices deben ser **flags opcionales**, como los que ya existen, para no penalizar a los validadores que no quieran servir lecturas.
 
 ## 7.3 `radixdlt/babylon-nodecli` (despliegue de nodos)
@@ -82,6 +84,8 @@ Todos los índices deben ser **flags opcionales**, como los que ya existen, para
   - el sidecar `radix-lite-indexer`;
   - proxy TLS.
 - **P1/S:** asistente para publicar `api_endpoints` en los metadatos del validador.
+- **P0/S:** perfil **«nodo pequeño» de 4 GB** (R2, sección 9.4): memoria Java, mempool y canales P2P reducidos, opciones de RocksDB y validador sin índices de API.
+- **P0/S, seguridad:** la descarga del snapshot comunitario usa `verify=False` (TLS sin verificar, `node-runner-cli/ledger_snapshot/__init__.py`). Hay que verificar TLS y un hash o firma publicados; a medio plazo, sustituirla por el arranque verificado (R9).
 
 ## 7.4 `radixdlt/babylon-gateway`
 

@@ -1,4 +1,4 @@
-[← Index](../../README.md) · [Previous: Section 8: roadmap](06-roadmap.md)
+[← Index](../../README.md) · [Previous: Section 10: step-by-step implementation guide](08-implementation-guide.md)
 
 # Sources
 
@@ -13,7 +13,14 @@
 - [RadixTalk — Action on P3 Foundation Services](https://radixtalk.com/t/action-on-p3-foundation-services/2238)
 - [Radix docs — Node setup (node hardware requirements)](https://docs.radixdlt.com/docs/node-setup)
 - [Radix docs — Network Gateway](https://docs.radixdlt.com/docs/network-gateway)
+- [Radix docs — Optimizing Performance](https://docs.radixdlt.com/docs/node-optimizing-performance)
+- [Community ledger snapshots (radix.live), size history](https://snapshots.radix.live/Validators-Latest/)
+- [PublicNode — snapshots](https://www.publicnode.com/snapshots)
+- [Radix Labs Roadmap — to Hyperscale and beyond (30 Nov 2024)](https://www.radixdlt.com/blog/radix-labs-roadmap---to-hyperscale-and-beyond)
+- [radix.wiki — Xi'an](https://radix.wiki/contents/tech/releases/radix-mainnet-xian)
+- [RadixTalk — Babylon node betatesting (betanet RAM measurements, 2023)](https://radixtalk.com/t/babylon-node-betatesting-first-impressions/1792)
+- Node code: `radixdlt/babylon-node` branch `develop` (12919a01) and tag `v1.4.0.0` (7400951e); `radixdlt/babylon-nodecli`.
 
 ---
 
-[← Index](../../README.md) · [Previous: Section 8: roadmap](06-roadmap.md)
+[← Index](../../README.md) · [Previous: Section 10: step-by-step implementation guide](08-implementation-guide.md)

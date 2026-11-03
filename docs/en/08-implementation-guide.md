@@ -1,0 +1,361 @@
+[← Index](../../README.md) · [Previous: Section 9: lighter nodes, 4 GB RAM and 500 GB disk, Java to Rust migration](07-lighter-nodes.md) · [Next: Sources and methodology](09-sources.md)
+
+# 10. Step-by-step implementation guide
+
+This chapter explains **how** to build the main pieces. Code snippets are **indicative**: they show the shape of the solution, not production-ready code, and must be adjusted to the exact version of each dependency.
+
+## 10.1 `radix-lite-indexer`: the Gateway replacement
+
+### Architecture
+
+```
+radix-lite-indexer/
+├── crates/
+│   ├── core-client/   # Typed client for the Core API and Engine State API (generated from the node's YAML)
+│   ├── ingest/        # Stream ingestion loop and index writing
+│   ├── store/         # Indexes in RocksDB (or SQLite): schemas and queries
+│   ├── api/           # HTTP server (axum): routes in the format apps use today
+│   ├── submit/        # Transaction submission and resubmission
+│   └── snapshot/      # Export and import of signed indexes
+├── conformance/       # Tests comparing responses with the public Gateway
+└── deploy/            # docker-compose, systemd, babylon-nodecli template
+```
+
+One important advantage: **Babylon has immediate finality** (BFT consensus), so a committed transaction is never reverted. The indexer **does not need to handle chain reorganisations**, which makes it much simpler than indexers for other networks.
+
+```mermaid
+flowchart TB
+    subgraph NODE["Full node (unchanged)"]
+        CORE["Core API and Engine State API<br/>127.0.0.1 only"]
+        LEDGER[("Full ledger:<br/>transactions, receipts, state")]
+        CORE --- LEDGER
+    end
+    subgraph IDX["Light indexer (separate process)"]
+        ING["Stream ingestion<br/>from version 1, genesis included"]
+        IX[("Small indexes:<br/>per-entity history, NFT location,<br/>holders, subintents, role rules,<br/>statistics, search")]
+        API["Public read API<br/>CORS, rate limiting, TLS"]
+        RES["Resubmission of pending<br/>transactions with backoff"]
+        ING --> IX
+    end
+    CORE -- "/stream/transactions" --> ING
+    APP["Wallet, dApp or explorer"] --> API
+    API -- "current state: balances, NFTs, metadata" --> CORE
+    API -- "history, holders, NFT location" --> IX
+    API -- "submit transaction" --> RES
+    RES --> CORE
+```
+
+### Data model
+
+All keys are byte-ordered so they can be scanned by range.
+
+| Table | Key | Value | Written on | Serves |
+|---|---|---|---|---|
+| `entity_tx` | `entity_address ‖ state_version (BE)` | bits: manifest class, balance changed?, event emitted?, deposit/withdrawal? | every user transaction and genesis | filtered history |
+| `entity_tx_by_resource` | `entity ‖ resource ‖ state_version` | delta (fungible) or ids added/removed (NFT) | same | per-resource history, `balance_changes` |
+| `nf_location` | `resource ‖ local_id` | `vault ‖ global_owner ‖ state_version` | NFT vault changes | `state/non-fungible/location`, explorers |
+| `holders` | `resource ‖ owner ‖ (inverted balance for ordering)` | balance | vault changes | `extensions/resource-holders`, explorers |
+| `subintents` | `subintent_hash` | `state_version ‖ intent_hash` | subintent nullifications | `transaction/subintent-status` (until N1 exists) |
+| `role_badges` | `badge (resource[:id]) ‖ entity` | — | `RoleAssignment` changes | `entities-by-role-requirement` |
+| `metadata_updated` | `entity ‖ key` | `state_version` | metadata-module changes | `last_updated_at_state_version` |
+| `ts_index` | `timestamp_ms` (per minute) | `state_version` | every transaction | date navigation |
+| `stats_hourly` | `hour` | counters | every transaction | statistics |
+| `search_terms` | `normalised term ‖ entity` | — | `name`, `symbol`, `tags` metadata | search |
+| `validator_epoch` | `validator ‖ epoch` | proposals made and missed | epoch-change events | uptime |
+| `cursor` | `"cursor"` | last processed `state_version` | each batch | resume |
+
+### Ingestion loop
+
+Pseudocode:
+
+```rust
+loop {
+    let from = store.cursor()? + 1;
+    let page = core.stream_transactions(from, LIMIT /* e.g. 1000 */).await?;   // /core/stream/transactions
+    if page.transactions.is_empty() { sleep(500ms).await; continue; }
+
+    let mut batch = store.batch();
+    for tx in page.transactions {
+        match tx.ledger_transaction.kind() {
+            RoundUpdate => { stats.count_round(&mut batch, &tx); continue; }   // entities are not indexed
+            Genesis | Flash | ProtocolUpdate | User => {}
+        }
+        let changes = decode_state_changes(&tx.receipt);                       // created, updated, deleted
+        index_entities(&mut batch, &tx, &changes);       // entity_tx, entity_tx_by_resource
+        index_vaults(&mut batch, &tx, &changes);         // nf_location, holders (vault -> global ancestor via ancestry)
+        index_roles_and_metadata(&mut batch, &tx, &changes);
+        index_subintents(&mut batch, &tx);
+        index_time_and_stats(&mut batch, &tx);
+    }
+    batch.set_cursor(last_state_version);
+    store.write(batch)?;                                  // atomic: indexes and cursor together
+}
+```
+
+**Important details:**
+
+1. **Genesis.** Start at version 1. The ~669 genesis transactions contain Olympia's migrated state and have very large receipts. Process them as a stream, without loading the whole receipt into memory.
+2. **A vault's global ancestor.** The receipt says which vault changed. To know which account or component owns it, use the node's ancestry: store it when the vault is created, or query `/entity/info` the first time.
+3. **Atomic writes.** Indexes and cursor are written in the same batch. If the process crashes, it resumes from the cursor, and repeated work is harmless because writes are idempotent.
+4. **Performance.** For the first sync (~567 million versions), fetch large batches in parallel and write in order. Round updates are only counted.
+
+### API layer
+
+An `axum` server with these layers:
+
+- `tower_http::cors::CorsLayer`;
+- a per-IP limiter (for example `tower_governor`);
+- a request-size limit;
+- a per-request timeout.
+
+Each route resolves its data in one of these ways:
+
+| Route (format apps use today) | Resolved with |
+|---|---|
+| `status/gateway-status`, `transaction/construction` | Core: `/status/network-status`, `/lts/transaction/construction` |
+| `transaction/preview`, `preview-v2` | Core: forwarded directly |
+| `transaction/submit` | `submit` module (see "Transaction resubmission" below) |
+| `transaction/status` | Core `/lts/transaction/status` + the `submit` module's pending table, with status mapping |
+| `transaction/subintent-status` | `subintents` index (or N1) |
+| `transaction/committed-details` | Core `/transaction/receipt` |
+| `transaction/account-deposit-pre-validation` | Core `/lts/state/account-deposit-behaviour` |
+| `state/entity/details` | Core `/state/*` + Engine State (metadata, roles, fields); aggregates per resource; `last_updated` from `metadata_updated` |
+| `state/entity/page/fungibles` | Core `/lts/state/account-all-fungible-resource-balances` (accounts) or the component's vaults |
+| `state/entity/page/non-fungibles`, `non-fungible-vault/ids` | Engine State `/object/collection/iterator` |
+| `state/non-fungible/data` | Core `/state/non-fungible` |
+| `state/non-fungible/location` | `nf_location` index |
+| `state/key-value-store/*` | Engine State `/kv-store/*` |
+| `state/validators/list` | Core `/state/consensus-manager` + `/state/validator` |
+| `stream/transactions` (with filters) | `entity_tx*` indexes + Core `/transaction/receipt` for details |
+| `extensions/entities-by-role-requirement/lookup` | `role_badges` index |
+| `extensions/resource-holders/page` | `holders` index |
+| `statistics/validators/uptime` | `validator_epoch` index |
+
+**Consistent reads.**
+
+- When a paged request starts, pin `state_version = min(node, indexer cursor)` and include it in the paging cursor.
+- If the node has moved on and the current read cannot be pinned at that version, return the page with an updated `ledger_state`; the API format already allows this.
+- For exact reads in the recent past, enable `db.historical_substate_values.enable` on the read node.
+
+### Transaction resubmission (`submit` module)
+
+```text
+on submit(payload):
+  validate format and epoch window (start <= current_epoch+1 < end)
+  store in `pending` table: {intent_hash, payload, first_sent, attempts=0, next_attempt}
+  send to Core /lts/transaction/submit
+every 5 s:
+  for each pending item with next_attempt <= now:
+    status = Core /lts/transaction/status
+    if CommittedSuccess/CommittedFailure/PermanentRejection -> close
+    if current_epoch >= end_epoch                          -> close as expired
+    if NotSeen or FateUncertain                            -> resubmit; attempts += 1;
+                                                              next_attempt = now + 10 s * 2^attempts (max 5 min)
+```
+
+These are the same parameters the Gateway uses today: 10 s base, ×2, up to 5 attempts, 5 minutes at most.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant W as Wallet
+    participant L as Read node
+    participant N as Full node
+    W->>L: transaction preview
+    L->>N: /transaction/preview
+    N-->>W: result and fees
+    W->>W: user signs
+    W->>L: submit transaction
+    L->>N: /lts/transaction/submit
+    loop while the epoch window is valid
+        L->>N: /lts/transaction/status
+        alt not committed
+            L->>N: resubmit with backoff
+        end
+    end
+    W->>L: status?
+    L-->>W: CommittedSuccess
+```
+
+### Conformance tests
+
+1. **Before the public Gateway is switched off:** record real requests and their responses, sampling the routes in the table above with varied addresses (old Olympia accounts, accounts with NFTs, validators, pools).
+2. **Compare** with what the indexer returns, field by field, ignoring fields that change over time (`ledger_state`).
+3. **Continuous integration:** every indexer change must pass these tests.
+4. **Test with real apps:** Android/iOS wallets on Stokenet and mainnet pointed at the indexer via Settings → Gateways. Walk through balances, NFTs, staking, history, submission and pre-authorizations.
+
+### Deployment next to the node
+
+```yaml
+# docker-compose (excerpt)
+services:
+  core:            # full node, as today
+    image: radixdlt/babylon-node:v1.4.0.0
+    environment:
+      RADIXDLT_DB_HISTORICAL_SUBSTATE_VALUES_ENABLE: "true"   # consistent recent reads
+      RADIXDLT_DB_ENTITY_LISTING_INDICES_ENABLE: "true"
+      RADIXDLT_ENGINE_STATE_API_PORT: "3336"
+  indexer:
+    image: radix-lite-indexer:latest
+    environment:
+      CORE_API_URL: http://core:3333/core
+      ENGINE_STATE_API_URL: http://core:3336/engine-state
+      PUBLIC_BIND: 0.0.0.0:8080
+      RATE_LIMIT_RPS: "20"
+    volumes: [ "indexer-data:/data" ]
+  proxy:           # TLS
+    image: caddy:2
+    ports: [ "443:443" ]
+```
+
+## 10.2 On-ledger discovery of read nodes
+
+**Proposed format.** An `api_endpoints` metadata entry on the validator component, which the owner can write with a normal transaction. Its value is a JSON string:
+
+```json
+{
+  "v": 1,
+  "endpoints": [
+    { "url": "https://read.example-validator.org", "api": "radix-read-v1",
+      "features": ["state", "submit", "history", "holders", "nf-location", "explorer"],
+      "network": "mainnet" }
+  ]
+}
+```
+
+**Client algorithm:**
+
+1. **Bootstrap list.** Ship 5-10 access points from different operators in the binary, only for first contact.
+2. **Read the full list.** From any of them, read the active validator set (`/state/consensus-manager`) and each validator's `api_endpoints` metadata.
+3. **Check.** Check each access point:
+   - that the network matches (`status/network-configuration`);
+   - that its `state_version` is close to the majority (not lagging);
+   - its latency.
+4. **Use.** Pick the best 2-3 and spread requests. If one fails, move to the next. Optionally, compare `state_version` and the accumulator hash between two to detect a lying node.
+5. **Cache.** Store the list and refresh it every few hours.
+
+## 10.3 `babylon-node` changes to serve reads (N1, N5b, N6)
+
+**N1. Subintent status.** A new handler in `core-rust/core-api-server/src/core_api/handlers/`:
+
+```rust
+pub(crate) async fn handle_transaction_subintent_status(
+    state: State<CoreApiState>,
+    Json(request): Json<models::TransactionSubintentStatusRequest>,
+) -> Result<Json<models::TransactionSubintentStatusResponse>, ResponseError> {
+    let hash = extract_subintent_hash(&request.subintent_hash)?;
+    let db = state.state_manager.database.snapshot();
+    let committed_at = db.get_txn_state_version_by_identifier(&hash);   // already exists (rocks_db.rs:899-919)
+    let identifiers = committed_at.and_then(|v| db.get_committed_transaction_identifiers(v));
+    Ok(Json(to_api_subintent_status(committed_at, identifiers)?))
+}
+```
+
+It also needs:
+
+- the route in `core_api/server.rs`;
+- the schema in `core-api-schema.yaml`, and regenerated models;
+- tests.
+
+**N5b. `last_updated_at_state_version` for metadata.** To avoid a new index, return the version of the entry's last change by reading the state tree's leaf node: each leaf records the version at which it was written.
+
+**N6. Public read mode.**
+
+- A new `api.public.*` configuration section.
+- On the axum router of the Core API and the Engine State API:
+  - a CORS layer;
+  - a per-IP limiter;
+  - a route allow-list: reads, preview, submit and status, **never** `/mempool/*` or unbounded routes;
+  - force `enable_unbounded_endpoints=false`.
+
+## 10.4 Client changes
+
+**Sargon: `LedgerBackend` interface and resubmission.**
+
+1. Define the trait in a new crate, `crates/gateway/backend`, with the high-level methods used in `methods/state_methods.rs` and `methods/transaction_methods.rs`.
+2. Implement it for the current `GatewayClient`, without changing its behaviour.
+3. Change `SargonOS::gateway_client()` (`system/os/os/src/sargon_os_gateway_client.rs:8-17`) to return `Arc<dyn LedgerBackend>`, and the five places that build their own client to receive it.
+4. **Access-point list:**
+   - `SavedGateways` uses `current` + `other` as a list with failover;
+   - add the discovery from 10.2 behind an option.
+5. **Resubmission:**
+   - store the notarized payload in the host's secure storage (the driver already exists) until it is committed or its epoch expires;
+   - the loop in `sargon_os_transaction_status.rs:38-105` resubmits when the status is `NotSeen` or `FateUncertain`.
+6. **Tests:** a mock of the trait for unit tests, and integration tests against an indexer on Stokenet.
+
+**Android: fix the lost port and path** (`di/HttpModule.kt:128-144`):
+
+```kotlin
+val target = currentGatewayUrl.toHttpUrl()
+val newUrl = original.url.newBuilder()
+    .scheme(target.scheme).host(target.host).port(target.port)
+    .encodedPath(target.encodedPath.trimEnd('/') + original.url.encodedPath)
+    .build()
+```
+
+**Radix dApp Toolkit:** a list of access points with failover:
+
+```ts
+const gatewayApiService = FailoverGatewayApiService({
+  endpoints: ['https://read.a.org', 'https://read.b.org'],   // or discovered on ledger
+  networkId,
+})
+const rdt = RadixDappToolkit({ /* ... */, providers: { gatewayModule: GatewayModule({ providers: { gatewayApiService } }) } })
+```
+
+**ROLA:** an injectable `owner_keys` reader:
+
+```ts
+const rola = Rola({
+  networkId, applicationName, expectedOrigin, dAppDefinitionAddress,
+  ownerKeysReader: (address) => readMetadataEntry(endpoints, address, 'owner_keys'), // Engine State or indexer
+})
+```
+
+## 10.5 Verifiable Olympia archive
+
+1. **Get the data.** Ask the Foundation, or any operator that still has one, for a copy of the database of an Olympia node or of its Gateway (`olympia-gateway.radixdlt.com`, version 337,759,839). Alternatively, walk its per-account transaction endpoints for every account while it is still live.
+2. **Export.**
+   - Transactions in order, in JSON Lines or Parquet files chunked by version range.
+   - A **static index by address**: `rdx1…` → list of chunks and positions.
+   - A file mapping each Olympia address to its Babylon account.
+3. **Seal.**
+   - Compute a Merkle tree over the files and publish the root.
+   - Have **several independent people** sign the root and publish it, for example on RadixTalk and in a Babylon transaction with a message.
+4. **Publish** on IPFS (with several independent pinning services), BitTorrent and, if possible, Arweave.
+5. **Integrate** into the reference explorer and `olympia-wallet`: read the static index and download only the chunks needed.
+
+## 10.6 Verifiable reads: the long-term solution
+
+**Node.** A `POST /core/state/proof` endpoint that takes a list of substate keys and returns:
+
+- the values;
+- the state tree's **Merkle multiproof** against `state_tree_hash` at version V;
+- the **signed ledger proof** for V.
+
+The state tree window already keeps recent versions (`state_hash_tree.*`). For transactions and receipts, proofs are against `transaction_tree_hash` and `receipt_tree_hash`; this requires keeping the accumulators that R5 prunes, so that information would live on archive nodes.
+
+**Light client** (a Rust crate, also compiled to WebAssembly):
+
+1. It starts from a **checkpoint**: the proof of a recent epoch shipped with the app release.
+2. **It follows epoch changes:** it downloads epoch proofs from the checkpoint onwards (`/stream/proofs`) and checks that each is signed by more than 2/3 of the previous set's stake. That way it knows the current validators.
+3. **It verifies every read:**
+   - the ledger proof is signed by more than 2/3 of the epoch's stake;
+   - the Merkle multiproof matches `state_tree_hash`.
+4. If anything fails, it drops the node and asks another (10.2).
+
+**Verifiable indexes (protocol update).** For history and holder lists to be provably complete too, the engine would have to keep a per-entity root in state (for example, an accumulator of the transactions that affect it). This needs a protocol update and should be designed together with R10.
+
+## 10.7 How to test and roll out each phase without downtime
+
+1. **Stokenet first.** Every change goes to Stokenet first, which the community runs today, with nodes from different operators.
+2. **Metrics.** Per-column-family size metrics (`raw_db_size`), process RSS, missed rounds per validator, API latency and indexer lag are published on a shared dashboard.
+3. **Options off by default.** Storage changes ship as options. They are enabled on full nodes first, then validators.
+4. **Rollback.**
+   - For the indexer, point apps at another access point.
+   - For node options, take a checkpoint before enabling those that delete data (R3, R5, R7, R8).
+5. **Protocol updates** (R10, verifiable indexes) follow the usual validator readiness-signalling process.
+
+---
+
+[← Index](../../README.md) · [Previous: Section 9: lighter nodes, 4 GB RAM and 500 GB disk, Java to Rust migration](07-lighter-nodes.md) · [Next: Sources and methodology](09-sources.md)
